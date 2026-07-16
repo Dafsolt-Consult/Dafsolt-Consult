@@ -1,4 +1,6 @@
+import { randomBytes } from "crypto";
 import { prisma } from "../../config/prisma";
+import { env } from "../../config/env";
 import { ApiError } from "../../utils/ApiError";
 import { comparePassword, hashPassword } from "../../utils/password";
 import { hashToken } from "../../utils/hashToken";
@@ -7,6 +9,7 @@ import { LoginInput, OnboardSchoolInput } from "./auth.schema";
 import ms from "../../utils/ms";
 
 const TRIAL_DAYS = 30;
+const RESET_TOKEN_TTL_MS = ms("1h");
 
 export async function onboardSchool(input: OnboardSchoolInput) {
   const existingSlug = await prisma.tenant.findUnique({ where: { slug: input.slug } });
@@ -91,6 +94,58 @@ export async function logout(refreshToken: string) {
     where: { tokenHash, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+}
+
+/** Always succeeds silently whether or not the email exists, so the
+ * response can't be used to enumerate registered accounts. Works for every
+ * role — SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT, LIBRARIAN,
+ * ACCOUNTANT — since it operates on the shared User model, not a
+ * role-specific one. */
+export async function requestPasswordReset(email: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || !user.isActive) return;
+
+  const rawToken = randomBytes(32).toString("hex");
+
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      tokenHash: hashToken(rawToken),
+      expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+    },
+  });
+
+  const resetLink = `${env.clientUrl}/reset-password?token=${rawToken}`;
+
+  // No email/SMS provider is wired up yet (see README roadmap) — log the
+  // link so an operator with server access can relay it to the user until
+  // a real provider is integrated. The raw token is never returned via the
+  // API or persisted anywhere other than its hash.
+  console.log(`[password reset] ${user.role} <${user.email}> requested a reset: ${resetLink}`);
+}
+
+export async function resetPassword(rawToken: string, newPassword: string) {
+  const tokenHash = hashToken(rawToken);
+  const resetToken = await prisma.passwordResetToken.findFirst({
+    where: { tokenHash, usedAt: null },
+  });
+
+  if (!resetToken || resetToken.expiresAt < new Date()) {
+    throw ApiError.badRequest("This reset link is invalid or has expired");
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash } }),
+    prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
+    // Force re-login everywhere: a leaked/guessed old session shouldn't
+    // survive a password reset.
+    prisma.refreshToken.updateMany({
+      where: { userId: resetToken.userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+  ]);
 }
 
 async function issueSession(userId: string, tenantId: string | null, role: import("@prisma/client").UserRole) {

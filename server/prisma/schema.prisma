@@ -227,6 +227,7 @@ model User {
   guardian Guardian?
 
   refreshTokens        RefreshToken[]
+  passwordResetTokens  PasswordResetToken[]
   recordedAttendances  Attendance[]      @relation("AttendanceRecorder")
   createdQuestions     Question[]        @relation("QuestionCreator")
   createdExams         Exam[]            @relation("ExamCreator")
@@ -252,6 +253,20 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("password_reset_tokens")
 }
 
 // ──────────────────────────────────────────────────────────────────────────

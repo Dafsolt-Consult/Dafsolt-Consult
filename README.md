@@ -49,6 +49,11 @@ which pass an explicit `x-tenant-id` header to act on a specific school.
 **Subscription plans**: `FREE` / `BASIC` / `PREMIUM`, each with a student and
 staff seat cap enforced at creation time — the natural SaaS upsell lever.
 
+**Password reset**: available to every role at `/forgot-password` (single-use,
+1-hour-expiry tokens; resetting revokes all of that account's active
+sessions). Delivery is log-based until a real email/SMS provider is wired up
+— see `DEPLOYMENT.md` § 6.
+
 ## Data model highlights (`server/prisma/schema.prisma`)
 
 - **Academic structure**: `AcademicSession` → `Term`, `ClassLevel` → `ClassArm`,
@@ -141,8 +146,14 @@ guardian with a parent-portal login → parent login viewing their child's
 performance, assignments, CBT exam history, fees, and announcements →
 a student submitting an assignment, a teacher grading it, and the parent
 seeing the grade — plus confirming a parent is rejected (403) when trying
-to view a student they aren't linked to. Both `server` and `client` build
-and type-check cleanly (`npm run build` in each).
+to view a student they aren't linked to. Also verified the password-reset
+flow end-to-end: a stranger and a real account both get the identical
+generic "if that email exists…" response (no account enumeration), the
+reset link only ever appears in server logs (never the API response), an
+invalid/reused token is rejected, a valid one successfully changes the
+password, the old password immediately stops working, and a session that
+was active before the reset gets its refresh token revoked. Both `server`
+and `client` build and type-check cleanly (`npm run build` in each).
 
 ## Known limitations / roadmap
 

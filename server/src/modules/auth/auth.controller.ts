@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { loginSchema, onboardSchoolSchema, refreshSchema } from "./auth.schema";
+import { forgotPasswordSchema, loginSchema, onboardSchoolSchema, refreshSchema, resetPasswordSchema } from "./auth.schema";
 import * as authService from "./auth.service";
 import { prisma } from "../../config/prisma";
 import { ApiError } from "../../utils/ApiError";
@@ -27,6 +27,20 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = refreshSchema.parse(req.body);
   await authService.logout(refreshToken);
   res.status(204).send();
+});
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = forgotPasswordSchema.parse(req.body);
+  await authService.requestPasswordReset(email);
+  // Deliberately generic and always the same shape, whether or not the
+  // email exists, so this can't be used to enumerate accounts.
+  res.json({ message: "If an account exists for that email, a password reset link has been sent." });
+});
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token, newPassword } = resetPasswordSchema.parse(req.body);
+  await authService.resetPassword(token, newPassword);
+  res.json({ message: "Your password has been reset. Please sign in." });
 });
 
 export const me = asyncHandler(async (req: Request, res: Response) => {

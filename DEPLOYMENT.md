@@ -107,7 +107,31 @@ From there, the school admin can:
 - build the CBT question bank and exams, post assignments, set up fee
   structures, and post announcements/calendar events
 
-## 6. Updating after a code change
+## 6. Password resets (until real email is wired up)
+
+Every role (Super Admin, School Admin, Teacher, Student, Parent, Librarian,
+Accountant) can request a reset at `/forgot-password`. Since a real email/SMS
+provider isn't integrated yet, the actual reset link isn't emailed — it's
+logged server-side instead:
+
+```bash
+docker compose -f docker-compose.prod.yml logs server | grep "password reset"
+```
+
+You'll see a line like:
+
+```
+[password reset] TEACHER <name@example.com> requested a reset: https://school.yourdomain.com/reset-password?token=...
+```
+
+Copy that link and relay it to the user manually (WhatsApp, SMS, in person)
+for this pilot. The link expires after 1 hour and can only be used once;
+resetting a password also signs that account out of every other device.
+Wiring up a real provider later is a one-line change at the `console.log`
+call site in `server/src/modules/auth/auth.service.ts`
+(`requestPasswordReset`) — swap it for an actual email/SMS send.
+
+## 7. Updating after a code change
 
 ```bash
 git pull
@@ -119,7 +143,7 @@ migrations automatically on the API container's next start. Existing data in
 Postgres and uploaded files persist across rebuilds (they live in named
 Docker volumes, not inside the containers).
 
-## 7. Backups
+## 8. Backups
 
 Postgres data lives in the `dafsolt_pgdata_prod` volume. Take a logical
 backup regularly:
@@ -133,7 +157,7 @@ Copy that file off the VPS (e.g. to S3, or just `scp` it somewhere) — a
 backup that only lives on the same disk as the database doesn't protect you
 from a disk failure.
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 - **Caddy can't get a certificate**: almost always DNS — confirm `DOMAIN` in
   `.env` resolves to this VPS's IP, and that ports 80/443 are actually open
