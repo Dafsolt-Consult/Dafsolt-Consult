@@ -3,6 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { gradeFor } from "../../utils/grading";
+import { resolveStudentParam } from "../../utils/resolveStudentId";
 import { generateReportCardsSchema, upsertResultSchema } from "./results.schema";
 
 export const upsertResult = asyncHandler(async (req: Request, res: Response) => {
@@ -38,7 +39,7 @@ export const listResults = asyncHandler(async (req: Request, res: Response) => {
 
 export const studentResultSheet = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
-  const { studentId } = req.params;
+  const studentId = await resolveStudentParam(req, tenantId, req.params.studentId);
   const { termId } = req.query as Record<string, string | undefined>;
 
   const results = await prisma.resultEntry.findMany({
@@ -103,7 +104,8 @@ export const generateReportCards = asyncHandler(async (req: Request, res: Respon
 
 export const getReportCard = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
-  const { studentId, termId } = req.params;
+  const studentId = await resolveStudentParam(req, tenantId, req.params.studentId);
+  const { termId } = req.params;
 
   const [reportCard, results] = await Promise.all([
     prisma.reportCard.findFirst({ where: { tenantId, studentId, termId }, include: { classArm: { include: { classLevel: true } } } }),

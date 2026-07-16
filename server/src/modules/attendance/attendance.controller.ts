@@ -3,6 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
+import { resolveStudentParam } from "../../utils/resolveStudentId";
 import { markAttendanceSchema } from "./attendance.schema";
 
 export const markAttendance = asyncHandler(async (req: Request, res: Response) => {
@@ -51,7 +52,7 @@ export const listAttendance = asyncHandler(async (req: Request, res: Response) =
 
 export const attendanceSummary = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
-  const { studentId } = req.params;
+  const studentId = await resolveStudentParam(req, tenantId, req.params.studentId);
   const { from, to } = req.query as Record<string, string | undefined>;
 
   const grouped = await prisma.attendance.groupBy({

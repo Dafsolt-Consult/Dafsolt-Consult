@@ -3,6 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
+import { resolveStudentParam } from "../../utils/resolveStudentId";
 import { createFeeStructureSchema, generateInvoicesSchema, recordPaymentSchema } from "./fees.schema";
 
 export const listFeeStructures = asyncHandler(async (req: Request, res: Response) => {
@@ -57,7 +58,9 @@ export const generateInvoices = asyncHandler(async (req: Request, res: Response)
 
 export const listInvoices = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
-  const { studentId, status, termId } = req.query as Record<string, string | undefined>;
+  const { status, termId } = req.query as Record<string, string | undefined>;
+  const studentIdParam = req.query.studentId as string | undefined;
+  const studentId = studentIdParam ? await resolveStudentParam(req, tenantId, studentIdParam) : undefined;
 
   const invoices = await prisma.invoice.findMany({
     where: { tenantId, studentId, termId, status: status as never },

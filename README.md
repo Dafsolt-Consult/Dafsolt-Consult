@@ -1,12 +1,123 @@
-- 👋 Hi, I’m @Dafsolt-Consult
-- 👀 I’m interested in ...
-- 🌱 I’m currently learning ...flutter
-- 💞️ I’m looking to collaborate on ...machine lerning 
-- 📫 How to reach me ...+2349051244427
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...i am a novice 
+# Dafsolt School Suite
 
-<!---
-Dafsolt-Consult/Dafsolt-Consult is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-You can click the Preview link to take a look at your changes.
---->
+A multi-tenant School Management SaaS built for primary and secondary schools
+across Africa, with a full built-in Computer-Based Testing (CBT) engine and a
+physical + digital school library. Each school that signs up gets its own
+isolated workspace (a "tenant") inside one shared platform — the classic SaaS
+model, run and billed centrally by Dafsolt Consult.
+
+## Why this shape
+
+- **Africa-first defaults**: Nigerian/West African curriculum structure out
+  of the box (Primary 1–6, JSS 1–3, SSS 1–3), WAEC/NECO-style grading
+  (A/B/C/D/E/F), Naira as the default currency, `Africa/Lagos` timezone, and
+  stubs for local payment rails (Paystack, Flutterwave) and SMS
+  (Africa's Talking) so schools with intermittent connectivity and mobile-money
+  billing aren't an afterthought.
+- **CBT is a first-class module**, not a bolt-on: a reusable question bank
+  (multiple choice, true/false, fill-in-the-blank, theory), an exam builder,
+  a timed exam-taking flow with per-student shuffling, instant auto-grading
+  for objective questions, and manual grading for theory answers.
+- **Library serves both physical and digital lending**: a book catalog that
+  tracks physical copies (borrow/return, due dates, fines) alongside ebook
+  links schools can host themselves, tagged by target audience (primary vs.
+  secondary) so the library stays relevant to whoever is browsing it.
+
+## Architecture
+
+```
+├── server/     Node.js + Express + TypeScript API, PostgreSQL via Prisma
+└── client/     React + TypeScript + Vite + Tailwind SPA
+```
+
+**Multi-tenancy**: shared database, shared schema. Every tenant-scoped table
+carries a `tenantId` column; a middleware (`resolveTenantId`) pins every
+request to the caller's own school, except platform `SUPER_ADMIN` accounts,
+which pass an explicit `x-tenant-id` header to act on a specific school.
+
+**Roles**: `SUPER_ADMIN` (platform), `SCHOOL_ADMIN`, `TEACHER`, `STUDENT`,
+`PARENT`, `LIBRARIAN`, `ACCOUNTANT`. Every route is gated by role via
+`authorize(...)` middleware.
+
+**Subscription plans**: `FREE` / `BASIC` / `PREMIUM`, each with a student and
+staff seat cap enforced at creation time — the natural SaaS upsell lever.
+
+## Data model highlights (`server/prisma/schema.prisma`)
+
+- **Academic structure**: `AcademicSession` → `Term`, `ClassLevel` → `ClassArm`,
+  `Subject`, with a `ClassArmSubject` join assigning a teacher to a subject in
+  a specific class for a specific term.
+- **People**: `Student` / `Teacher` / `Guardian` all wrap a `User` (auth
+  identity + role); `Enrollment` tracks which class a student sits in per
+  session, so students can be promoted year over year without losing history.
+- **CBT**: `Question` (+ `QuestionOption`) → `Exam` → `ExamQuestion` →
+  `ExamAttempt` → `ExamAnswer`. Question order and MCQ option order are
+  shuffled per-student using a seeded PRNG (`utils/shuffle.ts`) so the shuffle
+  is anti-cheating yet reproducible if the student reloads mid-exam.
+- **Library**: `Book` (physical/ebook/both) + `BookCategory` + `BorrowRecord`
+  with automatic fine calculation on late return.
+- **Fees**: `FeeStructure` → `Invoice` → `Payment`, amounts stored in minor
+  currency units (kobo) to avoid floating-point errors.
+- **Results**: `ResultEntry` (CA + exam score, auto-graded A–F) rolled up into
+  a per-term `ReportCard` with attendance counts and class position.
+
+## Getting started
+
+### 1. Database
+
+```bash
+docker compose up -d          # starts Postgres 16 on localhost:5432
+```
+
+### 2. Backend
+
+```bash
+cd server
+cp .env.example .env          # adjust secrets as needed
+npm install
+npx prisma migrate dev        # applies the schema
+npm run seed                  # optional: loads a demo school with sample data
+npm run dev                   # http://localhost:4000
+```
+
+The seed script creates **Demo Academy** with three ready-to-use logins (all
+password `DemoPass123!`): `admin@demoacademy.ng` (school admin),
+`teacher@demoacademy.ng` (teacher), `student@demoacademy.ng` (student).
+
+### 3. Frontend
+
+```bash
+cd client
+npm install
+npm run dev                   # http://localhost:5173
+```
+
+The Vite dev server proxies `/api` to `http://localhost:4000`.
+
+### 4. New school signup
+
+Visit `/onboard` in the client to register a brand-new school (creates the
+tenant + its first `SCHOOL_ADMIN` in one step, starting a 30-day free trial),
+or sign in directly at `/login` with a seeded account.
+
+## Verified end-to-end
+
+The full stack was exercised directly against a live PostgreSQL instance
+(not just type-checked): school onboarding → academic session/class/subject
+setup → student admission → question bank → exam creation → student
+exam attempt with shuffled questions/options → auto-grading of objective
+answers → manual grading of a theory answer → library borrow/return with
+fine tracking → result entry with automatic grade computation. Both
+`server` and `client` build and type-check cleanly (`npm run build` in each).
+
+## Known limitations / roadmap
+
+- Parent accounts currently need a linked student profile to view child-specific
+  data through the same `/me`-style endpoints students use; a proper
+  guardian → multiple-children selector is a natural next step.
+- Payment gateway and SMS provider integrations are stubbed (env vars are
+  wired in `server/.env.example`) — swap in real Paystack/Flutterwave/Africa's
+  Talking calls when a school is ready to go live with billing/notifications.
+- File uploads (book covers, ebook files, question images) currently expect a
+  hosted URL; wiring up direct upload (e.g. to S3-compatible storage) is a
+  follow-up.
