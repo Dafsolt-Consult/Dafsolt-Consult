@@ -12,3 +12,4 @@ coverage/
 client/dist/
 server/dist/
 *.tsbuildinfo
+db-backups/
