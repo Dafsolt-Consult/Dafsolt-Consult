@@ -1,0 +1,66 @@
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import rateLimit from "express-rate-limit";
+import path from "path";
+import { env } from "./config/env";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+
+import authRoutes from "./modules/auth/auth.routes";
+import tenantsRoutes from "./modules/tenants/tenants.routes";
+import usersRoutes from "./modules/users/users.routes";
+import academicsRoutes from "./modules/academics/academics.routes";
+import studentsRoutes from "./modules/students/students.routes";
+import teachersRoutes from "./modules/teachers/teachers.routes";
+import attendanceRoutes from "./modules/attendance/attendance.routes";
+import resultsRoutes from "./modules/results/results.routes";
+import feesRoutes from "./modules/fees/fees.routes";
+import cbtRoutes from "./modules/cbt/cbt.routes";
+import libraryRoutes from "./modules/library/library.routes";
+
+export function createApp() {
+  const app = express();
+
+  app.use(helmet());
+  app.use(cors({ origin: env.clientUrl, credentials: true }));
+  app.use(express.json({ limit: "2mb" }));
+  app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 500,
+      standardHeaders: true,
+      legacyHeaders: false,
+    })
+  );
+
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many attempts, please try again later" },
+  });
+
+  app.use("/uploads", express.static(path.resolve(env.uploadDir)));
+
+  app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
+
+  app.use("/api/auth", authLimiter, authRoutes);
+  app.use("/api/tenants", tenantsRoutes);
+  app.use("/api/users", usersRoutes);
+  app.use("/api/academics", academicsRoutes);
+  app.use("/api/students", studentsRoutes);
+  app.use("/api/teachers", teachersRoutes);
+  app.use("/api/attendance", attendanceRoutes);
+  app.use("/api/results", resultsRoutes);
+  app.use("/api/fees", feesRoutes);
+  app.use("/api/cbt", cbtRoutes);
+  app.use("/api/library", libraryRoutes);
+
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
+  return app;
+}
