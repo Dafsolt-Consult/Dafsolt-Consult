@@ -133,6 +133,23 @@ enum NotificationStatus {
   FAILED
 }
 
+enum CalendarEventType {
+  HOLIDAY
+  EXAM
+  ACADEMIC
+  EVENT
+  MEETING
+}
+
+enum AnnouncementAudience {
+  ALL
+  STAFF
+  PARENTS
+  PRIMARY
+  JUNIOR_SECONDARY
+  SENIOR_SECONDARY
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Platform / Tenancy
 // ──────────────────────────────────────────────────────────────────────────
@@ -182,6 +199,9 @@ model Tenant {
   resultEntries     ResultEntry[]
   reportCards       ReportCard[]
   notificationLogs  NotificationLog[]
+  assignments       Assignment[]
+  calendarEvents    CalendarEvent[]
+  announcements     Announcement[]
 
   @@map("tenants")
 }
@@ -213,6 +233,9 @@ model User {
   gradedAnswers        ExamAnswer[]      @relation("AnswerGrader")
   recordedPayments     Payment[]         @relation("PaymentRecorder")
   notificationsToUser  NotificationLog[] @relation("NotificationRecipient")
+  gradedSubmissions    AssignmentSubmission[] @relation("AssignmentGrader")
+  createdCalendarEvents CalendarEvent[]  @relation("CalendarEventCreator")
+  createdAnnouncements Announcement[]   @relation("AnnouncementCreator")
 
   @@index([tenantId])
   @@map("users")
@@ -314,6 +337,7 @@ model ClassArm {
   attendances   Attendance[]
   resultEntries ResultEntry[]
   reportCards   ReportCard[]
+  assignments   Assignment[]
 
   @@unique([tenantId, classLevelId, name])
   @@index([tenantId])
@@ -333,6 +357,7 @@ model Subject {
   questions     Question[]
   exams         Exam[]
   resultEntries ResultEntry[]
+  assignments   Assignment[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -382,6 +407,7 @@ model Student {
   invoices        Invoice[]
   resultEntries   ResultEntry[]
   reportCards     ReportCard[]
+  assignmentSubmissions AssignmentSubmission[]
 
   @@unique([tenantId, admissionNumber])
   @@index([tenantId])
@@ -400,6 +426,7 @@ model Teacher {
 
   formArms      ClassArm[]        @relation("FormTeacher")
   classSubjects ClassArmSubject[]
+  assignments   Assignment[]
 
   @@unique([tenantId, staffId])
   @@index([tenantId])
@@ -782,6 +809,88 @@ model ReportCard {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Assignments
+// ──────────────────────────────────────────────────────────────────────────
+
+model Assignment {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  classArmId    String
+  classArm      ClassArm @relation(fields: [classArmId], references: [id], onDelete: Cascade)
+  subjectId     String
+  subject       Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacherId     String
+  teacher       Teacher  @relation(fields: [teacherId], references: [id])
+  title         String
+  description   String?
+  attachmentUrl String?
+  dueDate       DateTime
+  totalPoints   Int      @default(100)
+  createdAt     DateTime @default(now())
+
+  submissions AssignmentSubmission[]
+
+  @@index([tenantId, classArmId])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id             String     @id @default(cuid())
+  assignmentId   String
+  assignment     Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  submissionText String?
+  attachmentUrl  String?
+  submittedAt    DateTime?
+  score          Int?
+  feedback       String?
+  gradedAt       DateTime?
+  gradedById     String?
+  gradedBy       User?      @relation("AssignmentGrader", fields: [gradedById], references: [id])
+
+  @@unique([assignmentId, studentId])
+  @@map("assignment_submissions")
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// School calendar & announcements
+// ──────────────────────────────────────────────────────────────────────────
+
+model CalendarEvent {
+  id          String            @id @default(cuid())
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  type        CalendarEventType @default(EVENT)
+  startDate   DateTime
+  endDate     DateTime?
+  createdById String
+  createdBy   User              @relation("CalendarEventCreator", fields: [createdById], references: [id])
+  createdAt   DateTime          @default(now())
+
+  @@index([tenantId, startDate])
+  @@map("calendar_events")
+}
+
+model Announcement {
+  id          String               @id @default(cuid())
+  tenantId    String
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title       String
+  body        String
+  audience    AnnouncementAudience @default(ALL)
+  createdById String
+  createdBy   User                 @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  publishedAt DateTime             @default(now())
+
+  @@index([tenantId, publishedAt])
+  @@map("announcements")
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Notifications
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -796,6 +905,7 @@ model NotificationLog {
   message     String
   status      NotificationStatus  @default(PENDING)
   sentAt      DateTime?
+  readAt      DateTime?
   createdAt   DateTime            @default(now())
 
   @@index([tenantId, userId])

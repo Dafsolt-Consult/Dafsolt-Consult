@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
-import { createStudentSchema, enrollStudentSchema, updateStudentSchema } from "./students.schema";
+import { addGuardianSchema, createStudentSchema, enrollStudentSchema, updateStudentSchema } from "./students.schema";
 import * as studentsService from "./students.service";
 
 export const listStudents = asyncHandler(async (req: Request, res: Response) => {
@@ -77,6 +77,13 @@ export const updateStudent = asyncHandler(async (req: Request, res: Response) =>
     },
   });
   res.json(student);
+});
+
+export const addGuardian = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  const input = addGuardianSchema.parse(req.body);
+  const link = await studentsService.addGuardian(tenantId, req.params.studentId, input);
+  res.status(201).json(link);
 });
 
 export const enrollStudent = asyncHandler(async (req: Request, res: Response) => {

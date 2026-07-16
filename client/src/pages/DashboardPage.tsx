@@ -3,10 +3,13 @@ import { Card, PageHeader } from "../components/ui";
 import { useFetch } from "../hooks/useFetch";
 import { Paginated, Student } from "../types";
 import { Link } from "react-router-dom";
+import { ParentPage } from "./parent/ParentPage";
 
 export function DashboardPage() {
   const { user } = useAuth();
   if (!user) return null;
+
+  if (user.role === "PARENT") return <ParentPage />;
 
   return (
     <div>
@@ -15,7 +18,7 @@ export function DashboardPage() {
       {user.role === "TEACHER" && <TeacherOverview />}
       {user.role === "STUDENT" && <StudentOverview />}
       {user.role === "SUPER_ADMIN" && <SuperAdminOverview />}
-      {(user.role === "PARENT" || user.role === "LIBRARIAN" || user.role === "ACCOUNTANT") && (
+      {(user.role === "LIBRARIAN" || user.role === "ACCOUNTANT") && (
         <Card>
           <p className="text-sm text-slate-600">Use the sidebar to navigate to your tools.</p>
         </Card>
@@ -42,6 +45,9 @@ function AdminOverview() {
       <StatCard label="Teachers" value="View" to="/teachers" />
       <StatCard label="Question Bank" value="Manage" to="/cbt/questions" />
       <StatCard label="Library" value="Browse" to="/library/books" />
+      <StatCard label="Assignments" value="Manage" to="/assignments" />
+      <StatCard label="Calendar" value="Manage" to="/calendar" />
+      <StatCard label="Announcements" value="Post" to="/announcements" />
     </div>
   );
 }
@@ -52,6 +58,7 @@ function TeacherOverview() {
       <StatCard label="Mark attendance" value="Go" to="/attendance" />
       <StatCard label="Enter results" value="Go" to="/results" />
       <StatCard label="Exams" value="Manage" to="/cbt/exams" />
+      <StatCard label="Assignments" value="Manage" to="/assignments" />
     </div>
   );
 }
@@ -60,6 +67,7 @@ function StudentOverview() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <StatCard label="My exams" value="View" to="/cbt/available" />
+      <StatCard label="My assignments" value="View" to="/assignments" />
       <StatCard label="My results" value="View" to="/results" />
       <StatCard label="Library" value="Browse" to="/library/books" />
     </div>

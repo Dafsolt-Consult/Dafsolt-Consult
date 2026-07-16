@@ -13,5 +13,6 @@ router.get("/:studentId", staffRoles, studentsController.getStudent);
 router.post("/", adminOnly, studentsController.createStudent);
 router.patch("/:studentId", adminOnly, studentsController.updateStudent);
 router.post("/:studentId/enroll", adminOnly, studentsController.enrollStudent);
+router.post("/:studentId/guardians", adminOnly, studentsController.addGuardian);
 
 export default router;

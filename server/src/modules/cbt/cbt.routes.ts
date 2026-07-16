@@ -31,6 +31,11 @@ router.get("/exams/:examId/results", staffRoles, examsController.examResultsOver
 router.get("/attempts/:attemptId", authorize("STUDENT"), attemptsController.getAttempt);
 router.post("/attempts/:attemptId/answers", authorize("STUDENT"), attemptsController.answerQuestion);
 router.post("/attempts/:attemptId/submit", authorize("STUDENT"), attemptsController.submitAttempt);
+router.get(
+  "/attempts/students/:studentId",
+  authorize("SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"),
+  attemptsController.listAttemptsForStudent
+);
 
 // Manual grading (staff)
 router.get("/attempts/:attemptId/grading", staffRoles, attemptsController.listAttemptAnswersForGrading);

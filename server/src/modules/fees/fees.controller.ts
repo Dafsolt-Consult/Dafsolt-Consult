@@ -4,6 +4,7 @@ import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
 import { resolveStudentParam } from "../../utils/resolveStudentId";
+import { notifyUsers, studentAndGuardianUserIds } from "../../utils/notify";
 import { createFeeStructureSchema, generateInvoicesSchema, recordPaymentSchema } from "./fees.schema";
 
 export const listFeeStructures = asyncHandler(async (req: Request, res: Response) => {
@@ -39,7 +40,7 @@ export const generateInvoices = asyncHandler(async (req: Request, res: Response)
     enrollments.map(async ({ studentId }) => {
       const existing = await prisma.invoice.findFirst({ where: { studentId, feeStructureId: feeStructure.id } });
       if (existing) return existing;
-      return prisma.invoice.create({
+      const invoice = await prisma.invoice.create({
         data: {
           tenantId,
           studentId,
@@ -50,6 +51,12 @@ export const generateInvoices = asyncHandler(async (req: Request, res: Response)
           dueDate: input.dueDate,
         },
       });
+      const recipients = await studentAndGuardianUserIds(prisma, studentId);
+      await notifyUsers(prisma, tenantId, recipients, {
+        subject: "New fee invoice",
+        message: `${feeStructure.name} (₦${(feeStructure.amount / 100).toLocaleString()}) is due ${invoice.dueDate.toDateString()}.`,
+      });
+      return invoice;
     })
   );
 

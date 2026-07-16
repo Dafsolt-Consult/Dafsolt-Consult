@@ -4,6 +4,7 @@ import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { gradeFor } from "../../utils/grading";
 import { resolveStudentParam } from "../../utils/resolveStudentId";
+import { notifyUsers, studentAndGuardianUserIds } from "../../utils/notify";
 import { generateReportCardsSchema, upsertResultSchema } from "./results.schema";
 
 export const upsertResult = asyncHandler(async (req: Request, res: Response) => {
@@ -82,7 +83,7 @@ export const generateReportCards = asyncHandler(async (req: Request, res: Respon
       const daysPresent = attendanceCounts.find((a) => a.status === "PRESENT")?._count ?? 0;
       const daysAbsent = attendanceCounts.find((a) => a.status === "ABSENT")?._count ?? 0;
 
-      return prisma.reportCard.upsert({
+      const reportCard = await prisma.reportCard.upsert({
         where: { studentId_termId: { studentId, termId: input.termId } },
         update: { position: index + 1, daysPresent, daysAbsent },
         create: {
@@ -96,6 +97,14 @@ export const generateReportCards = asyncHandler(async (req: Request, res: Respon
           daysAbsent,
         },
       });
+
+      const recipients = await studentAndGuardianUserIds(prisma, studentId);
+      await notifyUsers(prisma, tenantId, recipients, {
+        subject: "Report card published",
+        message: `A new report card is available — position ${index + 1} in class.`,
+      });
+
+      return reportCard;
     })
   );
 

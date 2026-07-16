@@ -14,5 +14,16 @@ export interface CreateStudentInput {
     phone: string;
     email?: string;
     relationship: string;
+    password?: string;
   };
+}
+
+export interface AddGuardianInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  relationship: string;
+  isPrimary?: boolean;
+  password?: string;
 }

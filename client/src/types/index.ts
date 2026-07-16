@@ -134,4 +134,94 @@ export interface Student {
   status: string;
   user: { id: string; email: string; firstName: string; lastName: string; isActive: boolean };
   enrollments?: { classArm: ClassArm & { classLevel: ClassLevel } }[];
+  relationship?: string;
+  isPrimary?: boolean;
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  assignmentId?: string;
+  studentId: string;
+  submissionText?: string | null;
+  attachmentUrl?: string | null;
+  submittedAt?: string | null;
+  score?: number | null;
+  feedback?: string | null;
+  gradedAt?: string | null;
+  student?: { user: { firstName: string; lastName: string } };
+}
+
+export interface Assignment {
+  id: string;
+  classArmId: string;
+  subjectId: string;
+  title: string;
+  description?: string | null;
+  attachmentUrl?: string | null;
+  dueDate: string;
+  totalPoints: number;
+  subject?: { name: string };
+  classArm?: ClassArm & { classLevel: ClassLevel };
+  _count?: { submissions: number };
+  submissions?: AssignmentSubmission[];
+  mySubmission?: AssignmentSubmission | null;
+}
+
+export type CalendarEventType = "HOLIDAY" | "EXAM" | "ACADEMIC" | "EVENT" | "MEETING";
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string | null;
+  type: CalendarEventType;
+  startDate: string;
+  endDate?: string | null;
+}
+
+export type AnnouncementAudience = "ALL" | "STAFF" | "PARENTS" | "PRIMARY" | "JUNIOR_SECONDARY" | "SENIOR_SECONDARY";
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  audience: AnnouncementAudience;
+  publishedAt: string;
+  createdBy?: { firstName: string; lastName: string };
+}
+
+export interface AppNotification {
+  id: string;
+  subject?: string | null;
+  message: string;
+  createdAt: string;
+  readAt?: string | null;
+}
+
+export interface ResultEntry {
+  id: string;
+  caScore: number;
+  examScore: number;
+  totalScore: number;
+  grade?: string | null;
+  remark?: string | null;
+  subject: { name: string };
+}
+
+export interface ReportCard {
+  id: string;
+  daysPresent: number;
+  daysAbsent: number;
+  position?: number | null;
+  classTeacherComment?: string | null;
+  principalComment?: string | null;
+  classArm?: ClassArm & { classLevel: ClassLevel };
+}
+
+export interface Invoice {
+  id: string;
+  amount: number;
+  amountPaid: number;
+  status: string;
+  dueDate: string;
+  feeStructure: { name: string };
 }

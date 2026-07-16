@@ -22,6 +22,13 @@ model, run and billed centrally by Dafsolt Consult.
   tracks physical copies (borrow/return, due dates, fines) alongside ebook
   links schools can host themselves, tagged by target audience (primary vs.
   secondary) so the library stays relevant to whoever is browsing it.
+- **A real parent portal, not just a role flag**: guardians get their own
+  login (created at admission time or added to an existing student later),
+  linked to one or more children. The Parent Portal lets them switch between
+  children and monitor performance (grades, attendance, teacher/principal
+  comments), assignments, CBT exam results, the school calendar, fee
+  invoices/payment history, and school announcements — with in-app
+  notifications firing automatically when any of that changes.
 
 ## Architecture
 
@@ -60,6 +67,21 @@ staff seat cap enforced at creation time — the natural SaaS upsell lever.
   currency units (kobo) to avoid floating-point errors.
 - **Results**: `ResultEntry` (CA + exam score, auto-graded A–F) rolled up into
   a per-term `ReportCard` with attendance counts and class position.
+- **Assignments**: `Assignment` (per class + subject) → `AssignmentSubmission`
+  (text/attachment, teacher score + feedback).
+- **School calendar & announcements**: `CalendarEvent` (holidays, exams,
+  academic dates) and `Announcement`, the latter targeted by audience (`ALL`,
+  `STAFF`, `PARENTS`, or a school stage) and resolved per-viewer at read time.
+- **Parents**: `Guardian.userId` is an optional 1:1 link to a `User` (role
+  `PARENT`); `StudentGuardian` is the many-to-many join a parent's access is
+  checked against everywhere a child's records are requested (see
+  `resolveStudentParam` in `utils/resolveStudentId.ts`). The same guardian
+  can be linked to several children (siblings), and re-using an email at
+  admission time links the new child to the existing parent login instead of
+  erroring.
+- **Notifications**: `NotificationLog` (in-app for now) is written whenever a
+  new assignment, fee invoice, report card, or announcement is created — see
+  `utils/notify.ts`.
 
 ## Getting started
 
@@ -107,17 +129,24 @@ The full stack was exercised directly against a live PostgreSQL instance
 setup → student admission → question bank → exam creation → student
 exam attempt with shuffled questions/options → auto-grading of objective
 answers → manual grading of a theory answer → library borrow/return with
-fine tracking → result entry with automatic grade computation. Both
-`server` and `client` build and type-check cleanly (`npm run build` in each).
+fine tracking → result entry with automatic grade computation → adding a
+guardian with a parent-portal login → parent login viewing their child's
+performance, assignments, CBT exam history, fees, and announcements →
+a student submitting an assignment, a teacher grading it, and the parent
+seeing the grade — plus confirming a parent is rejected (403) when trying
+to view a student they aren't linked to. Both `server` and `client` build
+and type-check cleanly (`npm run build` in each).
 
 ## Known limitations / roadmap
 
-- Parent accounts currently need a linked student profile to view child-specific
-  data through the same `/me`-style endpoints students use; a proper
-  guardian → multiple-children selector is a natural next step.
 - Payment gateway and SMS provider integrations are stubbed (env vars are
   wired in `server/.env.example`) — swap in real Paystack/Flutterwave/Africa's
-  Talking calls when a school is ready to go live with billing/notifications.
-- File uploads (book covers, ebook files, question images) currently expect a
-  hosted URL; wiring up direct upload (e.g. to S3-compatible storage) is a
-  follow-up.
+  Talking calls when a school is ready to go live with billing/notifications
+  (in-app notifications already work end-to-end; SMS/email are the same
+  `notifyUsers()` call site away).
+- File uploads (book covers, ebook files, question images, assignment
+  attachments) currently expect a hosted URL; wiring up direct upload (e.g.
+  to S3-compatible storage) is a follow-up.
+- Announcement/notification audience targeting by school stage assumes a
+  student has a single current enrollment; mid-term class transfers mid-day
+  aren't specially handled (the next enrollment record simply takes over).

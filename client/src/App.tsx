@@ -18,6 +18,10 @@ import { ExamTakingPage } from "./pages/cbt/ExamTakingPage";
 import { LibraryCatalogPage } from "./pages/library/LibraryCatalogPage";
 import { BorrowRecordsPage } from "./pages/library/BorrowRecordsPage";
 import { SchoolsPage } from "./pages/schools/SchoolsPage";
+import { AssignmentsPage } from "./pages/assignments/AssignmentsPage";
+import { CalendarPage } from "./pages/calendar/CalendarPage";
+import { AnnouncementsPage } from "./pages/announcements/AnnouncementsPage";
+import { NotificationsPage } from "./pages/notifications/NotificationsPage";
 
 export default function App() {
   return (
@@ -56,6 +60,10 @@ export default function App() {
         <Route path="/cbt/available" element={<ProtectedRoute roles={["STUDENT"]}><AvailableExamsPage /></ProtectedRoute>} />
         <Route path="/library/books" element={<LibraryCatalogPage />} />
         <Route path="/library/borrow-records" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "LIBRARIAN"]}><BorrowRecordsPage /></ProtectedRoute>} />
+        <Route path="/assignments" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><AssignmentsPage /></ProtectedRoute>} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/announcements" element={<AnnouncementsPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/schools" element={<ProtectedRoute roles={["SUPER_ADMIN"]}><SchoolsPage /></ProtectedRoute>} />
       </Route>
     </Routes>

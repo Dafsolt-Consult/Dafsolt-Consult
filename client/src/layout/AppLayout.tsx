@@ -9,18 +9,23 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/", label: "Dashboard" },
+  { to: "/", label: "Dashboard", roles: ["SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "ACCOUNTANT"] },
+  { to: "/", label: "Parent Portal", roles: ["PARENT"] },
   { to: "/students", label: "Students", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/teachers", label: "Teachers", roles: ["SCHOOL_ADMIN"] },
   { to: "/academics", label: "Classes & Subjects", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/attendance", label: "Attendance", roles: ["SCHOOL_ADMIN", "TEACHER"] },
-  { to: "/results", label: "Results", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"] },
-  { to: "/fees", label: "Fees", roles: ["SCHOOL_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"] },
+  { to: "/results", label: "Results", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
+  { to: "/fees", label: "Fees", roles: ["SCHOOL_ADMIN", "ACCOUNTANT", "STUDENT"] },
   { to: "/cbt/questions", label: "Question Bank", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/cbt/exams", label: "Exams", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/cbt/available", label: "My Exams", roles: ["STUDENT"] },
-  { to: "/library/books", label: "Library" },
+  { to: "/assignments", label: "Assignments", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
+  { to: "/calendar", label: "School Calendar", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
+  { to: "/announcements", label: "Announcements", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
+  { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN"] },
   { to: "/library/borrow-records", label: "Borrow Records", roles: ["SCHOOL_ADMIN", "LIBRARIAN"] },
+  { to: "/notifications", label: "Notifications" },
   { to: "/schools", label: "Schools", roles: ["SUPER_ADMIN"] },
 ];
 

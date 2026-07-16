@@ -4,6 +4,7 @@ import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
 import { seededShuffle } from "../../utils/shuffle";
+import { resolveStudentParam } from "../../utils/resolveStudentId";
 import { autoGradeAttempt, recomputeAttemptTotals } from "./grading.service";
 import { gradeAnswerSchema, submitAnswerSchema } from "./attempts.schema";
 import { Exam, ExamAttempt } from "@prisma/client";
@@ -52,6 +53,21 @@ export const listAvailableExams = asyncHandler(async (req: Request, res: Respons
   });
 
   res.json(exams);
+});
+
+/** CBT exam history (across all exams, not just one) for a student — used by
+ * the student portal and the parent dashboard's "exam results" view. */
+export const listAttemptsForStudent = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  const studentId = await resolveStudentParam(req, tenantId, req.params.studentId);
+
+  const attempts = await prisma.examAttempt.findMany({
+    where: { studentId, exam: { tenantId } },
+    include: { exam: { include: { subject: true } } },
+    orderBy: { startedAt: "desc" },
+  });
+
+  res.json(attempts);
 });
 
 export const startAttempt = asyncHandler(async (req: Request, res: Response) => {

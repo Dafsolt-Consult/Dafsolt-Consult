@@ -18,6 +18,11 @@ import resultsRoutes from "./modules/results/results.routes";
 import feesRoutes from "./modules/fees/fees.routes";
 import cbtRoutes from "./modules/cbt/cbt.routes";
 import libraryRoutes from "./modules/library/library.routes";
+import parentsRoutes from "./modules/parents/parents.routes";
+import assignmentsRoutes from "./modules/assignments/assignments.routes";
+import calendarRoutes from "./modules/calendar/calendar.routes";
+import announcementsRoutes from "./modules/announcements/announcements.routes";
+import notificationsRoutes from "./modules/notifications/notifications.routes";
 
 export function createApp() {
   const app = express();
@@ -58,6 +63,11 @@ export function createApp() {
   app.use("/api/fees", feesRoutes);
   app.use("/api/cbt", cbtRoutes);
   app.use("/api/library", libraryRoutes);
+  app.use("/api/parents", parentsRoutes);
+  app.use("/api/assignments", assignmentsRoutes);
+  app.use("/api/calendar", calendarRoutes);
+  app.use("/api/announcements", announcementsRoutes);
+  app.use("/api/notifications", notificationsRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
