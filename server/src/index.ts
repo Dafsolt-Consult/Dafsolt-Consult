@@ -10,6 +10,6 @@ ensureSuperAdmin()
   })
   .finally(() => {
     app.listen(env.port, () => {
-      console.log(`Dafsolt School SaaS API listening on port ${env.port} [${env.nodeEnv}]`);
+      console.log(`School Manager API listening on port ${env.port} [${env.nodeEnv}]`);
     });
   });

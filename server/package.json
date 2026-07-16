@@ -1,8 +1,8 @@
 {
-  "name": "@dafsolt/server",
+  "name": "@school-manager/server",
   "version": "0.1.0",
   "private": true,
-  "description": "Dafsolt School SaaS API - multi-tenant school management, CBT and library platform",
+  "description": "School Manager API - multi-tenant school management, CBT and library platform",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

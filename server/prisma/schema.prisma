@@ -1,4 +1,4 @@
-// Dafsolt School SaaS — multi-tenant school management, CBT & library platform
+// School Manager — multi-tenant school management, CBT & library platform
 // Multi-tenancy strategy: shared database / shared schema, every tenant-scoped
 // table carries a `tenantId` column enforced by application middleware.
 

@@ -31,7 +31,7 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
       <Card className="w-full max-w-sm">
-        <h1 className="mb-1 text-xl font-bold text-brand-700">Dafsolt School Suite</h1>
+        <h1 className="mb-1 text-xl font-bold text-brand-700">School Manager</h1>
         <p className="mb-6 text-sm text-slate-500">Sign in to your school account</p>
 
         {error && (

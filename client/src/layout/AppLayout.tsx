@@ -39,7 +39,7 @@ export function AppLayout() {
     <div className="flex min-h-screen">
       <aside className="flex w-64 flex-col border-r border-slate-200 bg-white">
         <div className="border-b border-slate-200 px-5 py-4">
-          <p className="text-lg font-bold text-brand-700">Dafsolt School Suite</p>
+          <p className="text-lg font-bold text-brand-700">School Manager</p>
           {user.tenant && <p className="truncate text-xs text-slate-500">{user.tenant.name}</p>}
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">
