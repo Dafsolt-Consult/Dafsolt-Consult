@@ -4,6 +4,16 @@ import { useAuth } from "../context/AuthContext";
 import { Button, Card, ErrorBanner, Input, Label } from "../components/ui";
 import { apiErrorMessage } from "../api/client";
 
+/** Keeps the slug matching the backend's `[a-z0-9-]+` rule as the user
+ * types, instead of only lowercasing and letting the API reject spaces or
+ * punctuation with an opaque validation error. */
+function sanitizeSlug(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+}
+
 export function OnboardPage() {
   const { onboardSchool, user } = useAuth();
   const navigate = useNavigate();
@@ -15,6 +25,7 @@ export function OnboardPage() {
     adminEmail: "",
     adminPassword: "",
   });
+  const [slugTouched, setSlugTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -22,6 +33,15 @@ export function OnboardPage() {
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function updateSchoolName(value: string) {
+    setForm((f) => ({ ...f, schoolName: value, slug: slugTouched ? f.slug : sanitizeSlug(value) }));
+  }
+
+  function updateSlug(value: string) {
+    setSlugTouched(true);
+    update("slug", sanitizeSlug(value));
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -53,7 +73,7 @@ export function OnboardPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>School name</Label>
-            <Input required value={form.schoolName} onChange={(e) => update("schoolName", e.target.value)} />
+            <Input required value={form.schoolName} onChange={(e) => updateSchoolName(e.target.value)} />
           </div>
           <div>
             <Label>School URL slug</Label>
@@ -62,8 +82,9 @@ export function OnboardPage() {
               placeholder="e.g. brightfuture-academy"
               pattern="[a-z0-9-]+"
               value={form.slug}
-              onChange={(e) => update("slug", e.target.value.toLowerCase())}
+              onChange={(e) => updateSlug(e.target.value)}
             />
+            <p className="mt-1 text-xs text-slate-400">Only lowercase letters, numbers and hyphens — filled in automatically from the school name.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
