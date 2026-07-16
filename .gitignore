@@ -11,3 +11,4 @@ coverage/
 .idea/
 client/dist/
 server/dist/
+*.tsbuildinfo

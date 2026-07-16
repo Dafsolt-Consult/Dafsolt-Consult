@@ -40,6 +40,13 @@ services:
       SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
       UPLOAD_DIR: uploads
       MAX_UPLOAD_MB: 20
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      AFRICASTALKING_API_KEY: ${AFRICASTALKING_API_KEY:-}
+      AFRICASTALKING_USERNAME: ${AFRICASTALKING_USERNAME:-}
     volumes:
       - dafsolt_uploads_prod:/app/uploads
     expose:
@@ -53,8 +60,7 @@ services:
     environment:
       DOMAIN: ${DOMAIN}
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:8091:80"
     volumes:
       - dafsolt_caddy_data:/data
       - dafsolt_caddy_config:/config

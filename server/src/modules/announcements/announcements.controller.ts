@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AnnouncementAudience } from "@prisma/client";
+import { AnnouncementAudience, UserRole } from "@prisma/client";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
@@ -7,7 +7,16 @@ import { ApiError } from "../../utils/ApiError";
 import { notifyUsers, studentAndGuardianUserIds } from "../../utils/notify";
 import { createAnnouncementSchema } from "./announcements.schema";
 
-const STAFF_ROLES = ["SCHOOL_ADMIN", "TEACHER", "LIBRARIAN", "ACCOUNTANT"];
+const STAFF_ROLES: UserRole[] = [
+  "SCHOOL_ADMIN",
+  "TEACHER",
+  "LIBRARIAN",
+  "ACCOUNTANT",
+  "NURSE",
+  "HR_MANAGER",
+  "TRANSPORT_OFFICER",
+  "HOSTEL_WARDEN",
+];
 
 /** Announcements are broadcast by audience rather than to specific users, so
  * visibility is computed at read time from the caller's role (and, for
@@ -76,7 +85,7 @@ export const createAnnouncement = asyncHandler(async (req: Request, res: Respons
 
 async function recipientsFor(tenantId: string, audience: AnnouncementAudience): Promise<string[]> {
   if (audience === "STAFF") {
-    const staff = await prisma.user.findMany({ where: { tenantId, role: { in: ["SCHOOL_ADMIN", "TEACHER", "LIBRARIAN", "ACCOUNTANT"] } }, select: { id: true } });
+    const staff = await prisma.user.findMany({ where: { tenantId, role: { in: STAFF_ROLES } }, select: { id: true } });
     return staff.map((s) => s.id);
   }
 

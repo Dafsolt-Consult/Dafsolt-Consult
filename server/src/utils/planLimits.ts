@@ -21,7 +21,21 @@ export async function assertStudentSlotAvailable(tenantId: string) {
 export async function assertStaffSlotAvailable(tenantId: string) {
   const tenant = await prisma.tenant.findUniqueOrThrow({ where: { id: tenantId } });
   const count = await prisma.user.count({
-    where: { tenantId, role: { in: ["TEACHER", "LIBRARIAN", "ACCOUNTANT", "SCHOOL_ADMIN"] } },
+    where: {
+      tenantId,
+      role: {
+        in: [
+          "TEACHER",
+          "LIBRARIAN",
+          "ACCOUNTANT",
+          "SCHOOL_ADMIN",
+          "NURSE",
+          "HR_MANAGER",
+          "TRANSPORT_OFFICER",
+          "HOSTEL_WARDEN",
+        ],
+      },
+    },
   });
   if (count >= tenant.maxStaff) {
     throw ApiError.forbidden(

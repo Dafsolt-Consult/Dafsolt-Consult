@@ -1,4 +1,4 @@
-{$DOMAIN} {
+http://{$DOMAIN} {
 	encode gzip
 
 	handle /api/* {

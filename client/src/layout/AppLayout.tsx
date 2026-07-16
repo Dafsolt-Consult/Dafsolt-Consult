@@ -26,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN"] },
   { to: "/library/borrow-records", label: "Borrow Records", roles: ["SCHOOL_ADMIN", "LIBRARIAN"] },
   { to: "/notifications", label: "Notifications" },
+  { to: "/settings", label: "Settings", roles: ["SCHOOL_ADMIN"] },
   { to: "/schools", label: "Schools", roles: ["SUPER_ADMIN"] },
 ];
 

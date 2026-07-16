@@ -6,7 +6,9 @@ export const onboardSchoolSchema = z.object({
     .string()
     .min(2)
     .max(60)
-    .regex(/^[a-z0-9-]+$/, "Slug may only contain lowercase letters, numbers and hyphens"),
+    .regex(/^[a-z0-9-]+$/, "Slug may only contain lowercase letters, numbers and hyphens")
+    .optional()
+    .or(z.literal("")),
   country: z.string().min(2).max(60).default("Nigeria"),
   currency: z.string().min(3).max(3).default("NGN"),
   adminFirstName: z.string().min(1).max(60),

@@ -56,11 +56,10 @@ export function OnboardPage() {
             <Input required value={form.schoolName} onChange={(e) => update("schoolName", e.target.value)} />
           </div>
           <div>
-            <Label>School URL slug</Label>
+            <Label>School URL slug (optional)</Label>
             <Input
-              required
-              placeholder="e.g. brightfuture-academy"
-              pattern="[a-z0-9-]+"
+              placeholder="e.g. brightfuture-academy — leave blank to auto-generate"
+              pattern="[a-z0-9-]*"
               value={form.slug}
               onChange={(e) => update("slug", e.target.value.toLowerCase())}
             />

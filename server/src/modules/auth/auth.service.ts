@@ -7,13 +7,30 @@ import { hashToken } from "../../utils/hashToken";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../utils/jwt";
 import { LoginInput, OnboardSchoolInput } from "./auth.schema";
 import ms from "../../utils/ms";
+import { slugify } from "../../utils/slugify";
+import { sendEmail } from "../../utils/email";
 
 const TRIAL_DAYS = 30;
 const RESET_TOKEN_TTL_MS = ms("1h");
 
+async function resolveUniqueSlug(requested: string | undefined, schoolName: string) {
+  const base = slugify(requested || schoolName) || "school";
+
+  const existing = await prisma.tenant.findUnique({ where: { slug: base } });
+  if (!existing) return base;
+
+  if (requested) throw ApiError.conflict("This school URL is already taken");
+
+  for (let suffix = 2; suffix < 1000; suffix++) {
+    const candidate = `${base}-${suffix}`;
+    const taken = await prisma.tenant.findUnique({ where: { slug: candidate } });
+    if (!taken) return candidate;
+  }
+  throw ApiError.conflict("Could not generate a unique school URL, please provide one");
+}
+
 export async function onboardSchool(input: OnboardSchoolInput) {
-  const existingSlug = await prisma.tenant.findUnique({ where: { slug: input.slug } });
-  if (existingSlug) throw ApiError.conflict("This school URL is already taken");
+  const slug = await resolveUniqueSlug(input.slug || undefined, input.schoolName);
 
   const existingEmail = await prisma.user.findUnique({ where: { email: input.adminEmail } });
   if (existingEmail) throw ApiError.conflict("An account with this email already exists");
@@ -24,7 +41,7 @@ export async function onboardSchool(input: OnboardSchoolInput) {
   const tenant = await prisma.tenant.create({
     data: {
       name: input.schoolName,
-      slug: input.slug,
+      slug,
       country: input.country,
       currency: input.currency,
       trialEndsAt,
@@ -117,11 +134,17 @@ export async function requestPasswordReset(email: string) {
 
   const resetLink = `${env.clientUrl}/reset-password?token=${rawToken}`;
 
-  // No email/SMS provider is wired up yet (see README roadmap) — log the
-  // link so an operator with server access can relay it to the user until
-  // a real provider is integrated. The raw token is never returned via the
-  // API or persisted anywhere other than its hash.
+  // Always log the link too, so an operator with server access can relay it
+  // manually if SMTP isn't configured for this deployment yet — see
+  // src/utils/email.ts for what happens without SMTP_* env vars set. The
+  // raw token is never returned via the API or persisted anywhere other
+  // than its hash.
   console.log(`[password reset] ${user.role} <${user.email}> requested a reset: ${resetLink}`);
+  await sendEmail(
+    user.email,
+    "Reset your School Manager password",
+    `Hi ${user.firstName}, use this link to reset your password (expires in 1 hour): ${resetLink}`
+  );
 }
 
 export async function resetPassword(rawToken: string, newPassword: string) {

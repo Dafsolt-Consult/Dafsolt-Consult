@@ -24,6 +24,7 @@ import { AssignmentsPage } from "./pages/assignments/AssignmentsPage";
 import { CalendarPage } from "./pages/calendar/CalendarPage";
 import { AnnouncementsPage } from "./pages/announcements/AnnouncementsPage";
 import { NotificationsPage } from "./pages/notifications/NotificationsPage";
+import { SettingsPage } from "./pages/settings/SettingsPage";
 
 export default function App() {
   return (
@@ -68,6 +69,7 @@ export default function App() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/announcements" element={<AnnouncementsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/settings" element={<ProtectedRoute roles={["SCHOOL_ADMIN"]}><SettingsPage /></ProtectedRoute>} />
         <Route path="/schools" element={<ProtectedRoute roles={["SUPER_ADMIN"]}><SchoolsPage /></ProtectedRoute>} />
       </Route>
     </Routes>
