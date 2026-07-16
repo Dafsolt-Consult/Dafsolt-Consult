@@ -1,0 +1,66 @@
+# Production stack for a single-VPS deployment: Postgres + the API + a Caddy
+# container that serves the built frontend and reverse-proxies /api (with
+# automatic Let's Encrypt HTTPS for $DOMAIN).
+#
+# Usage: copy .env.production.example to .env, fill in real secrets, then:
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - dafsolt_pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      CLIENT_URL: https://${DOMAIN}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_TTL: 7d
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
+      UPLOAD_DIR: uploads
+      MAX_UPLOAD_MB: 20
+    volumes:
+      - dafsolt_uploads_prod:/app/uploads
+    expose:
+      - "4000"
+
+  client:
+    build: ./client
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - dafsolt_caddy_data:/data
+      - dafsolt_caddy_config:/config
+
+volumes:
+  dafsolt_pgdata_prod:
+  dafsolt_uploads_prod:
+  dafsolt_caddy_data:
+  dafsolt_caddy_config:

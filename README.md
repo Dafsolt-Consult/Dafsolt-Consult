@@ -122,6 +122,13 @@ Visit `/onboard` in the client to register a brand-new school (creates the
 tenant + its first `SCHOOL_ADMIN` in one step, starting a 30-day free trial),
 or sign in directly at `/login` with a seeded account.
 
+### 5. Deploying for a live pilot
+
+See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for a step-by-step guide to running
+this on a real VPS with Docker Compose and automatic HTTPS (Caddy) — covers
+DNS/firewall prerequisites, secrets setup, first boot, onboarding the real
+school, updates, and backups.
+
 ## Verified end-to-end
 
 The full stack was exercised directly against a live PostgreSQL instance

@@ -1,8 +1,15 @@
 import { createApp } from "./app";
 import { env } from "./config/env";
+import { ensureSuperAdmin } from "./bootstrap";
 
 const app = createApp();
 
-app.listen(env.port, () => {
-  console.log(`Dafsolt School SaaS API listening on port ${env.port} [${env.nodeEnv}]`);
-});
+ensureSuperAdmin()
+  .catch((err) => {
+    console.error("Failed to ensure SUPER_ADMIN account exists:", err);
+  })
+  .finally(() => {
+    app.listen(env.port, () => {
+      console.log(`Dafsolt School SaaS API listening on port ${env.port} [${env.nodeEnv}]`);
+    });
+  });
