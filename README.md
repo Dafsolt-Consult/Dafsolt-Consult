@@ -150,3 +150,31 @@ and type-check cleanly (`npm run build` in each).
 - Announcement/notification audience targeting by school stage assumes a
   student has a single current enrollment; mid-term class transfers mid-day
   aren't specially handled (the next enrollment record simply takes over).
+
+## v1.1 module coverage vs. the full ERP spec
+
+v1.0/v1.1 cover Student Information Management, the Parent Portal, most of
+the Teacher Portal, most of the Administrator Dashboard, core Academic
+Management, core Fee & Finance Management, Announcements, Library
+Management, Examination & Results, and Security & Access Control (role-based
+permissions, JWT auth) — each with the gaps noted below carried into v1.2.
+
+**Deferred to v1.2:**
+
+- Student disciplinary/conduct records
+- Teacher lesson planning; direct teacher↔parent/student messaging (beyond
+  announcements/notifications)
+- Admin settings UI (school profile is API-only today); compliance reporting
+- Timetable / period scheduling (daily class schedule, distinct from CBT exam
+  scheduling); richer curriculum/syllabus content beyond subjects & class levels
+- Scholarships/fee discounts; financial reporting/summary dashboards (beyond
+  raw invoice & payment lists)
+- Newsletters, emergency broadcast alerts, direct messaging; real SMS/email
+  delivery (provider integration, not just the in-app notification log)
+- Custom analytics dashboards, compliance reports, predictive analytics
+- Audit trail of admin/staff actions
+- **Not started**: Transport Management, Hostel/Boarding Management, Human
+  Resources & Payroll, Inventory & Asset Management
+- **Advanced modules not started**: E-Learning/LMS (live classes), Alumni
+  Management, Health & Medical Records, true Multi-School (school-group)
+  management with consolidated cross-campus reporting
