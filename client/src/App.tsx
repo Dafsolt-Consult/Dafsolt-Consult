@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardPage } from "./pages/OnboardPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
@@ -29,6 +30,7 @@ import { SettingsPage } from "./pages/settings/SettingsPage";
 export default function App() {
   return (
     <Routes>
+      <Route path="/welcome" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboard" element={<OnboardPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
