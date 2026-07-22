@@ -1,10 +1,14 @@
 import { Prisma, PrismaClient } from "@prisma/client";
+import { sendEmail } from "./email";
 
 type Tx = Prisma.TransactionClient | PrismaClient;
 
-/** Writes an in-app notification for each recipient. Delivery is immediate
- * (no external SMS/email provider is wired up yet — see README roadmap), so
- * every entry is created already marked SENT. */
+/** Writes an in-app notification for each recipient, and best-effort emails
+ * them the same message alongside it. The email is a silent no-op per
+ * recipient when SMTP isn't configured (see utils/email.ts), so every
+ * existing call site (assignments, invoices, report cards, announcements)
+ * gets real email delivery for free once SMTP is set up — nothing to
+ * change at the call sites themselves. */
 export async function notifyUsers(tx: Tx, tenantId: string, userIds: string[], input: { subject?: string; message: string }) {
   const uniqueIds = [...new Set(userIds)];
   if (!uniqueIds.length) return;
@@ -20,6 +24,11 @@ export async function notifyUsers(tx: Tx, tenantId: string, userIds: string[], i
       sentAt: new Date(),
     })),
   });
+
+  const recipients = await tx.user.findMany({ where: { id: { in: uniqueIds } }, select: { email: true } });
+  await Promise.allSettled(
+    recipients.map((r) => sendEmail(r.email, input.subject ?? "School Manager notification", input.message))
+  );
 }
 
 /** Collects the login-capable recipient user ids for a student: the student

@@ -40,6 +40,13 @@ services:
       SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
       UPLOAD_DIR: uploads
       MAX_UPLOAD_MB: 20
+      # Optional — leave unset in .env to fall back to server-log delivery
+      # for password resets (see DEPLOYMENT.md).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: "${SMTP_FROM:-School Manager <no-reply@dafsolt.com>}"
     volumes:
       - dafsolt_uploads_prod:/app/uploads
     expose:

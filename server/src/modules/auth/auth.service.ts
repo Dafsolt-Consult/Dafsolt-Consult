@@ -6,6 +6,7 @@ import { comparePassword, hashPassword } from "../../utils/password";
 import { hashToken } from "../../utils/hashToken";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../utils/jwt";
 import { logAudit } from "../../utils/audit";
+import { sendEmail } from "../../utils/email";
 import { LoginInput, OnboardSchoolInput } from "./auth.schema";
 import ms from "../../utils/ms";
 
@@ -118,11 +119,19 @@ export async function requestPasswordReset(email: string) {
 
   const resetLink = `${env.clientUrl}/reset-password?token=${rawToken}`;
 
-  // No email/SMS provider is wired up yet (see README roadmap) — log the
-  // link so an operator with server access can relay it to the user until
-  // a real provider is integrated. The raw token is never returned via the
-  // API or persisted anywhere other than its hash.
-  console.log(`[password reset] ${user.role} <${user.email}> requested a reset: ${resetLink}`);
+  const emailed = await sendEmail(
+    user.email,
+    "Reset your School Manager password",
+    `Hi ${user.firstName},\n\nSomeone requested a password reset for your account. If this was you, use the link below within the next hour:\n\n${resetLink}\n\nThis link can only be used once. If you didn't request this, you can safely ignore this email.`
+  );
+
+  // Falls back to a server log when SMTP isn't configured (or the send
+  // itself fails) so an operator with server access can still relay the
+  // link manually — see DEPLOYMENT.md. The raw token is never returned via
+  // the API or persisted anywhere other than its hash.
+  if (!emailed) {
+    console.log(`[password reset] ${user.role} <${user.email}> requested a reset: ${resetLink}`);
+  }
 }
 
 export async function resetPassword(rawToken: string, newPassword: string) {

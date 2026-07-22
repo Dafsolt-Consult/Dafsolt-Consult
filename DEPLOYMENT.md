@@ -107,29 +107,53 @@ From there, the school admin can:
 - build the CBT question bank and exams, post assignments, set up fee
   structures, and post announcements/calendar events
 
-## 6. Password resets (until real email is wired up)
+## 6. Email delivery and password resets
 
 Every role (Super Admin, School Admin, Teacher, Student, Parent, Librarian,
-Accountant) can request a reset at `/forgot-password`. Since a real email/SMS
-provider isn't integrated yet, the actual reset link isn't emailed — it's
-logged server-side instead:
+Accountant) can request a reset at `/forgot-password`. Real delivery now
+works once SMTP is configured — add these to `.env` before starting the
+stack (or any time; the server picks it up on next restart):
+
+```
+SMTP_HOST=smtp.yourprovider.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-username
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM=School Manager <no-reply@yourdomain.com>
+```
+
+Any standard SMTP provider works — your host's mail server, Gmail, Zoho,
+or an SMTP relay from SendGrid/Mailgun/etc. Once set, this covers **every**
+notification the app sends, not just password resets: assignments posted,
+fee invoices generated, report cards published, and announcements all get
+emailed to recipients automatically, on top of the existing in-app
+notification log — nothing else to configure.
+
+**If `SMTP_HOST` is left blank**, everything still works exactly as before:
+password reset links are logged server-side instead of emailed —
 
 ```bash
 docker compose -f docker-compose.prod.yml logs server | grep "password reset"
 ```
 
-You'll see a line like:
+— giving a line like:
 
 ```
 [password reset] TEACHER <name@example.com> requested a reset: https://school.yourdomain.com/reset-password?token=...
 ```
 
 Copy that link and relay it to the user manually (WhatsApp, SMS, in person)
-for this pilot. The link expires after 1 hour and can only be used once;
+in the meantime. The link expires after 1 hour and can only be used once;
 resetting a password also signs that account out of every other device.
-Wiring up a real provider later is a one-line change at the `console.log`
-call site in `server/src/modules/auth/auth.service.ts`
-(`requestPasswordReset`) — swap it for an actual email/SMS send.
+
+> Note: real SMTP delivery was verified for graceful fallback (no SMTP
+> configured) but the live send itself couldn't be exercised from the
+> development sandbox this was built in — its network policy blocks
+> reaching arbitrary external hosts, including disposable test-SMTP
+> services. The code uses nodemailer's standard, well-tested
+> `createTransport`/`sendMail` pattern; do a real test send (e.g. via
+> `/forgot-password`) after configuring your SMTP credentials to confirm
+> end-to-end.
 
 ## 7. Updating after a code change
 

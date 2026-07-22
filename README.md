@@ -84,9 +84,11 @@ sessions). Delivery is log-based until a real email/SMS provider is wired up
   can be linked to several children (siblings), and re-using an email at
   admission time links the new child to the existing parent login instead of
   erroring.
-- **Notifications**: `NotificationLog` (in-app for now) is written whenever a
-  new assignment, fee invoice, report card, or announcement is created — see
-  `utils/notify.ts`.
+- **Notifications**: `NotificationLog` is written whenever a new assignment,
+  fee invoice, report card, or announcement is created — see `utils/notify.ts`.
+  The same call also emails every recipient via `utils/email.ts` when SMTP is
+  configured (`sendEmail()` is a silent no-op otherwise), so every
+  notification type gets real delivery for free once SMTP is set up.
 - **Timetable**: `TimetablePeriod` (class + subject + optional teacher, day of
   week, `HH:mm` start/end) with conflict detection on create/update — a class
   can't have two overlapping periods, and a teacher can't be double-booked
@@ -175,11 +177,10 @@ should see. Both `server` and `client` build and type-check cleanly
 
 ## Known limitations / roadmap
 
-- Payment gateway and SMS provider integrations are stubbed (env vars are
-  wired in `server/.env.example`) — swap in real Paystack/Flutterwave/Africa's
-  Talking calls when a school is ready to go live with billing/notifications
-  (in-app notifications already work end-to-end; SMS/email are the same
-  `notifyUsers()` call site away).
+- Real email delivery (SMTP) is wired up — see `DEPLOYMENT.md` § 6 — but SMS
+  and payment gateway integrations are still stubbed (env vars are wired in
+  `server/.env.example`) — swap in real Paystack/Flutterwave/Africa's Talking
+  calls when a school is ready to go live with billing/SMS.
 - File uploads (book covers, ebook files, question images, assignment
   attachments) currently expect a hosted URL; wiring up direct upload (e.g.
   to S3-compatible storage) is a follow-up.
@@ -205,6 +206,10 @@ permissions, JWT auth, password reset).
 - Timetable / period scheduling — a real weekly Mon–Fri class schedule
   with conflict detection (no double-booking a class or a teacher), with
   admin manage, teacher/student read-only, and Parent Portal views
+- Real email delivery (SMTP) — password resets and every existing
+  notification type (assignments, invoices, report cards, announcements)
+  now email recipients automatically once SMTP is configured, with a
+  graceful log-only fallback when it isn't
 
 **Still deferred:**
 
@@ -215,8 +220,8 @@ permissions, JWT auth, password reset).
   & class levels
 - Scholarships/fee discounts; financial reporting/summary dashboards (beyond
   raw invoice & payment lists)
-- Newsletters, emergency broadcast alerts, direct messaging; real SMS/email
-  delivery (provider integration, not just the in-app notification log)
+- Newsletters, emergency broadcast alerts, direct messaging; real SMS
+  delivery (Africa's Talking or similar — email is now done, SMS isn't)
 - Custom analytics dashboards, compliance reports, predictive analytics
 - **Not started**: Transport Management, Hostel/Boarding Management, Human
   Resources & Payroll, Inventory & Asset Management
