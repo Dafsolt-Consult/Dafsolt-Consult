@@ -5,6 +5,7 @@ import { resolveTenantId } from "../../middleware/auth";
 import { createStaffSchema, updateUserSchema } from "./users.schema";
 import * as usersService from "./users.service";
 import { ApiError } from "../../utils/ApiError";
+import { logAudit } from "../../utils/audit";
 
 export const listStaff = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
@@ -32,13 +33,25 @@ export const listStaff = asyncHandler(async (req: Request, res: Response) => {
 
 export const createStaff = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
   const input = createStaffSchema.parse(req.body);
   const user = await usersService.createStaffAccount(tenantId, input);
+
+  await logAudit(prisma, {
+    tenantId,
+    actorId: req.auth.userId,
+    action: "STAFF_CREATED",
+    targetType: "User",
+    targetId: user.id,
+    metadata: { email: input.email, role: input.role },
+  });
+
   res.status(201).json(user);
 });
 
 export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
   const { userId } = req.params;
   const input = updateUserSchema.parse(req.body);
 
@@ -46,5 +59,15 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   if (!existing) throw ApiError.notFound("User not found");
 
   const user = await prisma.user.update({ where: { id: userId }, data: input });
+
+  await logAudit(prisma, {
+    tenantId,
+    actorId: req.auth.userId,
+    action: "STAFF_UPDATED",
+    targetType: "User",
+    targetId: userId,
+    metadata: input,
+  });
+
   res.json(user);
 });

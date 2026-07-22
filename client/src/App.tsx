@@ -24,6 +24,8 @@ import { AssignmentsPage } from "./pages/assignments/AssignmentsPage";
 import { CalendarPage } from "./pages/calendar/CalendarPage";
 import { AnnouncementsPage } from "./pages/announcements/AnnouncementsPage";
 import { NotificationsPage } from "./pages/notifications/NotificationsPage";
+import { SettingsPage } from "./pages/settings/SettingsPage";
+import { TimetablePage } from "./pages/timetable/TimetablePage";
 
 export default function App() {
   return (
@@ -56,6 +58,7 @@ export default function App() {
         <Route path="/teachers" element={<ProtectedRoute roles={["SCHOOL_ADMIN"]}><TeachersPage /></ProtectedRoute>} />
         <Route path="/academics" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><AcademicsPage /></ProtectedRoute>} />
         <Route path="/attendance" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><AttendancePage /></ProtectedRoute>} />
+        <Route path="/timetable" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><TimetablePage /></ProtectedRoute>} />
         <Route path="/results" element={<ResultsPage />} />
         <Route path="/fees" element={<FeesPage />} />
         <Route path="/cbt/questions" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><QuestionBankPage /></ProtectedRoute>} />
@@ -68,6 +71,7 @@ export default function App() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/announcements" element={<AnnouncementsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/settings" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "SUPER_ADMIN"]}><SettingsPage /></ProtectedRoute>} />
         <Route path="/schools" element={<ProtectedRoute roles={["SUPER_ADMIN"]}><SchoolsPage /></ProtectedRoute>} />
       </Route>
     </Routes>

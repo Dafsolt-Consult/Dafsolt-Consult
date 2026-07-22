@@ -5,6 +5,7 @@ import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
 import { addGuardianSchema, createStudentSchema, enrollStudentSchema, updateStudentSchema } from "./students.schema";
 import * as studentsService from "./students.service";
+import { logAudit } from "../../utils/audit";
 
 export const listStudents = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
@@ -57,13 +58,25 @@ export const getStudent = asyncHandler(async (req: Request, res: Response) => {
 
 export const createStudent = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
   const input = createStudentSchema.parse(req.body);
   const student = await studentsService.createStudent(tenantId, input);
+
+  await logAudit(prisma, {
+    tenantId,
+    actorId: req.auth.userId,
+    action: "STUDENT_ADMITTED",
+    targetType: "Student",
+    targetId: student.id,
+    metadata: { admissionNumber: input.admissionNumber, email: input.email },
+  });
+
   res.status(201).json(student);
 });
 
 export const updateStudent = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
   const input = updateStudentSchema.parse(req.body);
   const existing = await prisma.student.findFirst({ where: { id: req.params.studentId, tenantId } });
   if (!existing) throw ApiError.notFound("Student not found");
@@ -76,6 +89,16 @@ export const updateStudent = asyncHandler(async (req: Request, res: Response) =>
       user: firstName || lastName ? { update: { firstName, lastName } } : undefined,
     },
   });
+
+  await logAudit(prisma, {
+    tenantId,
+    actorId: req.auth.userId,
+    action: "STUDENT_UPDATED",
+    targetType: "Student",
+    targetId: req.params.studentId,
+    metadata: input,
+  });
+
   res.json(student);
 });
 

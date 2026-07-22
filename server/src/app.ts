@@ -23,6 +23,8 @@ import assignmentsRoutes from "./modules/assignments/assignments.routes";
 import calendarRoutes from "./modules/calendar/calendar.routes";
 import announcementsRoutes from "./modules/announcements/announcements.routes";
 import notificationsRoutes from "./modules/notifications/notifications.routes";
+import auditRoutes from "./modules/audit/audit.routes";
+import timetableRoutes from "./modules/timetable/timetable.routes";
 
 export function createApp() {
   const app = express();
@@ -68,6 +70,8 @@ export function createApp() {
   app.use("/api/calendar", calendarRoutes);
   app.use("/api/announcements", announcementsRoutes);
   app.use("/api/notifications", notificationsRoutes);
+  app.use("/api/audit-logs", auditRoutes);
+  app.use("/api/timetable", timetableRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

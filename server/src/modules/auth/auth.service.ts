@@ -5,6 +5,7 @@ import { ApiError } from "../../utils/ApiError";
 import { comparePassword, hashPassword } from "../../utils/password";
 import { hashToken } from "../../utils/hashToken";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../utils/jwt";
+import { logAudit } from "../../utils/audit";
 import { LoginInput, OnboardSchoolInput } from "./auth.schema";
 import ms from "../../utils/ms";
 
@@ -128,6 +129,7 @@ export async function resetPassword(rawToken: string, newPassword: string) {
   const tokenHash = hashToken(rawToken);
   const resetToken = await prisma.passwordResetToken.findFirst({
     where: { tokenHash, usedAt: null },
+    include: { user: true },
   });
 
   if (!resetToken || resetToken.expiresAt < new Date()) {
@@ -136,16 +138,23 @@ export async function resetPassword(rawToken: string, newPassword: string) {
 
   const passwordHash = await hashPassword(newPassword);
 
-  await prisma.$transaction([
-    prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash } }),
-    prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id: resetToken.userId }, data: { passwordHash } });
+    await tx.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } });
     // Force re-login everywhere: a leaked/guessed old session shouldn't
     // survive a password reset.
-    prisma.refreshToken.updateMany({
+    await tx.refreshToken.updateMany({
       where: { userId: resetToken.userId, revokedAt: null },
       data: { revokedAt: new Date() },
-    }),
-  ]);
+    });
+    await logAudit(tx, {
+      tenantId: resetToken.user.tenantId,
+      actorId: resetToken.userId,
+      action: "PASSWORD_RESET",
+      targetType: "User",
+      targetId: resetToken.userId,
+    });
+  });
 }
 
 async function issueSession(userId: string, tenantId: string | null, role: import("@prisma/client").UserRole) {

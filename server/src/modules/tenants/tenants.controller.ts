@@ -5,6 +5,7 @@ import { resolveTenantId } from "../../middleware/auth";
 import { PLAN_DEFAULTS } from "../../utils/planLimits";
 import { updateSubscriptionSchema, updateTenantProfileSchema } from "./tenants.schema";
 import { ApiError } from "../../utils/ApiError";
+import { logAudit } from "../../utils/audit";
 
 export const listTenants = asyncHandler(async (req: Request, res: Response) => {
   const page = Number(req.query.page ?? 1);
@@ -41,13 +42,25 @@ export const getCurrentTenant = asyncHandler(async (req: Request, res: Response)
 
 export const updateCurrentTenant = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
   const input = updateTenantProfileSchema.parse(req.body);
   const tenant = await prisma.tenant.update({ where: { id: tenantId }, data: input });
+
+  await logAudit(prisma, {
+    tenantId,
+    actorId: req.auth.userId,
+    action: "TENANT_PROFILE_UPDATED",
+    targetType: "Tenant",
+    targetId: tenantId,
+    metadata: input,
+  });
+
   res.json(tenant);
 });
 
 export const updateSubscription = asyncHandler(async (req: Request, res: Response) => {
   const { tenantId } = req.params;
+  if (!req.auth) throw ApiError.unauthorized();
   const input = updateSubscriptionSchema.parse(req.body);
 
   const data = { ...input } as typeof input;
@@ -58,6 +71,16 @@ export const updateSubscription = asyncHandler(async (req: Request, res: Respons
   }
 
   const tenant = await prisma.tenant.update({ where: { id: tenantId }, data });
+
+  await logAudit(prisma, {
+    tenantId,
+    actorId: req.auth.userId,
+    action: "SUBSCRIPTION_UPDATED",
+    targetType: "Tenant",
+    targetId: tenantId,
+    metadata: input,
+  });
+
   res.json(tenant);
 });
 

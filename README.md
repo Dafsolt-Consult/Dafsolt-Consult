@@ -87,6 +87,15 @@ sessions). Delivery is log-based until a real email/SMS provider is wired up
 - **Notifications**: `NotificationLog` (in-app for now) is written whenever a
   new assignment, fee invoice, report card, or announcement is created — see
   `utils/notify.ts`.
+- **Timetable**: `TimetablePeriod` (class + subject + optional teacher, day of
+  week, `HH:mm` start/end) with conflict detection on create/update — a class
+  can't have two overlapping periods, and a teacher can't be double-booked
+  across two different classes at an overlapping time, even in the same term.
+- **Audit trail**: `AuditLog` (nullable `tenantId`/`actorId` so platform-level
+  actions can be recorded too) via `utils/audit.ts`'s `logAudit()`, written on
+  school profile updates, subscription changes, staff/student
+  creation/updates, and password resets. `SCHOOL_ADMIN` sees their own
+  school's trail; `SUPER_ADMIN` sees the platform-wide trail.
 
 ## Getting started
 
@@ -152,8 +161,17 @@ generic "if that email exists…" response (no account enumeration), the
 reset link only ever appears in server logs (never the API response), an
 invalid/reused token is rejected, a valid one successfully changes the
 password, the old password immediately stops working, and a session that
-was active before the reset gets its refresh token revoked. Both `server`
-and `client` build and type-check cleanly (`npm run build` in each).
+was active before the reset gets its refresh token revoked. Verified the
+v1.2 additions too: a school profile update and a subscription change
+both produced the correct audit log entry with the acting user attached,
+`SUPER_ADMIN` sees the platform-wide trail while `SCHOOL_ADMIN` sees only
+their own school's; and on the timetable, a class-level double-booking
+and a teacher double-booked across two different classes at an
+overlapping time were both correctly rejected (409), a non-overlapping
+back-to-back period for the same teacher succeeded, and the
+student/teacher/parent read views each returned exactly the periods they
+should see. Both `server` and `client` build and type-check cleanly
+(`npm run build` in each).
 
 ## Known limitations / roadmap
 
@@ -169,28 +187,37 @@ and `client` build and type-check cleanly (`npm run build` in each).
   student has a single current enrollment; mid-term class transfers mid-day
   aren't specially handled (the next enrollment record simply takes over).
 
-## v1.1 module coverage vs. the full ERP spec
+## v1.2 module coverage vs. the full ERP spec
 
 v1.0/v1.1 cover Student Information Management, the Parent Portal, most of
 the Teacher Portal, most of the Administrator Dashboard, core Academic
 Management, core Fee & Finance Management, Announcements, Library
 Management, Examination & Results, and Security & Access Control (role-based
-permissions, JWT auth) — each with the gaps noted below carried into v1.2.
+permissions, JWT auth, password reset).
 
-**Deferred to v1.2:**
+**Delivered in v1.2:**
+
+- Admin settings UI — school profile (name, logo, address, contact,
+  currency, timezone) is now editable from `/settings`, not API-only
+- Audit trail — `SCHOOL_ADMIN` sees their own school's activity log,
+  `SUPER_ADMIN` sees the platform-wide one; covers profile/subscription
+  changes and staff/student creation & updates
+- Timetable / period scheduling — a real weekly Mon–Fri class schedule
+  with conflict detection (no double-booking a class or a teacher), with
+  admin manage, teacher/student read-only, and Parent Portal views
+
+**Still deferred:**
 
 - Student disciplinary/conduct records
 - Teacher lesson planning; direct teacher↔parent/student messaging (beyond
   announcements/notifications)
-- Admin settings UI (school profile is API-only today); compliance reporting
-- Timetable / period scheduling (daily class schedule, distinct from CBT exam
-  scheduling); richer curriculum/syllabus content beyond subjects & class levels
+- Compliance reporting; richer curriculum/syllabus content beyond subjects
+  & class levels
 - Scholarships/fee discounts; financial reporting/summary dashboards (beyond
   raw invoice & payment lists)
 - Newsletters, emergency broadcast alerts, direct messaging; real SMS/email
   delivery (provider integration, not just the in-app notification log)
 - Custom analytics dashboards, compliance reports, predictive analytics
-- Audit trail of admin/staff actions
 - **Not started**: Transport Management, Hostel/Boarding Management, Human
   Resources & Payroll, Inventory & Asset Management
 - **Advanced modules not started**: E-Learning/LMS (live classes), Alumni

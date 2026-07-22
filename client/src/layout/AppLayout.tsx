@@ -15,6 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/teachers", label: "Teachers", roles: ["SCHOOL_ADMIN"] },
   { to: "/academics", label: "Classes & Subjects", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/attendance", label: "Attendance", roles: ["SCHOOL_ADMIN", "TEACHER"] },
+  { to: "/timetable", label: "Timetable", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/results", label: "Results", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/fees", label: "Fees", roles: ["SCHOOL_ADMIN", "ACCOUNTANT", "STUDENT"] },
   { to: "/cbt/questions", label: "Question Bank", roles: ["SCHOOL_ADMIN", "TEACHER"] },
@@ -26,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN"] },
   { to: "/library/borrow-records", label: "Borrow Records", roles: ["SCHOOL_ADMIN", "LIBRARIAN"] },
   { to: "/notifications", label: "Notifications" },
+  { to: "/settings", label: "Settings", roles: ["SCHOOL_ADMIN", "SUPER_ADMIN"] },
   { to: "/schools", label: "Schools", roles: ["SUPER_ADMIN"] },
 ];
 

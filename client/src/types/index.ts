@@ -225,3 +225,45 @@ export interface Invoice {
   dueDate: string;
   feeStructure: { name: string };
 }
+
+export interface TenantProfile {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country: string;
+  phone?: string | null;
+  email?: string | null;
+  currency: string;
+  timezone: string;
+  planTier: "FREE" | "BASIC" | "PREMIUM";
+  subscriptionStatus: "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED";
+}
+
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  targetType?: string | null;
+  targetId?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  actor?: { firstName: string; lastName: string; role: UserRole } | null;
+  tenant?: { name: string } | null;
+}
+
+export interface TimetablePeriod {
+  id: string;
+  classArmId: string;
+  subjectId: string;
+  teacherId?: string | null;
+  termId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  subject?: { name: string };
+  classArm?: ClassArm & { classLevel: ClassLevel };
+  teacher?: { user: { firstName: string; lastName: string } } | null;
+}
