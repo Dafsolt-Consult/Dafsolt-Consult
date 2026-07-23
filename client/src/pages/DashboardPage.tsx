@@ -17,7 +17,6 @@ export function DashboardPage() {
       {user.role === "SCHOOL_ADMIN" && <AdminOverview />}
       {user.role === "TEACHER" && <TeacherOverview />}
       {user.role === "STUDENT" && <StudentOverview />}
-      {user.role === "SUPER_ADMIN" && <SuperAdminOverview />}
       {(user.role === "LIBRARIAN" || user.role === "ACCOUNTANT") && (
         <Card>
           <p className="text-sm text-slate-600">Use the sidebar to navigate to your tools.</p>
@@ -70,14 +69,6 @@ function StudentOverview() {
       <StatCard label="My assignments" value="View" to="/assignments" />
       <StatCard label="My results" value="View" to="/results" />
       <StatCard label="Library" value="Browse" to="/library/books" />
-    </div>
-  );
-}
-
-function SuperAdminOverview() {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <StatCard label="Schools on the platform" value="Manage" to="/schools" />
     </div>
   );
 }

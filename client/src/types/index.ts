@@ -1,5 +1,4 @@
 export type UserRole =
-  | "SUPER_ADMIN"
   | "SCHOOL_ADMIN"
   | "TEACHER"
   | "STUDENT"
@@ -28,6 +27,9 @@ export interface AuthUser {
   tenantId: string | null;
   tenant?: Tenant | null;
   avatarUrl?: string | null;
+  // Set only when this session was minted by a platform admin's
+  // impersonation session (see /platform), not a real login.
+  impersonatedBy?: string | null;
 }
 
 export interface Paginated<T> {
