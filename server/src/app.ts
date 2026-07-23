@@ -38,6 +38,13 @@ import notificationsRoutes from "./modules/notifications/notifications.routes";
 export function createApp() {
   const app = express();
 
+  // Exactly one reverse-proxy hop in front of this process (Caddy, in the
+  // client container — see docker-compose.prod.yml) — needed so req.ip and
+  // express-rate-limit's IP-based keying reflect the real client address
+  // instead of Caddy's, and so express-rate-limit doesn't reject the
+  // X-Forwarded-For header it sets.
+  app.set("trust proxy", 1);
+
   app.use(helmet());
   app.use(cors({ origin: env.clientUrl, credentials: true }));
   app.use(express.json({ limit: "2mb" }));
