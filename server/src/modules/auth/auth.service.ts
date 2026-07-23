@@ -135,17 +135,20 @@ export async function requestPasswordReset(email: string) {
 
   const resetLink = `${env.clientUrl}/reset-password?token=${rawToken}`;
 
-  // Always log the link too, so an operator with server access can relay it
-  // manually if SMTP isn't configured for this deployment yet — see
-  // src/utils/email.ts for what happens without SMTP_* env vars set. The
-  // raw token is never returned via the API or persisted anywhere other
-  // than its hash.
-  console.log(`[password reset] ${user.role} <${user.email}> requested a reset: ${resetLink}`);
-  await sendEmail(
+  const result = await sendEmail(
     user.email,
     "Reset your School Manager password",
     `Hi ${user.firstName}, use this link to reset your password (expires in 1 hour): ${resetLink}`
   );
+
+  // Falls back to a server log only when the email wasn't actually sent
+  // (SMTP not configured, or the send itself failed) so an operator with
+  // server access can still relay the link manually — see
+  // src/utils/email.ts. The raw token is never returned via the API or
+  // persisted anywhere other than its hash.
+  if (!result.ok) {
+    console.log(`[password reset] ${user.role} <${user.email}> requested a reset (${result.reason}): ${resetLink}`);
+  }
 }
 
 export async function resetPassword(rawToken: string, newPassword: string) {
@@ -160,6 +163,8 @@ export async function resetPassword(rawToken: string, newPassword: string) {
 
   const passwordHash = await hashPassword(newPassword);
 
+  const resetUser = await prisma.user.findUniqueOrThrow({ where: { id: resetToken.userId } });
+
   await prisma.$transaction([
     prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash } }),
     prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
@@ -168,6 +173,15 @@ export async function resetPassword(rawToken: string, newPassword: string) {
     prisma.refreshToken.updateMany({
       where: { userId: resetToken.userId, revokedAt: null },
       data: { revokedAt: new Date() },
+    }),
+    prisma.auditLog.create({
+      data: {
+        tenantId: resetUser.tenantId,
+        userId: resetUser.id,
+        action: "PASSWORD_RESET",
+        entityType: "User",
+        entityId: resetUser.id,
+      },
     }),
   ]);
 }
