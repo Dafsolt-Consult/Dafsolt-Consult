@@ -99,7 +99,7 @@ export interface Book {
   targetAudience?: "PRIMARY" | "JUNIOR_SECONDARY" | "SENIOR_SECONDARY" | null;
   totalCopies: number;
   availableCopies: number;
-  category?: { name: string } | null;
+  category?: { id: string; name: string } | null;
 }
 
 export interface ClassLevel {

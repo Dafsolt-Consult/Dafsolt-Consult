@@ -62,11 +62,27 @@ export const createQuestion = asyncHandler(async (req: Request, res: Response) =
 
 export const updateQuestion = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
-  const input = updateQuestionSchema.parse(req.body);
+  const { options, ...input } = updateQuestionSchema.parse(req.body);
   const existing = await prisma.question.findFirst({ where: { id: req.params.questionId, tenantId } });
   if (!existing) throw ApiError.notFound("Question not found");
 
-  const question = await prisma.question.update({ where: { id: existing.id }, data: input });
+  if (options) {
+    const answerCount = await prisma.examAnswer.count({ where: { questionId: existing.id } });
+    if (answerCount > 0) {
+      throw ApiError.conflict("This question has already been answered in an exam attempt, so its options can no longer be changed");
+    }
+  }
+
+  const question = await prisma.$transaction(async (tx) => {
+    if (options) {
+      await tx.questionOption.deleteMany({ where: { questionId: existing.id } });
+      await tx.questionOption.createMany({
+        data: options.map((o, order) => ({ ...o, questionId: existing.id, order })),
+      });
+    }
+    return tx.question.update({ where: { id: existing.id }, data: input, include: { options: true } });
+  });
+
   res.json(question);
 });
 

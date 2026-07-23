@@ -25,7 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/assignments", label: "Assignments", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/calendar", label: "School Calendar", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/announcements", label: "Announcements", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
-  { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN"] },
+  { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "PARENT"] },
   { to: "/library/borrow-records", label: "Borrow Records", roles: ["SCHOOL_ADMIN", "LIBRARIAN"] },
   { to: "/notifications", label: "Notifications" },
   { to: "/analytics", label: "Analytics & Reporting", roles: ["SCHOOL_ADMIN"] },

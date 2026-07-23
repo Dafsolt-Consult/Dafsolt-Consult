@@ -43,4 +43,5 @@ export const updateQuestionSchema = z.object({
   correctText: z.string().max(500).optional(),
   points: z.number().int().positive().max(100).optional(),
   difficulty: z.enum(["EASY", "MEDIUM", "HARD"]).optional(),
+  options: z.array(optionSchema).optional(),
 });

@@ -5,14 +5,44 @@ import { useFetch } from "../../hooks/useFetch";
 import { useAuth } from "../../context/AuthContext";
 import { Book, Paginated } from "../../types";
 
+interface BookCategory {
+  id: string;
+  name: string;
+}
+
+interface StudentOption {
+  id: string;
+  admissionNumber: string;
+  user: { firstName: string; lastName: string };
+}
+
 export function LibraryCatalogPage() {
   const { user } = useAuth();
   const canManage = user?.role === "SCHOOL_ADMIN" || user?.role === "LIBRARIAN";
   const [search, setSearch] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editBook, setEditBook] = useState<Book | null>(null);
   const [borrowBook, setBorrowBook] = useState<Book | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const { data, loading, error, refetch } = useFetch<Paginated<Book>>(`/library/books?search=${encodeURIComponent(search)}`, [search]);
+  const { data: categories, refetch: refetchCategories } = useFetch<BookCategory[]>("/library/categories");
+
+  const query = new URLSearchParams();
+  if (search) query.set("search", search);
+  if (categoryId) query.set("categoryId", categoryId);
+  const { data, loading, error, refetch } = useFetch<Paginated<Book>>(`/library/books?${query}`, [search, categoryId]);
+
+  async function deleteBook(book: Book) {
+    if (!confirm(`Delete "${book.title}" from the catalog?`)) return;
+    setActionError(null);
+    try {
+      await api.delete(`/library/books/${book.id}`);
+      refetch();
+    } catch (err) {
+      setActionError(apiErrorMessage(err));
+    }
+  }
 
   return (
     <div>
@@ -22,11 +52,26 @@ export function LibraryCatalogPage() {
         actions={canManage ? <Button onClick={() => setShowCreate(true)}>+ Add book</Button> : undefined}
       />
 
-      <div className="mb-4 max-w-xs">
-        <Input placeholder="Search title or author" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="mb-4 flex flex-wrap gap-3">
+        <Input className="max-w-xs" placeholder="Search title or author" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Select className="w-52" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+          <option value="">All categories</option>
+          {categories?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        {canManage && (
+          <NewCategoryButton
+            onCreated={() => {
+              refetchCategories();
+            }}
+          />
+        )}
       </div>
 
-      {error && <ErrorBanner message={error} />}
+      {(error || actionError) && <ErrorBanner message={error || actionError!} />}
       {loading ? (
         <Spinner />
       ) : !data?.items.length ? (
@@ -41,10 +86,11 @@ export function LibraryCatalogPage() {
               <div className="mt-2 flex flex-wrap gap-1">
                 <Badge>{book.format}</Badge>
                 {book.targetAudience && <Badge>{book.targetAudience.replace("_", " ")}</Badge>}
+                {book.category && <Badge>{book.category.name}</Badge>}
               </div>
               {book.format !== "EBOOK" && <p className="mt-2 text-xs text-slate-500">{book.availableCopies} of {book.totalCopies} copies available</p>}
 
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {(book.format === "EBOOK" || book.format === "BOTH") && book.ebookFileUrl && (
                   <a href={book.ebookFileUrl} target="_blank" rel="noreferrer">
                     <Button variant="secondary">Read online</Button>
@@ -55,26 +101,112 @@ export function LibraryCatalogPage() {
                     Borrow
                   </Button>
                 )}
+                {canManage && (
+                  <>
+                    <Button variant="ghost" onClick={() => setEditBook(book)}>
+                      Edit
+                    </Button>
+                    <Button variant="ghost" onClick={() => deleteBook(book)}>
+                      Delete
+                    </Button>
+                  </>
+                )}
               </div>
             </Card>
           ))}
         </div>
       )}
 
-      {showCreate && <CreateBookModal onClose={() => setShowCreate(false)} onCreated={refetch} />}
+      {showCreate && (
+        <BookFormModal
+          categories={categories ?? []}
+          onClose={() => setShowCreate(false)}
+          onSaved={() => {
+            refetch();
+            setShowCreate(false);
+          }}
+        />
+      )}
+      {editBook && (
+        <BookFormModal
+          book={editBook}
+          categories={categories ?? []}
+          onClose={() => setEditBook(null)}
+          onSaved={() => {
+            refetch();
+            setEditBook(null);
+          }}
+        />
+      )}
       {borrowBook && <BorrowBookModal book={borrowBook} onClose={() => setBorrowBook(null)} onDone={refetch} />}
     </div>
   );
 }
 
-function CreateBookModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function NewCategoryButton({ onCreated }: { onCreated: () => void }) {
+  const [show, setShow] = useState(false);
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api.post("/library/categories", { name });
+      onCreated();
+      setShow(false);
+      setName("");
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!show) {
+    return (
+      <Button variant="secondary" onClick={() => setShow(true)}>
+        + New category
+      </Button>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex items-center gap-2">
+      <Input placeholder="Category name" required value={name} onChange={(e) => setName(e.target.value)} className="w-40" />
+      <Button type="submit" variant="secondary" disabled={submitting}>
+        Save
+      </Button>
+      <Button type="button" variant="ghost" onClick={() => setShow(false)}>
+        Cancel
+      </Button>
+      {error && <span className="text-xs text-red-600">{error}</span>}
+    </form>
+  );
+}
+
+function BookFormModal({
+  book,
+  categories,
+  onClose,
+  onSaved,
+}: {
+  book?: Book;
+  categories: BookCategory[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const isEdit = !!book;
   const [form, setForm] = useState({
-    title: "",
-    author: "",
-    format: "PHYSICAL",
-    targetAudience: "",
-    totalCopies: "1",
-    ebookFileUrl: "",
+    title: book?.title ?? "",
+    author: book?.author ?? "",
+    format: (book?.format ?? "PHYSICAL") as string,
+    targetAudience: (book?.targetAudience ?? "") as string,
+    totalCopies: String(book?.totalCopies ?? 1),
+    ebookFileUrl: book?.ebookFileUrl ?? "",
+    categoryId: book?.category?.id ?? "",
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -84,14 +216,19 @@ function CreateBookModal({ onClose, onCreated }: { onClose: () => void; onCreate
     setError(null);
     setSubmitting(true);
     try {
-      await api.post("/library/books", {
+      const payload = {
         ...form,
         totalCopies: Number(form.totalCopies),
         targetAudience: form.targetAudience || undefined,
         ebookFileUrl: form.ebookFileUrl || undefined,
-      });
-      onCreated();
-      onClose();
+        categoryId: form.categoryId || undefined,
+      };
+      if (isEdit) {
+        await api.patch(`/library/books/${book!.id}`, payload);
+      } else {
+        await api.post("/library/books", payload);
+      }
+      onSaved();
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -100,7 +237,7 @@ function CreateBookModal({ onClose, onCreated }: { onClose: () => void; onCreate
   }
 
   return (
-    <Modal title="Add a book" onClose={onClose}>
+    <Modal title={isEdit ? `Edit "${book!.title}"` : "Add a book"} onClose={onClose}>
       {error && (
         <div className="mb-4">
           <ErrorBanner message={error} />
@@ -114,6 +251,17 @@ function CreateBookModal({ onClose, onCreated }: { onClose: () => void; onCreate
         <div>
           <Label>Author</Label>
           <Input required value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} />
+        </div>
+        <div>
+          <Label>Category</Label>
+          <Select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
+            <option value="">Uncategorized</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
         </div>
         <div>
           <Label>Format</Label>
@@ -145,7 +293,7 @@ function CreateBookModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </div>
         )}
         <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? "Saving..." : "Add book"}
+          {submitting ? "Saving..." : isEdit ? "Save changes" : "Add book"}
         </Button>
       </form>
     </Modal>
@@ -153,7 +301,10 @@ function CreateBookModal({ onClose, onCreated }: { onClose: () => void; onCreate
 }
 
 function BorrowBookModal({ book, onClose, onDone }: { book: Book; onClose: () => void; onDone: () => void }) {
-  const [studentId, setStudentId] = useState("");
+  const [search, setSearch] = useState("");
+  const [options, setOptions] = useState<StudentOption[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<StudentOption | null>(null);
+  const [borrowerName, setBorrowerName] = useState("");
   const [dueDate, setDueDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 14);
@@ -162,12 +313,27 @@ function BorrowBookModal({ book, onClose, onDone }: { book: Book; onClose: () =>
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  async function runSearch(value: string) {
+    setSearch(value);
+    setSelectedStudent(null);
+    if (!value) {
+      setOptions([]);
+      return;
+    }
+    const { data } = await api.get<{ items: StudentOption[] }>(`/students?search=${encodeURIComponent(value)}`);
+    setOptions(data.items);
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      await api.post(`/library/books/${book.id}/borrow`, { studentId: studentId || undefined, dueDate });
+      await api.post(`/library/books/${book.id}/borrow`, {
+        studentId: selectedStudent?.id,
+        borrowerName: selectedStudent ? undefined : borrowerName || undefined,
+        dueDate,
+      });
       onDone();
       onClose();
     } catch (err) {
@@ -185,10 +351,37 @@ function BorrowBookModal({ book, onClose, onDone }: { book: Book; onClose: () =>
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label>Student ID (leave blank for staff borrower)</Label>
-          <Input value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="Student record ID" />
+        <div className="relative">
+          <Label>Student</Label>
+          <Input
+            placeholder="Search student by name..."
+            value={selectedStudent ? `${selectedStudent.user.firstName} ${selectedStudent.user.lastName}` : search}
+            onChange={(e) => runSearch(e.target.value)}
+          />
+          {options.length > 0 && !selectedStudent && (
+            <div className="absolute z-10 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg">
+              {options.map((o) => (
+                <button
+                  type="button"
+                  key={o.id}
+                  className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
+                  onClick={() => {
+                    setSelectedStudent(o);
+                    setOptions([]);
+                  }}
+                >
+                  {o.user.firstName} {o.user.lastName} ({o.admissionNumber})
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+        {!selectedStudent && (
+          <div>
+            <Label>Or staff borrower name</Label>
+            <Input value={borrowerName} onChange={(e) => setBorrowerName(e.target.value)} placeholder="Leave blank if borrowing for a student" />
+          </div>
+        )}
         <div>
           <Label>Due date</Label>
           <Input type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} />

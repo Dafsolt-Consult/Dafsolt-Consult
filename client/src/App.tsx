@@ -18,6 +18,7 @@ import { FeesPage } from "./pages/fees/FeesPage";
 import { QuestionBankPage } from "./pages/cbt/QuestionBankPage";
 import { ExamsPage } from "./pages/cbt/ExamsPage";
 import { ExamDetailPage } from "./pages/cbt/ExamDetailPage";
+import { GradingPage } from "./pages/cbt/GradingPage";
 import { AvailableExamsPage } from "./pages/cbt/AvailableExamsPage";
 import { ExamTakingPage } from "./pages/cbt/ExamTakingPage";
 import { LibraryCatalogPage } from "./pages/library/LibraryCatalogPage";
@@ -117,6 +118,7 @@ export default function App() {
         <Route path="/cbt/questions" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><QuestionBankPage /></ProtectedRoute>} />
         <Route path="/cbt/exams" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><ExamsPage /></ProtectedRoute>} />
         <Route path="/cbt/exams/:examId" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><ExamDetailPage /></ProtectedRoute>} />
+        <Route path="/cbt/exams/:examId/attempts/:attemptId/grade" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><GradingPage /></ProtectedRoute>} />
         <Route path="/cbt/available" element={<ProtectedRoute roles={["STUDENT"]}><AvailableExamsPage /></ProtectedRoute>} />
         <Route path="/library/books" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "LIBRARIAN", "TEACHER", "STUDENT", "PARENT"]}><LibraryCatalogPage /></ProtectedRoute>} />
         <Route path="/library/borrow-records" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "LIBRARIAN"]}><BorrowRecordsPage /></ProtectedRoute>} />

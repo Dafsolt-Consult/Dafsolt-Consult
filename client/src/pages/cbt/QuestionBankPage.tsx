@@ -11,12 +11,25 @@ export function QuestionBankPage() {
   const [subjectId, setSubjectId] = useState("");
   const [classLevelId, setClassLevelId] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editQuestion, setEditQuestion] = useState<Question | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const query = new URLSearchParams();
   if (subjectId) query.set("subjectId", subjectId);
   if (classLevelId) query.set("classLevelId", classLevelId);
 
   const { data, loading, error, refetch } = useFetch<Paginated<Question>>(`/cbt/questions?${query}`, [subjectId, classLevelId]);
+
+  async function deleteQuestion(question: Question) {
+    if (!confirm("Delete this question from the bank?")) return;
+    setActionError(null);
+    try {
+      await api.delete(`/cbt/questions/${question.id}`);
+      refetch();
+    } catch (err) {
+      setActionError(apiErrorMessage(err));
+    }
+  }
 
   return (
     <div>
@@ -41,7 +54,7 @@ export function QuestionBankPage() {
         </Select>
       </div>
 
-      {error && <ErrorBanner message={error} />}
+      {(error || actionError) && <ErrorBanner message={error || actionError!} />}
       {loading ? (
         <Spinner />
       ) : !data?.items.length ? (
@@ -55,6 +68,7 @@ export function QuestionBankPage() {
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Difficulty</th>
               <th className="px-4 py-3">Points</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -67,35 +81,68 @@ export function QuestionBankPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-600">{q.difficulty}</td>
                 <td className="px-4 py-3 text-slate-600">{q.points}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <Button variant="ghost" onClick={() => setEditQuestion(q)}>
+                    Edit
+                  </Button>
+                  <Button variant="ghost" onClick={() => deleteQuestion(q)}>
+                    Delete
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
         </Table>
       )}
 
-      {showCreate && <CreateQuestionModal onClose={() => setShowCreate(false)} onCreated={refetch} />}
+      {showCreate && (
+        <QuestionFormModal
+          onClose={() => setShowCreate(false)}
+          onSaved={() => {
+            refetch();
+            setShowCreate(false);
+          }}
+        />
+      )}
+      {editQuestion && (
+        <QuestionFormModal
+          question={editQuestion}
+          onClose={() => setEditQuestion(null)}
+          onSaved={() => {
+            refetch();
+            setEditQuestion(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function QuestionFormModal({ question, onClose, onSaved }: { question?: Question; onClose: () => void; onSaved: () => void }) {
+  const isEdit = !!question;
   const { data: subjects } = useSubjects();
   const { data: classLevels } = useClassLevels();
-  const [type, setType] = useState<QuestionType>("MULTIPLE_CHOICE");
-  const [text, setText] = useState("");
-  const [subjectId, setSubjectId] = useState("");
-  const [classLevelId, setClassLevelId] = useState("");
-  const [topic, setTopic] = useState("");
-  const [points, setPoints] = useState("1");
-  const [correctText, setCorrectText] = useState("");
-  const [options, setOptions] = useState([
-    { text: "", isCorrect: true },
-    { text: "", isCorrect: false },
-  ]);
+  const [type, setType] = useState<QuestionType>(question?.type ?? "MULTIPLE_CHOICE");
+  const [text, setText] = useState(question?.text ?? "");
+  const [subjectId, setSubjectId] = useState(question?.subjectId ?? "");
+  const [classLevelId, setClassLevelId] = useState(question?.classLevelId ?? "");
+  const [topic, setTopic] = useState(question?.topic ?? "");
+  const [points, setPoints] = useState(String(question?.points ?? 1));
+  const [imageUrl, setImageUrl] = useState(question?.imageUrl ?? "");
+  const [correctText, setCorrectText] = useState(question?.correctText ?? "");
+  const originalOptions = question?.options?.length ? question.options.map((o) => ({ text: o.text, isCorrect: !!o.isCorrect })) : null;
+  const [options, setOptions] = useState(
+    originalOptions ?? [
+      { text: "", isCorrect: true },
+      { text: "", isCorrect: false },
+    ]
+  );
+  const [optionsDirty, setOptionsDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function updateOption(index: number, field: "text" | "isCorrect", value: string | boolean) {
+    setOptionsDirty(true);
     setOptions((opts) =>
       opts.map((o, i) => {
         if (i === index) return { ...o, [field]: value };
@@ -106,6 +153,7 @@ function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCr
   }
 
   function addOption() {
+    setOptionsDirty(true);
     setOptions((opts) => [...opts, { text: "", isCorrect: false }]);
   }
 
@@ -114,21 +162,35 @@ function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCr
     setError(null);
     setSubmitting(true);
     try {
-      const payload: Record<string, unknown> = {
-        type,
-        text,
-        subjectId,
-        classLevelId,
-        topic: topic || undefined,
-        points: Number(points),
-      };
-      if (type === "MULTIPLE_CHOICE" || type === "TRUE_FALSE") {
-        payload.options = type === "TRUE_FALSE" ? [{ text: "True", isCorrect: options[0]?.isCorrect ?? true }, { text: "False", isCorrect: !(options[0]?.isCorrect ?? true) }] : options;
+      if (isEdit) {
+        const payload: Record<string, unknown> = {
+          topic: topic || undefined,
+          text,
+          imageUrl: imageUrl || undefined,
+          points: Number(points),
+        };
+        if (optionsDirty && (type === "MULTIPLE_CHOICE" || type === "TRUE_FALSE")) {
+          payload.options = type === "TRUE_FALSE" ? [{ text: "True", isCorrect: options[0]?.isCorrect ?? true }, { text: "False", isCorrect: !(options[0]?.isCorrect ?? true) }] : options;
+        }
+        if (type === "FILL_IN_BLANK") payload.correctText = correctText;
+        await api.patch(`/cbt/questions/${question!.id}`, payload);
+      } else {
+        const payload: Record<string, unknown> = {
+          type,
+          text,
+          subjectId,
+          classLevelId,
+          topic: topic || undefined,
+          imageUrl: imageUrl || undefined,
+          points: Number(points),
+        };
+        if (type === "MULTIPLE_CHOICE" || type === "TRUE_FALSE") {
+          payload.options = type === "TRUE_FALSE" ? [{ text: "True", isCorrect: options[0]?.isCorrect ?? true }, { text: "False", isCorrect: !(options[0]?.isCorrect ?? true) }] : options;
+        }
+        if (type === "FILL_IN_BLANK") payload.correctText = correctText;
+        await api.post("/cbt/questions", payload);
       }
-      if (type === "FILL_IN_BLANK") payload.correctText = correctText;
-      await api.post("/cbt/questions", payload);
-      onCreated();
-      onClose();
+      onSaved();
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -137,7 +199,7 @@ function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCr
   }
 
   return (
-    <Modal title="Add a question" onClose={onClose}>
+    <Modal title={isEdit ? "Edit question" : "Add a question"} onClose={onClose}>
       {error && (
         <div className="mb-4">
           <ErrorBanner message={error} />
@@ -147,7 +209,7 @@ function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCr
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Subject</Label>
-            <Select required value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+            <Select required disabled={isEdit} value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
               <option value="">Select</option>
               {subjects?.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -158,7 +220,7 @@ function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCr
           </div>
           <div>
             <Label>Class level</Label>
-            <Select required value={classLevelId} onChange={(e) => setClassLevelId(e.target.value)}>
+            <Select required disabled={isEdit} value={classLevelId} onChange={(e) => setClassLevelId(e.target.value)}>
               <option value="">Select</option>
               {classLevels?.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -174,12 +236,13 @@ function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCr
         </div>
         <div>
           <Label>Question type</Label>
-          <Select value={type} onChange={(e) => setType(e.target.value as QuestionType)}>
+          <Select disabled={isEdit} value={type} onChange={(e) => setType(e.target.value as QuestionType)}>
             <option value="MULTIPLE_CHOICE">Multiple choice</option>
             <option value="TRUE_FALSE">True / False</option>
             <option value="FILL_IN_BLANK">Fill in the blank</option>
             <option value="THEORY">Theory</option>
           </Select>
+          {isEdit && <p className="mt-1 text-xs text-slate-400">Subject, class level and question type can't be changed after creation.</p>}
         </div>
         <div>
           <Label>Question text</Label>
@@ -190,6 +253,10 @@ function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCr
             onChange={(e) => setText(e.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
+        </div>
+        <div>
+          <Label>Image URL (optional)</Label>
+          <Input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
         </div>
 
         {type === "MULTIPLE_CHOICE" && (
@@ -212,7 +279,10 @@ function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCr
             <Label>Correct answer</Label>
             <Select
               value={options[0]?.isCorrect ? "true" : "false"}
-              onChange={(e) => setOptions([{ text: "True", isCorrect: e.target.value === "true" }])}
+              onChange={(e) => {
+                setOptionsDirty(true);
+                setOptions([{ text: "True", isCorrect: e.target.value === "true" }]);
+              }}
             >
               <option value="true">True</option>
               <option value="false">False</option>
@@ -233,7 +303,7 @@ function CreateQuestionModal({ onClose, onCreated }: { onClose: () => void; onCr
         </div>
 
         <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? "Saving..." : "Add question"}
+          {submitting ? "Saving..." : isEdit ? "Save changes" : "Add question"}
         </Button>
       </form>
     </Modal>

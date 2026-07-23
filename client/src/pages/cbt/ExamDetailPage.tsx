@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, Card, ErrorBanner, PageHeader, Select, Table } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
@@ -155,6 +155,7 @@ function ResultsTab({ examId }: { examId: string }) {
           <th className="px-4 py-3">Student</th>
           <th className="px-4 py-3">Status</th>
           <th className="px-4 py-3">Score</th>
+          <th className="px-4 py-3"></th>
         </tr>
       </thead>
       <tbody className="divide-y divide-slate-100">
@@ -167,6 +168,13 @@ function ResultsTab({ examId }: { examId: string }) {
               <Badge tone={a.status === "GRADED" ? "success" : "warning"}>{a.status}</Badge>
             </td>
             <td className="px-4 py-3">{a.totalScore}</td>
+            <td className="px-4 py-3">
+              {a.status !== "IN_PROGRESS" && (
+                <Link to={`/cbt/exams/${examId}/attempts/${a.id}/grade`}>
+                  <Button variant="secondary">{a.status === "GRADED" ? "Review" : "Grade"}</Button>
+                </Link>
+              )}
+            </td>
           </tr>
         ))}
       </tbody>
