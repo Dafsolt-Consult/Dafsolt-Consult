@@ -91,6 +91,16 @@ export const deleteQuestion = asyncHandler(async (req: Request, res: Response) =
   const existing = await prisma.question.findFirst({ where: { id: req.params.questionId, tenantId } });
   if (!existing) throw ApiError.notFound("Question not found");
 
+  const examCount = await prisma.examQuestion.count({ where: { questionId: existing.id } });
+  if (examCount > 0) {
+    throw ApiError.conflict("This question is attached to one or more exams. Remove it from those exams before deleting it from the bank");
+  }
+
+  const answerCount = await prisma.examAnswer.count({ where: { questionId: existing.id } });
+  if (answerCount > 0) {
+    throw ApiError.conflict("This question has already been answered in an exam attempt and can't be deleted");
+  }
+
   await prisma.question.delete({ where: { id: existing.id } });
   res.status(204).send();
 });

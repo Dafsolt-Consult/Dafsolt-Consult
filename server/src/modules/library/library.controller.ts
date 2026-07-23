@@ -84,6 +84,11 @@ export const deleteBook = asyncHandler(async (req: Request, res: Response) => {
   const existing = await prisma.book.findFirst({ where: { id: req.params.bookId, tenantId } });
   if (!existing) throw ApiError.notFound("Book not found");
 
+  const outstandingCount = await prisma.borrowRecord.count({ where: { bookId: existing.id, status: "BORROWED" } });
+  if (outstandingCount > 0) {
+    throw ApiError.conflict("This book has copies currently on loan. Wait until they're returned before deleting it");
+  }
+
   await prisma.book.delete({ where: { id: existing.id } });
   res.status(204).send();
 });
