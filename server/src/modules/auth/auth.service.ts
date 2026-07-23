@@ -115,9 +115,10 @@ export async function logout(refreshToken: string) {
 
 /** Always succeeds silently whether or not the email exists, so the
  * response can't be used to enumerate registered accounts. Works for every
- * role — SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT, LIBRARIAN,
- * ACCOUNTANT — since it operates on the shared User model, not a
- * role-specific one. */
+ * tenant role — SCHOOL_ADMIN, TEACHER, STUDENT, PARENT, LIBRARIAN,
+ * ACCOUNTANT, etc. — since it operates on the shared User model. Platform
+ * admins are a separate model (see modules/platform) with their own
+ * OWNER-driven reset instead of a self-service email flow. */
 export async function requestPasswordReset(email: string) {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !user.isActive) return;

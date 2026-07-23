@@ -11,11 +11,3 @@ export const updateTenantProfileSchema = z.object({
   currency: z.string().length(3).optional(),
   timezone: z.string().max(60).optional(),
 });
-
-export const updateSubscriptionSchema = z.object({
-  planTier: z.enum(["FREE", "BASIC", "PREMIUM"]).optional(),
-  subscriptionStatus: z.enum(["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED"]).optional(),
-  subscriptionEndsAt: z.coerce.date().optional(),
-  maxStudents: z.number().int().positive().optional(),
-  maxStaff: z.number().int().positive().optional(),
-});
