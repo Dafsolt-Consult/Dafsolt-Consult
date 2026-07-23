@@ -29,7 +29,7 @@ enum SubscriptionStatus {
 }
 
 enum UserRole {
-  SUPER_ADMIN
+  SUPER_ADMIN // deprecated: platform admins now live in PlatformAdmin, see platformRole
   SCHOOL_ADMIN
   TEACHER
   STUDENT
@@ -40,6 +40,11 @@ enum UserRole {
   HR_MANAGER
   TRANSPORT_OFFICER
   HOSTEL_WARDEN
+}
+
+enum PlatformRole {
+  OWNER // full access: billing/plan, platform admin management, impersonation
+  SUPPORT // read tenants, start impersonation sessions; no admin/plan management
 }
 
 enum Gender {
@@ -419,6 +424,41 @@ model PasswordResetToken {
   @@index([userId])
   @@index([tokenHash])
   @@map("password_reset_tokens")
+}
+
+// Platform staff who operate dafsolt.cloud itself — entirely separate from
+// tenant Users. Kept as its own table (rather than a nullable-tenantId User
+// hack) so a platform-admin id can never be mistaken for a tenant User FK,
+// and so tenant login/session code paths never need to reason about it.
+model PlatformAdmin {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         PlatformRole
+  firstName    String
+  lastName     String
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  refreshTokens PlatformRefreshToken[]
+  auditLogs     AuditLog[]
+
+  @@map("platform_admins")
+}
+
+model PlatformRefreshToken {
+  id              String        @id @default(cuid())
+  platformAdminId String
+  platformAdmin   PlatformAdmin @relation(fields: [platformAdminId], references: [id], onDelete: Cascade)
+  tokenHash       String
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([platformAdminId])
+  @@map("platform_refresh_tokens")
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -1192,20 +1232,26 @@ model NotificationLog {
 // ──────────────────────────────────────────────────────────────────────────
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  tenantId   String?
-  tenant     Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId     String?
-  user       User?    @relation("AuditLogActor", fields: [userId], references: [id])
-  action     String // e.g. "CREATE_STUDENT", "RECORD_PAYMENT"
-  entityType String // e.g. "Student", "Payment"
-  entityId   String?
-  metadata   Json?
-  ipAddress  String?
-  createdAt  DateTime @default(now())
+  id              String         @id @default(cuid())
+  tenantId        String?
+  tenant          Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?          @relation("AuditLogActor", fields: [userId], references: [id])
+  // Set when a platform admin performed or is impersonating this action;
+  // userId may ALSO be set in that case (the tenant user being acted as),
+  // so one row can show both the true actor and the acted-as identity.
+  platformAdminId String?
+  platformAdmin   PlatformAdmin? @relation(fields: [platformAdminId], references: [id])
+  action          String // e.g. "CREATE_STUDENT", "RECORD_PAYMENT"
+  entityType      String // e.g. "Student", "Payment"
+  entityId        String?
+  metadata        Json?
+  ipAddress       String?
+  createdAt       DateTime       @default(now())
 
   @@index([tenantId, createdAt])
   @@index([tenantId, entityType, entityId])
+  @@index([platformAdminId, createdAt])
   @@map("audit_logs")
 }
 
