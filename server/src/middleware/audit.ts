@@ -28,19 +28,26 @@ export function auditLog(action: string, entityType: string) {
 
     res.on("finish", () => {
       if (res.statusCode < 200 || res.statusCode >= 300) return;
-      if (!req.auth) return;
+      if (!req.auth && !req.platformAuth) return;
 
       const paramIdKey = Object.keys(req.params).find((key) => key === "id" || key.endsWith("Id"));
       const entityId =
         (responseBody as { id?: string } | undefined)?.id ?? (paramIdKey ? req.params[paramIdKey] : undefined);
 
-      const headerTenantId = req.headers["x-tenant-id"];
+      // Two distinct actor shapes share this table: a tenant User (req.auth,
+      // possibly itself an impersonation session) and a platform admin
+      // acting directly on platform-only routes (req.platformAuth) — e.g.
+      // changing a tenant's plan, which has no tenant User attached to it.
+      const tenantId = req.auth?.tenantId ?? req.params.tenantId ?? null;
+      const userId = req.auth?.userId ?? null;
+      const platformAdminId = req.auth?.impersonatedBy ?? req.platformAuth?.platformAdminId ?? null;
 
       prisma.auditLog
         .create({
           data: {
-            tenantId: req.auth.tenantId ?? (Array.isArray(headerTenantId) ? headerTenantId[0] : headerTenantId) ?? null,
-            userId: req.auth.userId,
+            tenantId,
+            userId,
+            platformAdminId,
             action,
             entityType,
             entityId,

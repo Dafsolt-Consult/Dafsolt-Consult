@@ -6,6 +6,7 @@ export interface AccessTokenPayload {
   sub: string; // userId
   tenantId: string | null;
   role: UserRole;
+  impersonatedBy?: string; // platformAdminId, set only for impersonation sessions
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {

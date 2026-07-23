@@ -15,11 +15,18 @@ export const env = {
 
   jwtAccessSecret: required("JWT_ACCESS_SECRET"),
   jwtRefreshSecret: required("JWT_REFRESH_SECRET"),
+  // Separate signing secret for platform-admin tokens (src/utils/platformJwt.ts)
+  // so a leaked tenant secret can't forge a platform token, or vice versa.
+  jwtPlatformSecret: required("JWT_PLATFORM_SECRET"),
   jwtAccessTtl: process.env.JWT_ACCESS_TTL ?? "15m",
   jwtRefreshTtl: process.env.JWT_REFRESH_TTL ?? "7d",
 
-  superAdminEmail: process.env.SUPER_ADMIN_EMAIL ?? "platform@dafsolt.com",
-  superAdminPassword: process.env.SUPER_ADMIN_PASSWORD ?? "ChangeMe123!",
+  // Bootstrap credentials for the first PlatformAdmin (role OWNER), created
+  // once by bootstrap.ts if the platform_admins table is empty. No fallback
+  // password — if unset, bootstrap silently skips instead of creating an
+  // account with a guessable default (see bootstrap.ts).
+  superAdminEmail: process.env.SUPER_ADMIN_EMAIL,
+  superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
 
   uploadDir: process.env.UPLOAD_DIR ?? "uploads",
   maxUploadMb: Number(process.env.MAX_UPLOAD_MB ?? 20),

@@ -58,5 +58,8 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
       tenant: { select: { id: true, name: true, slug: true, planTier: true, currency: true } },
     },
   });
-  res.json(user);
+  // impersonatedBy is a JWT-only claim (set by modules/platform's
+  // impersonate endpoint), not a persisted column on User — surfaced here
+  // so the frontend can show an "impersonating" banner.
+  res.json({ ...user, impersonatedBy: req.auth.impersonatedBy ?? null });
 });

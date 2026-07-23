@@ -7,6 +7,10 @@ export interface AuthContext {
   userId: string;
   tenantId: string | null;
   role: UserRole;
+  // Set when this token was minted by a platform admin's impersonation
+  // session (see modules/platform) rather than a real login — the value is
+  // that platform admin's id, for audit-log propagation.
+  impersonatedBy?: string;
 }
 
 declare global {
@@ -27,7 +31,12 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
   const token = header.slice("Bearer ".length);
   try {
     const payload = verifyAccessToken(token);
-    req.auth = { userId: payload.sub, tenantId: payload.tenantId, role: payload.role };
+    req.auth = {
+      userId: payload.sub,
+      tenantId: payload.tenantId,
+      role: payload.role,
+      impersonatedBy: payload.impersonatedBy,
+    };
     next();
   } catch {
     throw ApiError.unauthorized("Invalid or expired token");
@@ -47,16 +56,11 @@ export function authorize(...roles: UserRole[]) {
 }
 
 /** Resolves the tenantId a tenant-scoped request should operate under.
- * Regular users are locked to their own tenant. A SUPER_ADMIN may act on
- * behalf of a specific tenant via the `x-tenant-id` header. */
+ * Every caller here is a real tenant User — including a platform admin
+ * "acting as" one during an impersonation session (see modules/platform),
+ * whose token carries a real tenantId just like a normal login. */
 export function resolveTenantId(req: Request): string {
   if (!req.auth) throw ApiError.unauthorized();
-  if (req.auth.role === "SUPER_ADMIN") {
-    const header = req.headers["x-tenant-id"];
-    const tenantId = Array.isArray(header) ? header[0] : header;
-    if (!tenantId) throw ApiError.badRequest("x-tenant-id header is required for platform admins");
-    return tenantId;
-  }
   if (!req.auth.tenantId) throw ApiError.forbidden("Account is not attached to a school");
   return req.auth.tenantId;
 }
