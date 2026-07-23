@@ -22,7 +22,6 @@ import { AvailableExamsPage } from "./pages/cbt/AvailableExamsPage";
 import { ExamTakingPage } from "./pages/cbt/ExamTakingPage";
 import { LibraryCatalogPage } from "./pages/library/LibraryCatalogPage";
 import { BorrowRecordsPage } from "./pages/library/BorrowRecordsPage";
-import { SchoolsPage } from "./pages/schools/SchoolsPage";
 import { AssignmentsPage } from "./pages/assignments/AssignmentsPage";
 import { LessonPlansPage } from "./pages/lesson-plans/LessonPlansPage";
 import { TimetablePage } from "./pages/timetable/TimetablePage";
@@ -40,6 +39,16 @@ import { AnnouncementsPage } from "./pages/announcements/AnnouncementsPage";
 import { NotificationsPage } from "./pages/notifications/NotificationsPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
 
+import { PlatformAuthProvider } from "./context/PlatformAuthContext";
+import { PlatformProtectedRoute } from "./routes/PlatformProtectedRoute";
+import { PlatformLayout } from "./layout/PlatformLayout";
+import { PlatformLoginPage } from "./pages/platform/PlatformLoginPage";
+import { PlatformDashboardPage } from "./pages/platform/PlatformDashboardPage";
+import { PlatformSchoolsPage } from "./pages/platform/PlatformSchoolsPage";
+import { PlatformSchoolDetailPage } from "./pages/platform/PlatformSchoolDetailPage";
+import { PlatformAdminsPage } from "./pages/platform/PlatformAdminsPage";
+import { PlatformAuditLogPage } from "./pages/platform/PlatformAuditLogPage";
+
 export default function App() {
   return (
     <Routes>
@@ -48,6 +57,37 @@ export default function App() {
       <Route path="/onboard" element={<OnboardPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      <Route
+        path="/platform/*"
+        element={
+          <PlatformAuthProvider>
+            <Routes>
+              <Route path="login" element={<PlatformLoginPage />} />
+              <Route
+                element={
+                  <PlatformProtectedRoute>
+                    <PlatformLayout />
+                  </PlatformProtectedRoute>
+                }
+              >
+                <Route index element={<PlatformDashboardPage />} />
+                <Route path="schools" element={<PlatformSchoolsPage />} />
+                <Route path="schools/:tenantId" element={<PlatformSchoolDetailPage />} />
+                <Route
+                  path="admins"
+                  element={
+                    <PlatformProtectedRoute roles={["OWNER"]}>
+                      <PlatformAdminsPage />
+                    </PlatformProtectedRoute>
+                  }
+                />
+                <Route path="audit-log" element={<PlatformAuditLogPage />} />
+              </Route>
+            </Routes>
+          </PlatformAuthProvider>
+        }
+      />
 
       <Route
         path="/cbt/attempts/:attemptId"
@@ -91,14 +131,13 @@ export default function App() {
         <Route
           path="/analytics"
           element={
-            <ProtectedRoute roles={["SCHOOL_ADMIN", "SUPER_ADMIN"]}>
+            <ProtectedRoute roles={["SCHOOL_ADMIN"]}>
               <Suspense fallback={<div className="flex justify-center py-12"><Spinner /></div>}>
                 <AnalyticsPage />
               </Suspense>
             </ProtectedRoute>
           }
         />
-        <Route path="/schools" element={<ProtectedRoute roles={["SUPER_ADMIN"]}><SchoolsPage /></ProtectedRoute>} />
         <Route
           path="/transport"
           element={
