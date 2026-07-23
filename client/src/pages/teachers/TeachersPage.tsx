@@ -125,6 +125,10 @@ function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated:
             <option value="LIBRARIAN">Librarian</option>
             <option value="ACCOUNTANT">Accountant</option>
             <option value="SCHOOL_ADMIN">School Admin</option>
+            <option value="NURSE">Nurse</option>
+            <option value="HR_MANAGER">HR Manager</option>
+            <option value="TRANSPORT_OFFICER">Transport Officer</option>
+            <option value="HOSTEL_WARDEN">Hostel Warden</option>
           </Select>
         </div>
         {form.role === "TEACHER" && (

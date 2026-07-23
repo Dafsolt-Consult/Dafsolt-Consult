@@ -14,7 +14,9 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/students", label: "Students", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/teachers", label: "Teachers", roles: ["SCHOOL_ADMIN"] },
   { to: "/academics", label: "Classes & Subjects", roles: ["SCHOOL_ADMIN", "TEACHER"] },
+  { to: "/timetable", label: "Timetable", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/attendance", label: "Attendance", roles: ["SCHOOL_ADMIN", "TEACHER"] },
+  { to: "/lesson-plans", label: "Lesson Plans", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/results", label: "Results", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/fees", label: "Fees", roles: ["SCHOOL_ADMIN", "ACCOUNTANT", "STUDENT"] },
   { to: "/cbt/questions", label: "Question Bank", roles: ["SCHOOL_ADMIN", "TEACHER"] },
@@ -26,7 +28,17 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN"] },
   { to: "/library/borrow-records", label: "Borrow Records", roles: ["SCHOOL_ADMIN", "LIBRARIAN"] },
   { to: "/notifications", label: "Notifications" },
+  { to: "/analytics", label: "Analytics & Reporting", roles: ["SCHOOL_ADMIN"] },
+  { to: "/compliance", label: "Compliance Reports", roles: ["SCHOOL_ADMIN"] },
   { to: "/settings", label: "Settings", roles: ["SCHOOL_ADMIN"] },
+  { to: "/transport", label: "Transport", roles: ["SCHOOL_ADMIN", "TRANSPORT_OFFICER", "STUDENT", "PARENT"] },
+  { to: "/hostel", label: "Hostel", roles: ["SCHOOL_ADMIN", "HOSTEL_WARDEN", "STUDENT", "PARENT"] },
+  {
+    to: "/hr",
+    label: "HR & Payroll",
+    roles: ["SCHOOL_ADMIN", "HR_MANAGER", "TEACHER", "LIBRARIAN", "ACCOUNTANT", "NURSE", "TRANSPORT_OFFICER", "HOSTEL_WARDEN"],
+  },
+  { to: "/inventory", label: "Inventory & Assets", roles: ["SCHOOL_ADMIN", "ACCOUNTANT"] },
   { to: "/schools", label: "Schools", roles: ["SUPER_ADMIN"] },
 ];
 

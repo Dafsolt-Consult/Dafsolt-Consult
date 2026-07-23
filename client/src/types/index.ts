@@ -149,6 +149,53 @@ export interface Student {
   isPrimary?: boolean;
 }
 
+export type DisciplinaryCategory = "MINOR" | "MAJOR" | "SEVERE";
+export type DisciplinaryStatus = "OPEN" | "RESOLVED";
+
+export interface DisciplinaryRecord {
+  id: string;
+  studentId: string;
+  category: DisciplinaryCategory;
+  incidentDate: string;
+  description: string;
+  actionTaken?: string | null;
+  status: DisciplinaryStatus;
+  createdAt: string;
+  student?: { user: { firstName: string; lastName: string } };
+}
+
+export interface LessonPlan {
+  id: string;
+  classArmId: string;
+  subjectId: string;
+  teacherId: string;
+  termId: string;
+  topic: string;
+  objectives?: string | null;
+  content?: string | null;
+  attachmentUrl?: string | null;
+  date: string;
+  subject?: Subject;
+  classArm?: ClassArm & { classLevel: ClassLevel };
+  teacher?: { user: { firstName: string; lastName: string } };
+}
+
+export type DayOfWeek = "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
+
+export interface TimetableSlot {
+  id: string;
+  classArmId: string;
+  subjectId: string;
+  teacherId: string;
+  termId: string;
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  subject?: Subject;
+  classArm?: ClassArm & { classLevel: ClassLevel };
+  teacher?: { user: { firstName: string; lastName: string } };
+}
+
 export interface AssignmentSubmission {
   id: string;
   assignmentId?: string;

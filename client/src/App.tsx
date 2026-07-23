@@ -1,4 +1,6 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
+import { Spinner } from "./components/ui";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardPage } from "./pages/OnboardPage";
@@ -22,6 +24,17 @@ import { LibraryCatalogPage } from "./pages/library/LibraryCatalogPage";
 import { BorrowRecordsPage } from "./pages/library/BorrowRecordsPage";
 import { SchoolsPage } from "./pages/schools/SchoolsPage";
 import { AssignmentsPage } from "./pages/assignments/AssignmentsPage";
+import { LessonPlansPage } from "./pages/lesson-plans/LessonPlansPage";
+import { TimetablePage } from "./pages/timetable/TimetablePage";
+import { ComplianceReportsPage } from "./pages/compliance/ComplianceReportsPage";
+
+import { TransportPage } from "./pages/transport/TransportPage";
+import { HostelPage } from "./pages/hostel/HostelPage";
+import { HRPage } from "./pages/hr/HRPage";
+import { InventoryPage } from "./pages/inventory/InventoryPage";
+
+// Code-split: recharts is a heavy dependency only SCHOOL_ADMIN ever loads.
+const AnalyticsPage = lazy(() => import("./pages/analytics/AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
 import { CalendarPage } from "./pages/calendar/CalendarPage";
 import { AnnouncementsPage } from "./pages/announcements/AnnouncementsPage";
 import { NotificationsPage } from "./pages/notifications/NotificationsPage";
@@ -59,20 +72,67 @@ export default function App() {
         <Route path="/teachers" element={<ProtectedRoute roles={["SCHOOL_ADMIN"]}><TeachersPage /></ProtectedRoute>} />
         <Route path="/academics" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><AcademicsPage /></ProtectedRoute>} />
         <Route path="/attendance" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><AttendancePage /></ProtectedRoute>} />
-        <Route path="/results" element={<ResultsPage />} />
-        <Route path="/fees" element={<FeesPage />} />
+        <Route path="/results" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"]}><ResultsPage /></ProtectedRoute>} />
+        <Route path="/fees" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "ACCOUNTANT", "STUDENT", "PARENT"]}><FeesPage /></ProtectedRoute>} />
         <Route path="/cbt/questions" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><QuestionBankPage /></ProtectedRoute>} />
         <Route path="/cbt/exams" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><ExamsPage /></ProtectedRoute>} />
         <Route path="/cbt/exams/:examId" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><ExamDetailPage /></ProtectedRoute>} />
         <Route path="/cbt/available" element={<ProtectedRoute roles={["STUDENT"]}><AvailableExamsPage /></ProtectedRoute>} />
-        <Route path="/library/books" element={<LibraryCatalogPage />} />
+        <Route path="/library/books" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "LIBRARIAN", "TEACHER", "STUDENT", "PARENT"]}><LibraryCatalogPage /></ProtectedRoute>} />
         <Route path="/library/borrow-records" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "LIBRARIAN"]}><BorrowRecordsPage /></ProtectedRoute>} />
         <Route path="/assignments" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><AssignmentsPage /></ProtectedRoute>} />
+        <Route path="/lesson-plans" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><LessonPlansPage /></ProtectedRoute>} />
+        <Route path="/timetable" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><TimetablePage /></ProtectedRoute>} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/announcements" element={<AnnouncementsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/settings" element={<ProtectedRoute roles={["SCHOOL_ADMIN"]}><SettingsPage /></ProtectedRoute>} />
+        <Route path="/compliance" element={<ProtectedRoute roles={["SCHOOL_ADMIN"]}><ComplianceReportsPage /></ProtectedRoute>} />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute roles={["SCHOOL_ADMIN", "SUPER_ADMIN"]}>
+              <Suspense fallback={<div className="flex justify-center py-12"><Spinner /></div>}>
+                <AnalyticsPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
         <Route path="/schools" element={<ProtectedRoute roles={["SUPER_ADMIN"]}><SchoolsPage /></ProtectedRoute>} />
+        <Route
+          path="/transport"
+          element={
+            <ProtectedRoute roles={["SCHOOL_ADMIN", "TRANSPORT_OFFICER", "STUDENT", "PARENT"]}>
+              <TransportPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hostel"
+          element={
+            <ProtectedRoute roles={["SCHOOL_ADMIN", "HOSTEL_WARDEN", "STUDENT", "PARENT"]}>
+              <HostelPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hr"
+          element={
+            <ProtectedRoute
+              roles={["SCHOOL_ADMIN", "HR_MANAGER", "TEACHER", "LIBRARIAN", "ACCOUNTANT", "NURSE", "TRANSPORT_OFFICER", "HOSTEL_WARDEN"]}
+            >
+              <HRPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inventory"
+          element={
+            <ProtectedRoute roles={["SCHOOL_ADMIN", "ACCOUNTANT"]}>
+              <InventoryPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
     </Routes>
   );

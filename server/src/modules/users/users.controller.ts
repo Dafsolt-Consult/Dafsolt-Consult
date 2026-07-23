@@ -12,7 +12,20 @@ export const listStaff = asyncHandler(async (req: Request, res: Response) => {
   const users = await prisma.user.findMany({
     where: {
       tenantId,
-      role: role ? (role as never) : { in: ["SCHOOL_ADMIN", "TEACHER", "LIBRARIAN", "ACCOUNTANT"] },
+      role: role
+        ? (role as never)
+        : {
+            in: [
+              "SCHOOL_ADMIN",
+              "TEACHER",
+              "LIBRARIAN",
+              "ACCOUNTANT",
+              "NURSE",
+              "HR_MANAGER",
+              "TRANSPORT_OFFICER",
+              "HOSTEL_WARDEN",
+            ],
+          },
     },
     select: {
       id: true,
@@ -23,6 +36,7 @@ export const listStaff = asyncHandler(async (req: Request, res: Response) => {
       role: true,
       isActive: true,
       lastLoginAt: true,
+      baseSalary: true,
       teacher: { select: { id: true, staffId: true, qualification: true } },
     },
     orderBy: { createdAt: "desc" },

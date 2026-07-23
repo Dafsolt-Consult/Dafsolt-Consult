@@ -16,11 +16,29 @@ interface FeeStructure {
 interface Invoice {
   id: string;
   amount: number;
+  discountAmount: number;
   amountPaid: number;
   status: string;
   dueDate: string;
   student?: { user: { firstName: string; lastName: string } };
   feeStructure: { name: string };
+}
+
+interface Scholarship {
+  id: string;
+  studentId: string;
+  name: string;
+  discountType: "PERCENT" | "FIXED";
+  amount: number;
+  reason?: string | null;
+  isActive: boolean;
+  student?: { user: { firstName: string; lastName: string } };
+}
+
+interface StudentOption {
+  id: string;
+  admissionNumber: string;
+  user: { firstName: string; lastName: string };
 }
 
 function naira(kobo: number) {
@@ -35,6 +53,7 @@ export function FeesPage() {
     <div>
       <PageHeader title="Fees" subtitle={isStudentOrParent ? "Your invoices" : "Manage fee structures, invoices and payments"} />
       {!isStudentOrParent && <FeeStructuresSection />}
+      {!isStudentOrParent && <ScholarshipsSection />}
       <InvoicesSection studentId={isStudentOrParent ? "me" : undefined} canManage={!isStudentOrParent} />
     </div>
   );
@@ -98,6 +117,125 @@ function FeeStructuresSection() {
   );
 }
 
+function ScholarshipsSection() {
+  const { data: scholarships, refetch } = useFetch<Scholarship[]>("/scholarships");
+  const [search, setSearch] = useState("");
+  const [options, setOptions] = useState<StudentOption[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<StudentOption | null>(null);
+  const [form, setForm] = useState({ name: "", discountType: "PERCENT", amount: "", reason: "" });
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function runSearch(value: string) {
+    setSearch(value);
+    setSelectedStudent(null);
+    if (!value) {
+      setOptions([]);
+      return;
+    }
+    const { data } = await api.get<{ items: StudentOption[] }>(`/students?search=${encodeURIComponent(value)}`);
+    setOptions(data.items);
+  }
+
+  async function grant(e: FormEvent) {
+    e.preventDefault();
+    if (!selectedStudent) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api.post("/scholarships", {
+        studentId: selectedStudent.id,
+        name: form.name,
+        discountType: form.discountType,
+        amount: form.discountType === "FIXED" ? Math.round(Number(form.amount) * 100) : Number(form.amount),
+        reason: form.reason || undefined,
+      });
+      setForm({ name: "", discountType: "PERCENT", amount: "", reason: "" });
+      setSelectedStudent(null);
+      setSearch("");
+      setOptions([]);
+      refetch();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function toggleActive(s: Scholarship) {
+    await api.patch(`/scholarships/${s.id}`, { isActive: !s.isActive });
+    refetch();
+  }
+
+  return (
+    <Card className="mb-6">
+      <h3 className="mb-3 font-medium text-slate-800">Scholarships & discounts</h3>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {scholarships?.map((s) => (
+          <Badge key={s.id} tone={s.isActive ? "success" : "default"}>
+            {s.student ? `${s.student.user.firstName} ${s.student.user.lastName}` : "—"} · {s.name} ·{" "}
+            {s.discountType === "PERCENT" ? `${s.amount}%` : naira(s.amount)}
+            <button className="ml-2 underline" onClick={() => toggleActive(s)}>
+              {s.isActive ? "deactivate" : "reactivate"}
+            </button>
+          </Badge>
+        ))}
+        {!scholarships?.length && <span className="text-sm text-slate-500">No scholarships granted yet.</span>}
+      </div>
+
+      {error && (
+        <div className="mb-3">
+          <ErrorBanner message={error} />
+        </div>
+      )}
+
+      <form onSubmit={grant} className="grid grid-cols-1 gap-3 sm:grid-cols-5">
+        <div className="relative sm:col-span-2">
+          <Input
+            placeholder="Search student..."
+            value={selectedStudent ? `${selectedStudent.user.firstName} ${selectedStudent.user.lastName}` : search}
+            onChange={(e) => runSearch(e.target.value)}
+          />
+          {options.length > 0 && !selectedStudent && (
+            <div className="absolute z-10 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg">
+              {options.map((o) => (
+                <button
+                  type="button"
+                  key={o.id}
+                  className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
+                  onClick={() => {
+                    setSelectedStudent(o);
+                    setOptions([]);
+                  }}
+                >
+                  {o.user.firstName} {o.user.lastName} ({o.admissionNumber})
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <Input placeholder="Name e.g. Merit award" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <Select value={form.discountType} onChange={(e) => setForm({ ...form, discountType: e.target.value })}>
+          <option value="PERCENT">% off</option>
+          <option value="FIXED">₦ off</option>
+        </Select>
+        <Input
+          type="number"
+          min={1}
+          placeholder={form.discountType === "PERCENT" ? "e.g. 50" : "Amount (₦)"}
+          required
+          value={form.amount}
+          onChange={(e) => setForm({ ...form, amount: e.target.value })}
+        />
+        <Button type="submit" disabled={!selectedStudent || submitting} className="sm:col-span-5">
+          {submitting ? "Granting..." : "Grant scholarship"}
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
 function InvoicesSection({ studentId, canManage }: { studentId?: string; canManage: boolean }) {
   const url = studentId ? `/fees/invoices?studentId=${studentId}` : "/fees/invoices";
   const { data: invoices, refetch } = useFetch<Invoice[]>(url);
@@ -142,7 +280,10 @@ function InvoicesSection({ studentId, canManage }: { studentId?: string; canMana
                   <td className="px-4 py-3">{inv.student ? `${inv.student.user.firstName} ${inv.student.user.lastName}` : "—"}</td>
                 )}
                 <td className="px-4 py-3">{inv.feeStructure.name}</td>
-                <td className="px-4 py-3">{naira(inv.amount)}</td>
+                <td className="px-4 py-3">
+                  {naira(inv.amount)}
+                  {inv.discountAmount > 0 && <span className="ml-1 text-xs text-emerald-600">(-{naira(inv.discountAmount)})</span>}
+                </td>
                 <td className="px-4 py-3">{naira(inv.amountPaid)}</td>
                 <td className="px-4 py-3">
                   <Badge tone={inv.status === "PAID" ? "success" : inv.status === "OVERDUE" ? "danger" : "warning"}>{inv.status}</Badge>

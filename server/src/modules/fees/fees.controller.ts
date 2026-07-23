@@ -24,6 +24,21 @@ export const createFeeStructure = asyncHandler(async (req: Request, res: Respons
   res.status(201).json(structure);
 });
 
+/** Active scholarships reduce the sticker price: PERCENT scholarships stack
+ * (capped at 100%) and are applied first, then FIXED amounts are subtracted.
+ * The result never goes below zero. */
+function applyScholarships(baseAmount: number, scholarships: { discountType: string; amount: number }[]) {
+  const totalPercent = Math.min(
+    100,
+    scholarships.filter((s) => s.discountType === "PERCENT").reduce((sum, s) => sum + s.amount, 0)
+  );
+  const totalFixed = scholarships.filter((s) => s.discountType === "FIXED").reduce((sum, s) => sum + s.amount, 0);
+
+  const afterPercent = baseAmount - Math.round((baseAmount * totalPercent) / 100);
+  const discountAmount = Math.min(baseAmount, baseAmount - afterPercent + totalFixed);
+  return { amount: baseAmount - discountAmount, discountAmount };
+}
+
 export const generateInvoices = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
   const input = generateInvoicesSchema.parse(req.body);
@@ -40,6 +55,13 @@ export const generateInvoices = asyncHandler(async (req: Request, res: Response)
     enrollments.map(async ({ studentId }) => {
       const existing = await prisma.invoice.findFirst({ where: { studentId, feeStructureId: feeStructure.id } });
       if (existing) return existing;
+
+      const scholarships = await prisma.scholarship.findMany({
+        where: { tenantId, studentId, isActive: true },
+        select: { discountType: true, amount: true },
+      });
+      const { amount, discountAmount } = applyScholarships(feeStructure.amount, scholarships);
+
       const invoice = await prisma.invoice.create({
         data: {
           tenantId,
@@ -47,14 +69,15 @@ export const generateInvoices = asyncHandler(async (req: Request, res: Response)
           feeStructureId: feeStructure.id,
           sessionId: feeStructure.sessionId,
           termId: feeStructure.termId,
-          amount: feeStructure.amount,
+          amount,
+          discountAmount,
           dueDate: input.dueDate,
         },
       });
       const recipients = await studentAndGuardianUserIds(prisma, studentId);
       await notifyUsers(prisma, tenantId, recipients, {
         subject: "New fee invoice",
-        message: `${feeStructure.name} (₦${(feeStructure.amount / 100).toLocaleString()}) is due ${invoice.dueDate.toDateString()}.`,
+        message: `${feeStructure.name} (₦${(invoice.amount / 100).toLocaleString()}) is due ${invoice.dueDate.toDateString()}.`,
       });
       return invoice;
     })

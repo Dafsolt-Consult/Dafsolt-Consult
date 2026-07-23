@@ -3,7 +3,7 @@ import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Select, Spinner, Table } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
 import { useClassArms, useSessions } from "../../hooks/useAcademics";
-import { Paginated, Student } from "../../types";
+import { DisciplinaryRecord, Paginated, Student } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 
 export function StudentsPage() {
@@ -11,6 +11,7 @@ export function StudentsPage() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [guardianTarget, setGuardianTarget] = useState<Student | null>(null);
+  const [disciplineTarget, setDisciplineTarget] = useState<Student | null>(null);
   const { data, loading, error, refetch } = useFetch<Paginated<Student>>(`/students?search=${encodeURIComponent(search)}`, [search]);
 
   return (
@@ -43,7 +44,7 @@ export function StudentsPage() {
               <th className="px-4 py-3">Class</th>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Status</th>
-              {user?.role === "SCHOOL_ADMIN" && <th className="px-4 py-3"></th>}
+              {(user?.role === "SCHOOL_ADMIN" || user?.role === "TEACHER") && <th className="px-4 py-3"></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -60,10 +61,15 @@ export function StudentsPage() {
                 <td className="px-4 py-3">
                   <Badge tone={s.status === "ACTIVE" ? "success" : "default"}>{s.status}</Badge>
                 </td>
-                {user?.role === "SCHOOL_ADMIN" && (
-                  <td className="px-4 py-3">
-                    <Button variant="ghost" onClick={() => setGuardianTarget(s)}>
-                      Add guardian
+                {(user?.role === "SCHOOL_ADMIN" || user?.role === "TEACHER") && (
+                  <td className="space-x-2 px-4 py-3">
+                    {user.role === "SCHOOL_ADMIN" && (
+                      <Button variant="ghost" onClick={() => setGuardianTarget(s)}>
+                        Add guardian
+                      </Button>
+                    )}
+                    <Button variant="ghost" onClick={() => setDisciplineTarget(s)}>
+                      Discipline
                     </Button>
                   </td>
                 )}
@@ -84,6 +90,7 @@ export function StudentsPage() {
           }}
         />
       )}
+      {disciplineTarget && <DisciplinaryRecordsModal student={disciplineTarget} onClose={() => setDisciplineTarget(null)} />}
     </div>
   );
 }
@@ -318,6 +325,133 @@ function AddGuardianModal({ student, onClose, onAdded }: { student: Student; onC
           {submitting ? "Saving..." : "Add guardian"}
         </Button>
       </form>
+    </Modal>
+  );
+}
+
+const CATEGORY_TONE: Record<string, "default" | "warning" | "danger"> = {
+  MINOR: "default",
+  MAJOR: "warning",
+  SEVERE: "danger",
+};
+
+function DisciplinaryRecordsModal({ student, onClose }: { student: Student; onClose: () => void }) {
+  const { data: records, loading, error, refetch } = useFetch<DisciplinaryRecord[]>(`/disciplinary-records?studentId=${student.id}`);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ category: "MINOR", incidentDate: "", description: "", actionTaken: "" });
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    setSubmitting(true);
+    try {
+      await api.post("/disciplinary-records", { ...form, studentId: student.id, actionTaken: form.actionTaken || undefined });
+      setForm({ category: "MINOR", incidentDate: "", description: "", actionTaken: "" });
+      setShowForm(false);
+      refetch();
+    } catch (err) {
+      setFormError(apiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function resolveRecord(recordId: string) {
+    await api.patch(`/disciplinary-records/${recordId}`, { status: "RESOLVED" });
+    refetch();
+  }
+
+  return (
+    <Modal title={`Disciplinary records — ${student.user.firstName} ${student.user.lastName}`} onClose={onClose}>
+      {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} />
+        </div>
+      )}
+      {loading ? (
+        <Spinner />
+      ) : (
+        <div className="max-h-64 space-y-3 overflow-y-auto">
+          {!records?.length && !showForm && <EmptyState message="No disciplinary records for this student." />}
+          {records?.map((r) => (
+            <div key={r.id} className="rounded-lg border border-slate-200 p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge tone={CATEGORY_TONE[r.category]}>{r.category}</Badge>
+                  <span className="text-slate-500">{new Date(r.incidentDate).toLocaleDateString()}</span>
+                </div>
+                {r.status === "OPEN" ? (
+                  <Button variant="ghost" onClick={() => resolveRecord(r.id)}>
+                    Mark resolved
+                  </Button>
+                ) : (
+                  <Badge tone="success">RESOLVED</Badge>
+                )}
+              </div>
+              <p className="mt-2 text-slate-700">{r.description}</p>
+              {r.actionTaken && <p className="mt-1 text-slate-500">Action taken: {r.actionTaken}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showForm ? (
+        <form onSubmit={handleSubmit} className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+          {formError && <ErrorBanner message={formError} />}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Category</Label>
+              <Select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                <option value="MINOR">Minor</option>
+                <option value="MAJOR">Major</option>
+                <option value="SEVERE">Severe</option>
+              </Select>
+            </div>
+            <div>
+              <Label>Incident date</Label>
+              <Input
+                type="date"
+                required
+                value={form.incidentDate}
+                onChange={(e) => setForm({ ...form, incidentDate: e.target.value })}
+              />
+            </div>
+          </div>
+          <div>
+            <Label>Description</Label>
+            <textarea
+              required
+              rows={3}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label>Action taken (optional)</Label>
+            <textarea
+              rows={2}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              value={form.actionTaken}
+              onChange={(e) => setForm({ ...form, actionTaken: e.target.value })}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Saving..." : "Save record"}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <Button className="mt-4" onClick={() => setShowForm(true)}>
+          + Log incident
+        </Button>
+      )}
     </Modal>
   );
 }
