@@ -4,30 +4,72 @@ import { api, apiErrorMessage } from "../../api/client";
 import { Button, Card, EmptyState, ErrorBanner, Label, Modal, PageHeader, Select, Spinner } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
 import { useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
-import { DayOfWeek, TimetableSlot } from "../../types";
+import { TimetablePeriod } from "../../types";
 
-const DAYS: DayOfWeek[] = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  MONDAY: "Monday",
-  TUESDAY: "Tuesday",
-  WEDNESDAY: "Wednesday",
-  THURSDAY: "Thursday",
-  FRIDAY: "Friday",
-  SATURDAY: "Saturday",
-  SUNDAY: "Sunday",
-};
-
-interface StaffUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  teacher?: { id: string } | null;
-}
+const DAYS = [
+  { value: 1, label: "Monday" },
+  { value: 2, label: "Tuesday" },
+  { value: 3, label: "Wednesday" },
+  { value: 4, label: "Thursday" },
+  { value: 5, label: "Friday" },
+];
 
 export function TimetablePage() {
   const { user } = useAuth();
-  if (user?.role === "STUDENT") return <StudentTimetableView />;
-  return <StaffTimetableView />;
+  if (user?.role === "SCHOOL_ADMIN") return <AdminTimetableView />;
+  if (user?.role === "TEACHER") return <TeacherTimetableView />;
+  return <StudentTimetableView />;
+}
+
+function WeeklyGrid({
+  periods,
+  renderDetail,
+  onEdit,
+  onDelete,
+}: {
+  periods: TimetablePeriod[];
+  renderDetail: (p: TimetablePeriod) => string;
+  onEdit?: (p: TimetablePeriod) => void;
+  onDelete?: (p: TimetablePeriod) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {DAYS.map((day) => {
+        const dayPeriods = periods.filter((p) => p.dayOfWeek === day.value).sort((a, b) => a.startTime.localeCompare(b.startTime));
+        return (
+          <div key={day.value}>
+            <h3 className="mb-2 text-sm font-semibold text-slate-700">{day.label}</h3>
+            <div className="space-y-2">
+              {dayPeriods.map((p) => (
+                <Card key={p.id} className="p-3">
+                  <p className="text-xs font-medium text-slate-400">
+                    {p.startTime}–{p.endTime}
+                  </p>
+                  <p className="text-sm font-medium text-slate-800">{p.subject?.name}</p>
+                  <p className="text-xs text-slate-500">{renderDetail(p)}</p>
+                  {(onEdit || onDelete) && (
+                    <div className="mt-2 flex gap-2">
+                      {onEdit && (
+                        <button onClick={() => onEdit(p)} className="text-xs font-medium text-brand-700 hover:underline">
+                          Edit
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button onClick={() => onDelete(p)} className="text-xs font-medium text-red-600 hover:underline">
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              ))}
+              {!dayPeriods.length && <p className="text-xs text-slate-400">No periods</p>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function useCurrentTerm() {
@@ -37,119 +79,93 @@ function useCurrentTerm() {
   return { sessions, currentSession, currentTerm };
 }
 
-function Grid({
-  slots,
-  canManage,
-  onEdit,
-  onDelete,
-}: {
-  slots: TimetableSlot[];
-  canManage: boolean;
-  onEdit?: (slot: TimetableSlot) => void;
-  onDelete?: (slot: TimetableSlot) => void;
-}) {
-  return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      {DAYS.map((day) => {
-        const daySlots = slots.filter((s) => s.dayOfWeek === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
-        return (
-          <div key={day}>
-            <p className="mb-2 text-xs font-semibold uppercase text-slate-500">{DAY_LABELS[day]}</p>
-            <div className="space-y-2">
-              {daySlots.length === 0 && <p className="text-xs text-slate-400">No lessons</p>}
-              {daySlots.map((s) => (
-                <Card key={s.id} className="p-3 text-sm">
-                  <p className="font-medium text-slate-800">
-                    {s.startTime}–{s.endTime}
-                  </p>
-                  <p className="text-slate-600">{s.subject?.name}</p>
-                  {s.teacher && (
-                    <p className="text-xs text-slate-500">
-                      {s.teacher.user.firstName} {s.teacher.user.lastName}
-                    </p>
-                  )}
-                  {canManage && (
-                    <div className="mt-2 flex gap-2">
-                      <button className="text-xs text-brand-700 hover:underline" onClick={() => onEdit?.(s)}>
-                        Edit
-                      </button>
-                      <button className="text-xs text-red-600 hover:underline" onClick={() => onDelete?.(s)}>
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function StaffTimetableView() {
-  const { user } = useAuth();
-  const { currentTerm } = useCurrentTerm();
+function AdminTimetableView() {
   const { data: classArms } = useClassArms();
+  const { currentSession, currentTerm } = useCurrentTerm();
   const [classArmId, setClassArmId] = useState("");
+  const [termId, setTermId] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [editing, setEditing] = useState<TimetableSlot | null>(null);
+  const [editing, setEditing] = useState<TimetablePeriod | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const query = classArmId && currentTerm ? `?classArmId=${classArmId}&termId=${currentTerm.id}` : null;
-  const { data: slots, loading, error, refetch } = useFetch<TimetableSlot[]>(query, [classArmId, currentTerm?.id]);
+  const activeTermId = termId || currentTerm?.id || "";
 
-  async function remove(slot: TimetableSlot) {
-    if (!confirm("Delete this timetable slot?")) return;
-    await api.delete(`/timetable/${slot.id}`);
-    refetch();
+  const query = classArmId && activeTermId ? `?classArmId=${classArmId}&termId=${activeTermId}` : "";
+  const { data: periods, loading, refetch } = useFetch<TimetablePeriod[]>(`/timetable${query}`, [classArmId, activeTermId]);
+
+  async function remove(period: TimetablePeriod) {
+    setError(null);
+    try {
+      await api.delete(`/timetable/${period.id}`);
+      refetch();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    }
   }
 
   return (
     <div>
       <PageHeader
         title="Timetable"
-        subtitle="Weekly class schedule"
+        subtitle="Weekly period schedule per class"
         actions={
-          user?.role === "SCHOOL_ADMIN" && classArmId && currentTerm ? (
-            <Button onClick={() => setShowCreate(true)}>+ Add slot</Button>
-          ) : undefined
+          classArmId && activeTermId ? <Button onClick={() => setShowCreate(true)}>+ Add period</Button> : undefined
         }
       />
 
-      <div className="mb-4 max-w-xs">
-        <Select value={classArmId} onChange={(e) => setClassArmId(e.target.value)}>
-          <option value="">Select a class</option>
-          {classArms?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.classLevel?.name} {c.name}
-            </option>
-          ))}
-        </Select>
-      </div>
+      <Card className="mb-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <Label>Class</Label>
+            <Select value={classArmId} onChange={(e) => setClassArmId(e.target.value)}>
+              <option value="">Select class</option>
+              {classArms?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.classLevel?.name} {c.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label>Term</Label>
+            <Select value={activeTermId} onChange={(e) => setTermId(e.target.value)}>
+              {currentSession?.terms?.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+      </Card>
 
-      {error && <ErrorBanner message={error} />}
-      {!classArmId ? (
-        <EmptyState message="Select a class to view its timetable." />
+      {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} />
+        </div>
+      )}
+
+      {!classArmId || !activeTermId ? (
+        <p className="text-sm text-slate-500">Choose a class and term to view/edit its timetable.</p>
       ) : loading ? (
         <Spinner />
       ) : (
-        <Grid
-          slots={slots ?? []}
-          canManage={user?.role === "SCHOOL_ADMIN"}
+        <WeeklyGrid
+          periods={periods ?? []}
+          renderDetail={(p) => (p.teacher ? `${p.teacher.user.firstName} ${p.teacher.user.lastName}` : "No teacher assigned")}
           onEdit={setEditing}
           onDelete={remove}
         />
       )}
 
-      {showCreate && currentTerm && (
-        <SlotModal classArmId={classArmId} termId={currentTerm.id} onClose={() => setShowCreate(false)} onSaved={refetch} />
+      {showCreate && classArmId && activeTermId && (
+        <PeriodFormModal classArmId={classArmId} termId={activeTermId} onClose={() => setShowCreate(false)} onSaved={refetch} />
       )}
-      {editing && currentTerm && (
-        <SlotModal
+      {editing && (
+        <PeriodFormModal
           classArmId={classArmId}
-          termId={currentTerm.id}
-          slot={editing}
+          termId={activeTermId}
+          period={editing}
           onClose={() => setEditing(null)}
           onSaved={refetch}
         />
@@ -158,28 +174,26 @@ function StaffTimetableView() {
   );
 }
 
-function SlotModal({
+function PeriodFormModal({
   classArmId,
   termId,
-  slot,
+  period,
   onClose,
   onSaved,
 }: {
   classArmId: string;
   termId: string;
-  slot?: TimetableSlot;
+  period?: TimetablePeriod;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const { data: subjects } = useSubjects();
-  const { data: staff } = useFetch<StaffUser[]>("/users?role=TEACHER");
-
   const [form, setForm] = useState({
-    subjectId: slot?.subjectId ?? "",
-    teacherId: slot?.teacherId ?? "",
-    dayOfWeek: slot?.dayOfWeek ?? ("MONDAY" as DayOfWeek),
-    startTime: slot?.startTime ?? "",
-    endTime: slot?.endTime ?? "",
+    subjectId: period?.subjectId ?? "",
+    teacherId: period?.teacherId ?? "",
+    dayOfWeek: String(period?.dayOfWeek ?? 1),
+    startTime: period?.startTime ?? "08:00",
+    endTime: period?.endTime ?? "08:40",
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -189,10 +203,19 @@ function SlotModal({
     setError(null);
     setSubmitting(true);
     try {
-      if (slot) {
-        await api.patch(`/timetable/${slot.id}`, form);
+      const payload = {
+        classArmId,
+        termId,
+        subjectId: form.subjectId,
+        teacherId: form.teacherId || undefined,
+        dayOfWeek: Number(form.dayOfWeek),
+        startTime: form.startTime,
+        endTime: form.endTime,
+      };
+      if (period) {
+        await api.patch(`/timetable/${period.id}`, payload);
       } else {
-        await api.post("/timetable", { ...form, classArmId, termId });
+        await api.post("/timetable", payload);
       }
       onSaved();
       onClose();
@@ -204,7 +227,7 @@ function SlotModal({
   }
 
   return (
-    <Modal title={slot ? "Edit timetable slot" : "Add timetable slot"} onClose={onClose}>
+    <Modal title={period ? "Edit period" : "Add period"} onClose={onClose}>
       {error && (
         <div className="mb-4">
           <ErrorBanner message={error} />
@@ -223,24 +246,11 @@ function SlotModal({
           </Select>
         </div>
         <div>
-          <Label>Teacher</Label>
-          <Select required value={form.teacherId} onChange={(e) => setForm({ ...form, teacherId: e.target.value })}>
-            <option value="">Select</option>
-            {staff
-              ?.filter((s) => s.teacher)
-              .map((s) => (
-                <option key={s.teacher!.id} value={s.teacher!.id}>
-                  {s.firstName} {s.lastName}
-                </option>
-              ))}
-          </Select>
-        </div>
-        <div>
           <Label>Day</Label>
-          <Select required value={form.dayOfWeek} onChange={(e) => setForm({ ...form, dayOfWeek: e.target.value as DayOfWeek })}>
+          <Select value={form.dayOfWeek} onChange={(e) => setForm({ ...form, dayOfWeek: e.target.value })}>
             {DAYS.map((d) => (
-              <option key={d} value={d}>
-                {DAY_LABELS[d]}
+              <option key={d.value} value={d.value}>
+                {d.label}
               </option>
             ))}
           </Select>
@@ -251,9 +261,9 @@ function SlotModal({
             <input
               type="time"
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               value={form.startTime}
               onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
           </div>
           <div>
@@ -261,30 +271,78 @@ function SlotModal({
             <input
               type="time"
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               value={form.endTime}
               onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
           </div>
         </div>
         <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? "Saving..." : slot ? "Save changes" : "Add slot"}
+          {submitting ? "Saving..." : period ? "Save changes" : "Add period"}
         </Button>
       </form>
     </Modal>
   );
 }
 
-function StudentTimetableView() {
-  const { currentTerm } = useCurrentTerm();
-  const query = currentTerm ? `/timetable/students/me?termId=${currentTerm.id}` : null;
-  const { data: slots, loading, error } = useFetch<TimetableSlot[]>(query, [currentTerm?.id]);
+function TeacherTimetableView() {
+  const { currentSession, currentTerm } = useCurrentTerm();
+  const { data: periods, loading, error } = useFetch<TimetablePeriod[]>(
+    currentTerm ? `/timetable/teachers/me?termId=${currentTerm.id}` : null,
+    [currentTerm?.id]
+  );
 
   return (
     <div>
-      <PageHeader title="My Timetable" subtitle="Your weekly class schedule" />
+      <PageHeader title="My Timetable" subtitle={currentSession ? `${currentSession.name}` : undefined} />
       {error && <ErrorBanner message={error} />}
-      {loading ? <Spinner /> : <Grid slots={slots ?? []} canManage={false} />}
+      {loading ? (
+        <Spinner />
+      ) : !periods?.length ? (
+        <EmptyState message="No timetable periods assigned to you yet." />
+      ) : (
+        <WeeklyGrid
+          periods={periods}
+          renderDetail={(p) => `${p.classArm?.classLevel.name} ${p.classArm?.name}`}
+        />
+      )}
     </div>
+  );
+}
+
+function StudentTimetableView() {
+  const { currentSession, currentTerm } = useCurrentTerm();
+  const { data: periods, loading, error } = useFetch<TimetablePeriod[]>(
+    currentTerm ? `/timetable/students/me?termId=${currentTerm.id}` : null,
+    [currentTerm?.id]
+  );
+
+  return (
+    <div>
+      <PageHeader title="My Timetable" subtitle={currentSession ? `${currentSession.name}` : undefined} />
+      {error && <ErrorBanner message={error} />}
+      {loading ? (
+        <Spinner />
+      ) : !periods?.length ? (
+        <EmptyState message="No timetable published for your class yet." />
+      ) : (
+        <WeeklyGrid periods={periods} renderDetail={(p) => (p.teacher ? `${p.teacher.user.firstName} ${p.teacher.user.lastName}` : "")} />
+      )}
+    </div>
+  );
+}
+
+export function ParentChildTimetable({ studentId }: { studentId: string }) {
+  const { currentTerm } = useCurrentTerm();
+  const { data: periods, loading } = useFetch<TimetablePeriod[]>(
+    currentTerm ? `/timetable/students/${studentId}?termId=${currentTerm.id}` : null,
+    [studentId, currentTerm?.id]
+  );
+
+  if (loading) return <Spinner />;
+  if (!periods?.length) return <EmptyState message="No timetable published for this class yet." />;
+
+  return (
+    <WeeklyGrid periods={periods} renderDetail={(p) => (p.teacher ? `${p.teacher.user.firstName} ${p.teacher.user.lastName}` : "")} />
   );
 }

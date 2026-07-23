@@ -182,20 +182,18 @@ export interface LessonPlan {
   teacher?: { user: { firstName: string; lastName: string } };
 }
 
-export type DayOfWeek = "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
-
-export interface TimetableSlot {
+export interface TimetablePeriod {
   id: string;
   classArmId: string;
   subjectId: string;
-  teacherId: string;
+  teacherId?: string | null;
   termId: string;
-  dayOfWeek: DayOfWeek;
+  dayOfWeek: number;
   startTime: string;
   endTime: string;
-  subject?: Subject;
+  subject?: { name: string };
   classArm?: ClassArm & { classLevel: ClassLevel };
-  teacher?: { user: { firstName: string; lastName: string } };
+  teacher?: { user: { firstName: string; lastName: string } } | null;
 }
 
 export interface AssignmentSubmission {

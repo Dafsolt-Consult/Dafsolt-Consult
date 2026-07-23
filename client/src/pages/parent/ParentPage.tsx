@@ -3,8 +3,9 @@ import { Badge, Card, EmptyState, ErrorBanner, PageHeader, Select, Spinner, Tabl
 import { useFetch } from "../../hooks/useFetch";
 import { useSessions } from "../../hooks/useAcademics";
 import { Announcement, Assignment, CalendarEvent, Invoice, ReportCard, ResultEntry, Student } from "../../types";
+import { ParentChildTimetable } from "../timetable/TimetablePage";
 
-const TABS = ["Performance", "Assignments", "Exam Results", "School Calendar", "Fees", "Announcements"] as const;
+const TABS = ["Performance", "Assignments", "Exam Results", "Timetable", "School Calendar", "Fees", "Announcements"] as const;
 
 function naira(kobo: number) {
   return `₦${(kobo / 100).toLocaleString()}`;
@@ -66,6 +67,7 @@ export function ParentPage() {
           {tab === "Performance" && <PerformanceTab studentId={activeChildId} />}
           {tab === "Assignments" && <AssignmentsTab studentId={activeChildId} />}
           {tab === "Exam Results" && <ExamResultsTab studentId={activeChildId} />}
+          {tab === "Timetable" && <ParentChildTimetable studentId={activeChildId} />}
           {tab === "School Calendar" && <CalendarTab />}
           {tab === "Fees" && <FeesTab studentId={activeChildId} />}
           {tab === "Announcements" && <AnnouncementsTab />}

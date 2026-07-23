@@ -1,28 +1,26 @@
 import { z } from "zod";
 
-const timeString = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:mm format");
+const timeString = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:mm format, e.g. 08:30");
 
-export const createTimetableSlotSchema = z
+export const createPeriodSchema = z
   .object({
     classArmId: z.string().cuid(),
     subjectId: z.string().cuid(),
-    teacherId: z.string().cuid(),
+    teacherId: z.string().cuid().optional(),
     termId: z.string().cuid(),
-    dayOfWeek: z.enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]),
+    dayOfWeek: z.number().int().min(1).max(7),
     startTime: timeString,
     endTime: timeString,
   })
-  .refine((v) => v.startTime < v.endTime, { message: "startTime must be before endTime", path: ["endTime"] });
-
-export const updateTimetableSlotSchema = z
-  .object({
-    subjectId: z.string().cuid().optional(),
-    teacherId: z.string().cuid().optional(),
-    dayOfWeek: z.enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]).optional(),
-    startTime: timeString.optional(),
-    endTime: timeString.optional(),
-  })
-  .refine((v) => !v.startTime || !v.endTime || v.startTime < v.endTime, {
-    message: "startTime must be before endTime",
+  .refine((data) => data.startTime < data.endTime, {
+    message: "End time must be after start time",
     path: ["endTime"],
   });
+
+export const updatePeriodSchema = z.object({
+  subjectId: z.string().cuid().optional(),
+  teacherId: z.string().cuid().optional(),
+  dayOfWeek: z.number().int().min(1).max(7).optional(),
+  startTime: timeString.optional(),
+  endTime: timeString.optional(),
+});

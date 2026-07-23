@@ -161,15 +161,6 @@ enum MaterialType {
   OTHER
 }
 
-enum DayOfWeek {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
-}
 
 enum QuestionType {
   MULTIPLE_CHOICE
@@ -318,7 +309,7 @@ model Tenant {
   auditLogs            AuditLog[]
   disciplinaryRecords  DisciplinaryRecord[]
   lessonPlans          LessonPlan[]
-  timetableSlots       TimetableSlot[]
+  timetablePeriods       TimetablePeriod[]
   scholarships         Scholarship[]
   drivers              Driver[]
   vehicles             Vehicle[]
@@ -506,7 +497,7 @@ model Term {
   resultEntries  ResultEntry[]
   reportCards    ReportCard[]
   lessonPlans    LessonPlan[]
-  timetableSlots TimetableSlot[]
+  timetablePeriods TimetablePeriod[]
 
   @@index([tenantId, sessionId])
   @@map("terms")
@@ -549,7 +540,7 @@ model ClassArm {
   reportCards    ReportCard[]
   assignments    Assignment[]
   lessonPlans    LessonPlan[]
-  timetableSlots TimetableSlot[]
+  timetablePeriods TimetablePeriod[]
   courseMaterials     CourseMaterial[]
   onlineClassSessions OnlineClassSession[]
 
@@ -573,7 +564,7 @@ model Subject {
   resultEntries  ResultEntry[]
   assignments    Assignment[]
   lessonPlans    LessonPlan[]
-  timetableSlots TimetableSlot[]
+  timetablePeriods TimetablePeriod[]
   courseMaterials     CourseMaterial[]
   onlineClassSessions OnlineClassSession[]
 
@@ -670,7 +661,7 @@ model Teacher {
   classSubjects  ClassArmSubject[]
   assignments    Assignment[]
   lessonPlans    LessonPlan[]
-  timetableSlots TimetableSlot[]
+  timetablePeriods TimetablePeriod[]
   courseMaterials     CourseMaterial[]
   onlineClassSessions OnlineClassSession[]
 
@@ -1145,27 +1136,25 @@ model LessonPlan {
   @@map("lesson_plans")
 }
 
-model TimetableSlot {
-  id         String    @id @default(cuid())
+model TimetablePeriod {
+  id         String   @id @default(cuid())
   tenantId   String
-  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   classArmId String
-  classArm   ClassArm  @relation(fields: [classArmId], references: [id], onDelete: Cascade)
+  classArm   ClassArm @relation(fields: [classArmId], references: [id], onDelete: Cascade)
   subjectId  String
-  subject    Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  teacherId  String
-  teacher    Teacher   @relation(fields: [teacherId], references: [id])
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacherId  String?
+  teacher    Teacher? @relation(fields: [teacherId], references: [id])
   termId     String
-  term       Term      @relation(fields: [termId], references: [id], onDelete: Cascade)
-  dayOfWeek  DayOfWeek
-  startTime  String // "HH:mm", 24-hour
-  endTime    String // "HH:mm", 24-hour
-  createdAt  DateTime  @default(now())
+  term       Term     @relation(fields: [termId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int // 1 = Monday ... 7 = Sunday
+  startTime  String // "HH:mm", 24-hour, zero-padded so string comparison sorts/overlaps correctly
+  endTime    String // "HH:mm"
 
-  @@unique([tenantId, classArmId, termId, dayOfWeek, startTime])
-  @@index([tenantId, classArmId, termId])
-  @@index([tenantId, teacherId, termId])
-  @@map("timetable_slots")
+  @@index([tenantId, classArmId, termId, dayOfWeek])
+  @@index([teacherId, termId, dayOfWeek])
+  @@map("timetable_periods")
 }
 
 // ──────────────────────────────────────────────────────────────────────────

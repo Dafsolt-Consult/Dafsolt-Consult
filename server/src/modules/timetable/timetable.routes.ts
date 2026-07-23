@@ -9,14 +9,26 @@ router.use(authenticate);
 const staffRoles = authorize("SCHOOL_ADMIN", "TEACHER");
 const adminOnly = authorize("SCHOOL_ADMIN");
 
-router.get("/", staffRoles, timetableController.listTimetableSlots);
-router.post("/", adminOnly, auditLog("CREATE_TIMETABLE_SLOT", "TimetableSlot"), timetableController.createTimetableSlot);
-router.patch("/:slotId", adminOnly, auditLog("UPDATE_TIMETABLE_SLOT", "TimetableSlot"), timetableController.updateTimetableSlot);
-router.delete("/:slotId", adminOnly, auditLog("DELETE_TIMETABLE_SLOT", "TimetableSlot"), timetableController.deleteTimetableSlot);
+router.get("/", staffRoles, timetableController.listPeriods);
+router.post("/", adminOnly, auditLog("CREATE_TIMETABLE_PERIOD", "TimetablePeriod"), timetableController.createPeriod);
+router.patch(
+  "/:periodId",
+  adminOnly,
+  auditLog("UPDATE_TIMETABLE_PERIOD", "TimetablePeriod"),
+  timetableController.updatePeriod
+);
+router.delete(
+  "/:periodId",
+  adminOnly,
+  auditLog("DELETE_TIMETABLE_PERIOD", "TimetablePeriod"),
+  timetableController.deletePeriod
+);
+
+router.get("/teachers/:teacherId", authorize("SCHOOL_ADMIN", "TEACHER"), timetableController.listForTeacher);
 router.get(
   "/students/:studentId",
   authorize("SCHOOL_ADMIN", "TEACHER", "STUDENT", "PARENT"),
-  timetableController.getStudentTimetable
+  timetableController.listForStudent
 );
 
 export default router;

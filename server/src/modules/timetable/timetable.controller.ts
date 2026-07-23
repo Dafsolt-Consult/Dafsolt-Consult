@@ -2,123 +2,143 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
-import { ApiError } from "../../utils/ApiError";
 import { resolveStudentParam } from "../../utils/resolveStudentId";
-import { createTimetableSlotSchema, updateTimetableSlotSchema } from "./timetable.schema";
+import { ApiError } from "../../utils/ApiError";
+import { createPeriodSchema, updatePeriodSchema } from "./timetable.schema";
 
-const slotInclude = {
+const periodInclude = {
   subject: true,
   classArm: { include: { classLevel: true } },
   teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
 } as const;
 
-async function assertNoOverlap(params: {
+async function assertNoConflict(params: {
   tenantId: string;
   termId: string;
-  dayOfWeek: string;
+  classArmId: string;
+  teacherId?: string | null;
+  dayOfWeek: number;
   startTime: string;
   endTime: string;
-  classArmId: string;
-  teacherId: string;
   excludeId?: string;
 }) {
-  const { tenantId, termId, dayOfWeek, startTime, endTime, classArmId, teacherId, excludeId } = params;
+  const overlapWhere = {
+    termId: params.termId,
+    dayOfWeek: params.dayOfWeek,
+    startTime: { lt: params.endTime },
+    endTime: { gt: params.startTime },
+    id: params.excludeId ? { not: params.excludeId } : undefined,
+  };
 
-  const clashing = await prisma.timetableSlot.findMany({
-    where: {
-      tenantId,
-      termId,
-      dayOfWeek: dayOfWeek as never,
-      id: excludeId ? { not: excludeId } : undefined,
-      OR: [{ classArmId }, { teacherId }],
-    },
+  const classConflict = await prisma.timetablePeriod.findFirst({
+    where: { tenantId: params.tenantId, classArmId: params.classArmId, ...overlapWhere },
   });
+  if (classConflict) throw ApiError.conflict("This class already has a period scheduled at an overlapping time");
 
-  const overlap = clashing.find((slot) => slot.startTime < endTime && slot.endTime > startTime);
-  if (!overlap) return;
-
-  if (overlap.classArmId === classArmId) {
-    throw ApiError.conflict("This class already has a lesson scheduled at that time");
+  if (params.teacherId) {
+    const teacherConflict = await prisma.timetablePeriod.findFirst({
+      where: { tenantId: params.tenantId, teacherId: params.teacherId, ...overlapWhere },
+    });
+    if (teacherConflict) throw ApiError.conflict("This teacher already has another class at an overlapping time");
   }
-  throw ApiError.conflict("This teacher is already scheduled elsewhere at that time");
 }
 
-export const listTimetableSlots = asyncHandler(async (req: Request, res: Response) => {
+export const listPeriods = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
-  const { classArmId, termId, teacherId } = req.query as Record<string, string | undefined>;
+  const { classArmId, termId } = req.query as Record<string, string | undefined>;
 
-  const slots = await prisma.timetableSlot.findMany({
-    where: { tenantId, classArmId, termId, teacherId },
-    include: slotInclude,
+  const periods = await prisma.timetablePeriod.findMany({
+    where: { tenantId, classArmId, termId },
+    include: periodInclude,
     orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
   });
 
-  res.json(slots);
+  res.json(periods);
 });
 
-export const getStudentTimetable = asyncHandler(async (req: Request, res: Response) => {
+export const createPeriod = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  const input = createPeriodSchema.parse(req.body);
+
+  await assertNoConflict({ tenantId, ...input });
+
+  const period = await prisma.timetablePeriod.create({ data: { ...input, tenantId }, include: periodInclude });
+  res.status(201).json(period);
+});
+
+export const updatePeriod = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  const input = updatePeriodSchema.parse(req.body);
+
+  const existing = await prisma.timetablePeriod.findFirst({ where: { id: req.params.periodId, tenantId } });
+  if (!existing) throw ApiError.notFound("Timetable period not found");
+
+  const merged = { ...existing, ...input };
+  if (merged.startTime >= merged.endTime) {
+    throw ApiError.badRequest("End time must be after start time");
+  }
+
+  await assertNoConflict({
+    tenantId,
+    termId: merged.termId,
+    classArmId: merged.classArmId,
+    teacherId: merged.teacherId,
+    dayOfWeek: merged.dayOfWeek,
+    startTime: merged.startTime,
+    endTime: merged.endTime,
+    excludeId: existing.id,
+  });
+
+  const period = await prisma.timetablePeriod.update({ where: { id: existing.id }, data: input, include: periodInclude });
+  res.json(period);
+});
+
+export const deletePeriod = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  const existing = await prisma.timetablePeriod.findFirst({ where: { id: req.params.periodId, tenantId } });
+  if (!existing) throw ApiError.notFound("Timetable period not found");
+
+  await prisma.timetablePeriod.delete({ where: { id: existing.id } });
+  res.status(204).send();
+});
+
+export const listForTeacher = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
+  const { termId } = req.query as Record<string, string | undefined>;
+
+  let teacherId = req.params.teacherId;
+  if (teacherId === "me") {
+    const teacher = await prisma.teacher.findFirst({ where: { userId: req.auth.userId, tenantId } });
+    if (!teacher) throw ApiError.forbidden("This account is not linked to a teacher profile");
+    teacherId = teacher.id;
+  } else if (req.auth.role === "TEACHER") {
+    const teacher = await prisma.teacher.findFirst({ where: { userId: req.auth.userId, tenantId } });
+    if (!teacher || teacher.id !== teacherId) throw ApiError.forbidden("You can only view your own timetable");
+  }
+
+  const periods = await prisma.timetablePeriod.findMany({
+    where: { tenantId, teacherId, termId },
+    include: periodInclude,
+    orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+  });
+
+  res.json(periods);
+});
+
+export const listForStudent = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
   const studentId = await resolveStudentParam(req, tenantId, req.params.studentId);
   const { termId } = req.query as Record<string, string | undefined>;
-  if (!termId) throw ApiError.badRequest("termId is required");
 
   const enrollment = await prisma.enrollment.findFirst({ where: { studentId }, orderBy: { enrolledAt: "desc" } });
   if (!enrollment) return res.json([]);
 
-  const slots = await prisma.timetableSlot.findMany({
-    where: { tenantId, termId, classArmId: enrollment.classArmId },
-    include: slotInclude,
+  const periods = await prisma.timetablePeriod.findMany({
+    where: { tenantId, classArmId: enrollment.classArmId, termId },
+    include: periodInclude,
     orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
   });
 
-  res.json(slots);
-});
-
-export const createTimetableSlot = asyncHandler(async (req: Request, res: Response) => {
-  const tenantId = resolveTenantId(req);
-  const input = createTimetableSlotSchema.parse(req.body);
-
-  await assertNoOverlap({ tenantId, ...input });
-
-  const slot = await prisma.timetableSlot.create({
-    data: { ...input, tenantId },
-    include: slotInclude,
-  });
-
-  res.status(201).json(slot);
-});
-
-export const updateTimetableSlot = asyncHandler(async (req: Request, res: Response) => {
-  const tenantId = resolveTenantId(req);
-  const input = updateTimetableSlotSchema.parse(req.body);
-
-  const existing = await prisma.timetableSlot.findFirst({ where: { id: req.params.slotId, tenantId } });
-  if (!existing) throw ApiError.notFound("Timetable slot not found");
-
-  await assertNoOverlap({
-    tenantId,
-    termId: existing.termId,
-    dayOfWeek: input.dayOfWeek ?? existing.dayOfWeek,
-    startTime: input.startTime ?? existing.startTime,
-    endTime: input.endTime ?? existing.endTime,
-    classArmId: existing.classArmId,
-    teacherId: input.teacherId ?? existing.teacherId,
-    excludeId: existing.id,
-  });
-
-  const slot = await prisma.timetableSlot.update({
-    where: { id: existing.id },
-    data: input,
-    include: slotInclude,
-  });
-  res.json(slot);
-});
-
-export const deleteTimetableSlot = asyncHandler(async (req: Request, res: Response) => {
-  const tenantId = resolveTenantId(req);
-  const existing = await prisma.timetableSlot.findFirst({ where: { id: req.params.slotId, tenantId } });
-  if (!existing) throw ApiError.notFound("Timetable slot not found");
-
-  await prisma.timetableSlot.delete({ where: { id: existing.id } });
-  res.status(204).send();
+  res.json(periods);
 });
