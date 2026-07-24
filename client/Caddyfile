@@ -1,0 +1,21 @@
+http://{$DOMAIN} {
+	encode gzip
+
+	handle /api/* {
+		reverse_proxy server:4000
+	}
+
+	handle /health {
+		reverse_proxy server:4000
+	}
+
+	handle /uploads/* {
+		reverse_proxy server:4000
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
