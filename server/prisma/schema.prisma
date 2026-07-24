@@ -284,6 +284,10 @@ model Tenant {
   subscriptionEndsAt DateTime?
   maxStudents        Int                @default(100)
   maxStaff           Int                @default(15)
+  // Suggested (not enforced) average-score threshold the Promotions page
+  // uses to pre-tick a student as ready to move up; the school admin can
+  // always override per student.
+  promotionPassMark  Int                @default(40)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

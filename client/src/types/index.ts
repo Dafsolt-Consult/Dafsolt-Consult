@@ -217,6 +217,15 @@ export interface DisciplinaryRecord {
   student?: { user: { firstName: string; lastName: string } };
 }
 
+export interface PromotionCandidate {
+  studentId: string;
+  admissionNumber: string;
+  firstName: string;
+  lastName: string;
+  average: number | null;
+  meetsStandard: boolean;
+}
+
 export interface HealthRecord {
   id: string;
   studentId: string;

@@ -14,6 +14,7 @@ interface TenantProfile {
   email?: string | null;
   currency: string;
   timezone: string;
+  promotionPassMark: number;
 }
 
 const FIELDS: { key: keyof TenantProfile; label: string }[] = [
@@ -55,6 +56,7 @@ export function SettingsPage() {
         email: form.email || undefined,
         currency: form.currency || undefined,
         timezone: form.timezone || undefined,
+        promotionPassMark: form.promotionPassMark ? Number(form.promotionPassMark) : undefined,
       });
       setSaved(true);
     } catch (err) {
@@ -82,6 +84,20 @@ export function SettingsPage() {
                 />
               </div>
             ))}
+            <div>
+              <Label>Promotion pass mark (%)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={form.promotionPassMark ?? ""}
+                onChange={(e) => setForm({ ...form, promotionPassMark: Number(e.target.value) })}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Suggested average score for a student to be marked ready for promotion — the Promotions page uses
+                this to pre-check students, but a school admin can always override it per student.
+              </p>
+            </div>
             {saveError && <ErrorBanner message={saveError} />}
             {saved && <p className="text-sm text-brand-700">Saved.</p>}
             <Button type="submit" disabled={saving}>

@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Select, Spinner, Table } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
@@ -21,7 +22,12 @@ export function StudentsPage() {
         subtitle={`${data?.total ?? 0} enrolled`}
         actions={
           user?.role === "SCHOOL_ADMIN" ? (
-            <Button onClick={() => setShowCreate(true)}>+ Admit student</Button>
+            <div className="flex gap-2">
+              <Link to="/students/promotions">
+                <Button variant="secondary">Promote students</Button>
+              </Link>
+              <Button onClick={() => setShowCreate(true)}>+ Admit student</Button>
+            </div>
           ) : undefined
         }
       />

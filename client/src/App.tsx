@@ -10,6 +10,7 @@ import { AppLayout } from "./layout/AppLayout";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { DashboardPage } from "./pages/DashboardPage";
 import { StudentsPage } from "./pages/students/StudentsPage";
+import { PromotionsPage } from "./pages/students/PromotionsPage";
 import { TeachersPage } from "./pages/teachers/TeachersPage";
 import { AcademicsPage } from "./pages/academics/AcademicsPage";
 import { AttendancePage } from "./pages/attendance/AttendancePage";
@@ -116,6 +117,7 @@ export default function App() {
       >
         <Route path="/" element={<DashboardPage />} />
         <Route path="/students" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><StudentsPage /></ProtectedRoute>} />
+        <Route path="/students/promotions" element={<ProtectedRoute roles={["SCHOOL_ADMIN"]}><PromotionsPage /></ProtectedRoute>} />
         <Route path="/teachers" element={<ProtectedRoute roles={["SCHOOL_ADMIN"]}><TeachersPage /></ProtectedRoute>} />
         <Route path="/academics" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><AcademicsPage /></ProtectedRoute>} />
         <Route path="/attendance" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><AttendancePage /></ProtectedRoute>} />

@@ -86,6 +86,55 @@ export const addGuardian = asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json(link);
 });
 
+/** A promotion suggestion, not a decision: for every student currently
+ * enrolled in a class+session, averages their ResultEntry totalScore across
+ * that whole session (all terms with entries) and flags whether it clears
+ * the tenant's configurable promotionPassMark. The school admin reviews and
+ * overrides per student on the Promotions page — nothing here writes
+ * anything or infers a "next class" (ClassLevel.order isn't reliable enough
+ * across real schools' data entry to auto-target one).
+ */
+export const listPromotionCandidates = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  const { classArmId, sessionId } = req.query as Record<string, string | undefined>;
+  if (!classArmId || !sessionId) throw ApiError.badRequest("classArmId and sessionId are required");
+
+  const tenant = await prisma.tenant.findUniqueOrThrow({ where: { id: tenantId } });
+
+  const [enrollments, resultEntries] = await Promise.all([
+    prisma.enrollment.findMany({
+      where: { classArmId, sessionId, student: { tenantId } },
+      include: { student: { include: { user: { select: { firstName: true, lastName: true } } } } },
+    }),
+    prisma.resultEntry.findMany({
+      where: { tenantId, classArmId, sessionId },
+      select: { studentId: true, totalScore: true },
+    }),
+  ]);
+
+  const scoresByStudent = new Map<string, number[]>();
+  for (const entry of resultEntries) {
+    const scores = scoresByStudent.get(entry.studentId) ?? [];
+    scores.push(entry.totalScore);
+    scoresByStudent.set(entry.studentId, scores);
+  }
+
+  const candidates = enrollments.map(({ student }) => {
+    const scores = scoresByStudent.get(student.id);
+    const average = scores?.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+    return {
+      studentId: student.id,
+      admissionNumber: student.admissionNumber,
+      firstName: student.user.firstName,
+      lastName: student.user.lastName,
+      average,
+      meetsStandard: average !== null && average >= tenant.promotionPassMark,
+    };
+  });
+
+  res.json({ promotionPassMark: tenant.promotionPassMark, candidates });
+});
+
 export const enrollStudent = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
   const input = enrollStudentSchema.parse(req.body);

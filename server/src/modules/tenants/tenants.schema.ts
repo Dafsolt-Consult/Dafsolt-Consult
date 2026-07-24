@@ -10,4 +10,5 @@ export const updateTenantProfileSchema = z.object({
   email: z.string().email().optional(),
   currency: z.string().length(3).optional(),
   timezone: z.string().max(60).optional(),
+  promotionPassMark: z.number().int().min(0).max(100).optional(),
 });

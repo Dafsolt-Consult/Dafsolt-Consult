@@ -284,6 +284,25 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
   grant a PERCENT/FIXED discount, deactivate/reactivate), rendered for
   `SCHOOL_ADMIN`/`ACCOUNTANT` on the existing `/fees` page. An earlier pass
   of this doc claimed it had no frontend at all — that was wrong.
+- Student promotion (`/students/promotions`): deliberately **not** fully
+  automatic. It was tempting to auto-promote a student into "the next
+  `ClassLevel` by `order`" once their average score clears a threshold, but
+  the live tenant's own `class_levels` data made that unsafe to build:
+  `order` is supposed to sort Primary 1..6 / JSS 1..3 / SSS 1..3, but in
+  practice it's almost all `1` with a couple of stray `2`s and a `100`, and
+  `stage` itself is wrong on some rows (e.g. an "SS 2" class tagged
+  `PRIMARY`). Auto-promotion would have silently promoted students into the
+  wrong class off that data. Instead: a new `Tenant.promotionPassMark`
+  (default 40%, editable on Settings) is only ever a *suggestion* —
+  `GET /students/promotion-candidates?classArmId=&sessionId=` averages each
+  enrolled student's `ResultEntry.totalScore` for that class+session and
+  flags whether it clears the mark, and the Promotions page pre-checks
+  those students but lets the admin tick/untick anyone. The admin explicitly
+  picks *both* the source class+session and the destination class+session
+  (no inferred "next" class), then promoting reuses the existing
+  `POST /students/:id/enroll` per selected student — no new write endpoint.
+  Graduating a final-year class isn't handled here at all; the page points
+  admins at the existing Alumni "promote student" action for that instead.
 
 **Still genuinely outstanding:**
 

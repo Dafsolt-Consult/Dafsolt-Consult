@@ -10,6 +10,7 @@ const staffRoles = authorize("SCHOOL_ADMIN", "TEACHER");
 const adminOnly = authorize("SCHOOL_ADMIN");
 
 router.get("/", staffRoles, studentsController.listStudents);
+router.get("/promotion-candidates", staffRoles, studentsController.listPromotionCandidates);
 router.get("/:studentId", staffRoles, studentsController.getStudent);
 router.post("/", adminOnly, auditLog("ADMIT_STUDENT", "Student"), studentsController.createStudent);
 router.patch("/:studentId", adminOnly, auditLog("UPDATE_STUDENT", "Student"), studentsController.updateStudent);
