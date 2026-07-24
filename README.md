@@ -184,10 +184,6 @@ and `client` build and type-check cleanly (`npm run build` in each).
   aren't specially handled (the next enrollment record simply takes over).
 - Direct teacher↔parent/student messaging (beyond announcements/notifications),
   newsletters, and emergency broadcast alerts are not built.
-- E-Learning has a data model only: `CourseMaterial` and `OnlineClassSession`
-  exist in `schema.prisma` (linked to `ClassArm`/`Subject`/`Teacher`), but
-  there's no controller, route, or frontend page for either yet — nothing
-  reads or writes them.
 
 ## v1.2 module coverage vs. the full ERP spec
 
@@ -213,13 +209,20 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
 - Audit trail of admin/staff actions (`middleware/audit.ts`, applied to
   tenants/platform/inventory/hostel/compliance routes)
 
-**Still genuinely outstanding** (see Known limitations above for the first
-two):
+**Built but not yet deployed** (committed on this branch, pending the next
+`prisma migrate deploy` + container rebuild — see `DEPLOYMENT.md` § updates):
+
+- E-Learning/LMS (`elearning`): teacher-managed course materials and
+  scheduled online class sessions per class+subject, with student/parent
+  read access and a Join-link flow. `CourseMaterial`/`OnlineClassSession`
+  had existed in `schema.prisma` with no migration, controller, route, or
+  UI; all four now exist.
+- The platform-curated Global Question Library (see CBT section above).
+
+**Still genuinely outstanding:**
 
 - Direct teacher↔parent/student messaging, newsletters, emergency broadcast
   alerts; real SMS delivery; real payment gateway integration
-- E-Learning/LMS — schema exists (`CourseMaterial`, `OnlineClassSession`),
-  no API or UI
 - **Not started at all**: Alumni Management, Health & Medical Records, true
   Multi-School (school-group) management with consolidated cross-campus
   reporting beyond the existing per-tenant platform-admin view
