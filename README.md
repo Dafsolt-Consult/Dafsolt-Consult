@@ -217,12 +217,30 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
   read access and a Join-link flow. `CourseMaterial`/`OnlineClassSession`
   had existed in `schema.prisma` with no migration, controller, route, or
   UI; all four now exist.
+- Alumni Management (`alumni`): a graduate directory, either promoted from
+  an existing `Student` (pre-fills name/contact from their `User`) or
+  entered manually for pre-digitization graduates. `SCHOOL_ADMIN` CRUD,
+  `TEACHER` read-only; no student/parent access (staff-facing directory,
+  not a personal record).
 - The platform-curated Global Question Library (see CBT section above).
+
+**Known but not yet fixed — backend exists, frontend doesn't:**
+
+- Assigning a teacher to a subject in a class (`POST /academics/class-subjects`)
+  works correctly at the API level but has no UI anywhere in the client —
+  there is currently no way to do this through the actual product. The
+  same endpoint also rejects the demo seed data's session/term ids (the
+  seed script gives them deterministic non-cuid ids for idempotent
+  re-seeding; the zod schema validates with `.cuid()`).
+- `disciplinary` and `scholarships` are fully wired on the backend
+  (`server/src/modules/*`) but have **no `client/src/pages` directory at
+  all** — same "backend-only" gap E-Learning had before this session,
+  not yet closed for these two.
 
 **Still genuinely outstanding:**
 
 - Direct teacher↔parent/student messaging, newsletters, emergency broadcast
   alerts; real SMS delivery; real payment gateway integration
-- **Not started at all**: Alumni Management, Health & Medical Records, true
-  Multi-School (school-group) management with consolidated cross-campus
-  reporting beyond the existing per-tenant platform-admin view
+- **Not started at all**: Health & Medical Records, true Multi-School
+  (school-group) management with consolidated cross-campus reporting
+  beyond the existing per-tenant platform-admin view
