@@ -1,10 +1,12 @@
 import { FormEvent, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client";
-import { Badge, Button, Card, ErrorBanner, Input, Label, PageHeader, Select } from "../../components/ui";
-import { useClassArms, useClassLevels, useSessions, useSubjects } from "../../hooks/useAcademics";
+import { Badge, Button, Card, ErrorBanner, Input, Label, PageHeader, Select, Spinner } from "../../components/ui";
+import { currentSessionId, currentTermId, useClassArms, useClassLevels, useSessions, useSubjects } from "../../hooks/useAcademics";
+import { useFetch } from "../../hooks/useFetch";
 import { useAuth } from "../../context/AuthContext";
+import { ClassArmSubject, Teacher } from "../../types";
 
-const TABS = ["Sessions & Terms", "Class Levels", "Class Arms", "Subjects"] as const;
+const TABS = ["Sessions & Terms", "Class Levels", "Class Arms", "Subjects", "Teacher Assignments"] as const;
 
 export function AcademicsPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Sessions & Terms");
@@ -14,7 +16,7 @@ export function AcademicsPage() {
   return (
     <div>
       <PageHeader title="Classes & Subjects" subtitle="Manage your school's academic structure" />
-      <div className="mb-6 flex gap-2 border-b border-slate-200">
+      <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-200">
         {TABS.map((t) => (
           <button
             key={t}
@@ -32,6 +34,7 @@ export function AcademicsPage() {
       {tab === "Class Levels" && <ClassLevelsTab canEdit={isAdmin} />}
       {tab === "Class Arms" && <ClassArmsTab canEdit={isAdmin} />}
       {tab === "Subjects" && <SubjectsTab canEdit={isAdmin} />}
+      {tab === "Teacher Assignments" && <TeacherAssignmentsTab canEdit={isAdmin} />}
     </div>
   );
 }
@@ -345,6 +348,147 @@ function SubjectsTab({ canEdit }: { canEdit: boolean }) {
             </Button>
           </form>
         </Card>
+      )}
+    </div>
+  );
+}
+
+function TeacherAssignmentsTab({ canEdit }: { canEdit: boolean }) {
+  const { data: sessions } = useSessions();
+  const { data: classArms } = useClassArms();
+  const { data: subjects } = useSubjects();
+  const { data: teachers } = useFetch<Teacher[]>(canEdit ? "/teachers" : null);
+
+  const [sessionId, setSessionId] = useState("");
+  const [termId, setTermId] = useState("");
+  const [classArmId, setClassArmId] = useState("");
+  const [savingSubjectId, setSavingSubjectId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const activeSessionId = sessionId || currentSessionId(sessions);
+  const activeSession = sessions?.find((s) => s.id === activeSessionId);
+  const activeTermId = termId || currentTermId(sessions);
+  const activeClassArmId = classArmId || classArms?.[0]?.id || "";
+
+  const query = activeClassArmId && activeTermId ? `?classArmId=${activeClassArmId}&termId=${activeTermId}` : "";
+  const {
+    data: assignments,
+    loading,
+    refetch,
+  } = useFetch<ClassArmSubject[]>(activeClassArmId && activeTermId ? `/academics/class-subjects${query}` : null, [
+    activeClassArmId,
+    activeTermId,
+  ]);
+
+  const assignmentBySubject = new Map((assignments ?? []).map((a) => [a.subjectId, a]));
+
+  async function assignTeacher(subjectId: string, teacherId: string) {
+    if (!teacherId) return;
+    setError(null);
+    setSavingSubjectId(subjectId);
+    try {
+      await api.post("/academics/class-subjects", {
+        classArmId: activeClassArmId,
+        subjectId,
+        teacherId,
+        sessionId: activeSessionId,
+        termId: activeTermId,
+      });
+      refetch();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSavingSubjectId(null);
+    }
+  }
+
+  if (!canEdit) {
+    return <p className="text-sm text-slate-500">Only a school admin can assign teachers to subjects.</p>;
+  }
+
+  return (
+    <div>
+      <p className="mb-4 text-sm text-slate-500">
+        Pick a class and term, then assign the teacher responsible for each subject in that class.
+      </p>
+
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <Label>Class</Label>
+          <Select value={activeClassArmId} onChange={(e) => setClassArmId(e.target.value)}>
+            {classArms?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.classLevel?.name} {c.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <Label>Session</Label>
+          <Select
+            value={activeSessionId}
+            onChange={(e) => {
+              setSessionId(e.target.value);
+              setTermId("");
+            }}
+          >
+            {sessions?.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <Label>Term</Label>
+          <Select value={activeTermId} onChange={(e) => setTermId(e.target.value)}>
+            {activeSession?.terms?.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} />
+        </div>
+      )}
+
+      {!activeClassArmId || !activeTermId ? (
+        <p className="text-sm text-slate-500">Create a class, session and term first.</p>
+      ) : loading ? (
+        <Spinner />
+      ) : (
+        <div className="space-y-2">
+          {subjects?.map((s) => {
+            const assignment = assignmentBySubject.get(s.id);
+            return (
+              <Card key={s.id} className="flex items-center justify-between">
+                <span className="font-medium text-slate-800">{s.name}</span>
+                <div className="flex items-center gap-2">
+                  <Select
+                    className="w-56"
+                    value={assignment?.teacherId ?? ""}
+                    disabled={savingSubjectId === s.id}
+                    onChange={(e) => assignTeacher(s.id, e.target.value)}
+                  >
+                    <option value="">Select teacher</option>
+                    {teachers?.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.user.firstName} {t.user.lastName}
+                      </option>
+                    ))}
+                  </Select>
+                  {assignment?.teacherId && <Badge tone="success">Assigned</Badge>}
+                </div>
+              </Card>
+            );
+          })}
+          {!subjects?.length && <p className="text-sm text-slate-500">No subjects yet — add some in the Subjects tab first.</p>}
+        </div>
       )}
     </div>
   );

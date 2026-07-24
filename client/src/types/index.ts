@@ -156,6 +156,24 @@ export interface Subject {
   isCore: boolean;
 }
 
+export interface Teacher {
+  id: string;
+  staffId: string;
+  qualification?: string | null;
+  user: { firstName: string; lastName: string; email: string };
+}
+
+export interface ClassArmSubject {
+  id: string;
+  classArmId: string;
+  subjectId: string;
+  teacherId?: string | null;
+  sessionId: string;
+  termId: string;
+  subject?: Subject;
+  teacher?: Teacher | null;
+}
+
 export interface AcademicSession {
   id: string;
   name: string;

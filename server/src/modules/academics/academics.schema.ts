@@ -8,7 +8,11 @@ export const createSessionSchema = z.object({
 });
 
 export const createTermSchema = z.object({
-  sessionId: z.string().cuid(),
+  // Not .cuid(): the seed script assigns AcademicSession/Term deterministic
+  // non-cuid ids (`${tenantId}-2025-2026`) for idempotent re-seeding, so
+  // format validation would reject perfectly valid rows. Existence is
+  // enforced by the DB foreign key, not this schema.
+  sessionId: z.string().min(1),
   name: z.string().min(2).max(30),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
@@ -39,6 +43,7 @@ export const assignClassSubjectSchema = z.object({
   classArmId: z.string().cuid(),
   subjectId: z.string().cuid(),
   teacherId: z.string().cuid().optional(),
-  sessionId: z.string().cuid(),
-  termId: z.string().cuid(),
+  // See createTermSchema above for why these aren't .cuid().
+  sessionId: z.string().min(1),
+  termId: z.string().min(1),
 });
