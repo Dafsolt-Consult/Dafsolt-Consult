@@ -147,6 +147,8 @@ export interface ClassArm {
   classLevelId: string;
   classLevel?: ClassLevel;
   capacity: number;
+  formTeacherId?: string | null;
+  formTeacher?: Teacher | null;
 }
 
 export interface Subject {

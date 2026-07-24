@@ -226,8 +226,10 @@ function ClassLevelsTab({ canEdit }: { canEdit: boolean }) {
 function ClassArmsTab({ canEdit }: { canEdit: boolean }) {
   const { data: arms, refetch } = useClassArms();
   const { data: levels } = useClassLevels();
+  const { data: teachers } = useFetch<Teacher[]>(canEdit ? "/teachers" : null);
   const [form, setForm] = useState({ classLevelId: "", name: "", capacity: "40" });
   const [error, setError] = useState<string | null>(null);
+  const [savingArmId, setSavingArmId] = useState<string | null>(null);
 
   async function create(e: FormEvent) {
     e.preventDefault();
@@ -241,15 +243,54 @@ function ClassArmsTab({ canEdit }: { canEdit: boolean }) {
     }
   }
 
+  async function setFormTeacher(armId: string, teacherId: string) {
+    setError(null);
+    setSavingArmId(armId);
+    try {
+      await api.patch(`/academics/class-arms/${armId}`, { formTeacherId: teacherId || null });
+      refetch();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSavingArmId(null);
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-2">
+        {error && (
+          <div className="mb-2">
+            <ErrorBanner message={error} />
+          </div>
+        )}
         {arms?.map((a) => (
-          <Card key={a.id} className="flex items-center justify-between">
-            <span className="font-medium text-slate-800">
-              {a.classLevel?.name} {a.name}
-            </span>
-            <span className="text-xs text-slate-500">Capacity {a.capacity}</span>
+          <Card key={a.id} className="flex items-center justify-between gap-4">
+            <div>
+              <span className="font-medium text-slate-800">
+                {a.classLevel?.name} {a.name}
+              </span>
+              <span className="ml-2 text-xs text-slate-500">Capacity {a.capacity}</span>
+            </div>
+            {canEdit ? (
+              <Select
+                className="max-w-xs"
+                value={a.formTeacherId ?? ""}
+                disabled={savingArmId === a.id}
+                onChange={(e) => setFormTeacher(a.id, e.target.value)}
+              >
+                <option value="">No form teacher</option>
+                {teachers?.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.user.firstName} {t.user.lastName}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <span className="text-sm text-slate-500">
+                {a.formTeacher ? `${a.formTeacher.user.firstName} ${a.formTeacher.user.lastName}` : "No form teacher"}
+              </span>
+            )}
           </Card>
         ))}
         {!arms?.length && <p className="text-sm text-slate-500">No class arms yet, e.g. "JSS 1 A".</p>}

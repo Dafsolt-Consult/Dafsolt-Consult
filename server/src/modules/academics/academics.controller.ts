@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
+import { ApiError } from "../../utils/ApiError";
 import {
   assignClassSubjectSchema,
   createClassArmSchema,
@@ -9,6 +10,7 @@ import {
   createSessionSchema,
   createSubjectSchema,
   createTermSchema,
+  updateClassArmSchema,
 } from "./academics.schema";
 
 // ── Academic sessions ──────────────────────────────────────────────────────
@@ -75,6 +77,26 @@ export const createClassArm = asyncHandler(async (req: Request, res: Response) =
   const input = createClassArmSchema.parse(req.body);
   const arm = await prisma.classArm.create({ data: { ...input, tenantId } });
   res.status(201).json(arm);
+});
+
+export const updateClassArm = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  const input = updateClassArmSchema.parse(req.body);
+
+  const existing = await prisma.classArm.findFirst({ where: { id: req.params.classArmId, tenantId } });
+  if (!existing) throw ApiError.notFound("Class arm not found");
+
+  if (input.formTeacherId) {
+    const teacher = await prisma.teacher.findFirst({ where: { id: input.formTeacherId, tenantId } });
+    if (!teacher) throw ApiError.notFound("Teacher not found");
+  }
+
+  const arm = await prisma.classArm.update({
+    where: { id: req.params.classArmId },
+    data: input,
+    include: { classLevel: true, formTeacher: { include: { user: true } } },
+  });
+  res.json(arm);
 });
 
 export const listClassArms = asyncHandler(async (req: Request, res: Response) => {

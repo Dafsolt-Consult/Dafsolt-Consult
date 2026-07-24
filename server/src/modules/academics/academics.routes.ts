@@ -17,6 +17,7 @@ router.post("/class-levels", adminOnly, academicsController.createClassLevel);
 
 router.get("/class-arms", staffRoles, academicsController.listClassArms);
 router.post("/class-arms", adminOnly, academicsController.createClassArm);
+router.patch("/class-arms/:classArmId", adminOnly, academicsController.updateClassArm);
 
 router.get("/subjects", staffRoles, academicsController.listSubjects);
 router.post("/subjects", adminOnly, academicsController.createSubject);

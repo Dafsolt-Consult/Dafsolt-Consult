@@ -235,6 +235,23 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
   foreign key either way. The same `.cuid()`-on-session/term pattern is
   still present in seven other schema files (exams, fees, hostel,
   timetable, students, lesson-plans, results) — not fixed there yet.
+  Assigning a teacher as a class's form/homeroom teacher
+  (`ClassArm.formTeacherId`) had the same "backend exists, no way to reach
+  it" gap: `createClassArm` accepted it, but there was no update route and
+  no UI, so it could only ever be set once, at creation, never changed.
+  Added `PATCH /academics/class-arms/:id` (validates the teacher belongs to
+  the tenant, same as other mutation endpoints) and a form-teacher picker
+  on the Class Arms tab that shows/changes it per arm.
+- Non-teaching-staff dashboards (`NURSE`, `HR_MANAGER`,
+  `TRANSPORT_OFFICER`, `HOSTEL_WARDEN`): `DashboardPage.tsx` only branched
+  on `SCHOOL_ADMIN`/`TEACHER`/`STUDENT`/`LIBRARIAN`/`ACCOUNTANT` — the other
+  four roles landed on `/` post-login to a bare "Welcome, {name}" header
+  with nothing below it, and didn't even get a "Dashboard" link in the
+  sidebar to find their way back to it. Added an overview for each (links
+  into their module — Health Records, HR & Payroll, Transport, Hostel —
+  plus the shared "My HR" self-service page for leave/payslips) and added
+  all four roles to the Dashboard nav item. No real users have these roles
+  yet on the live tenant, so this hadn't surfaced in practice.
 - Disciplinary Records (`/disciplinary-records`): staff log/filter/resolve
   view, a student's own read-only view, and a "Conduct" tab on the parent
   portal. Same backend-only gap E-Learning had before this session.

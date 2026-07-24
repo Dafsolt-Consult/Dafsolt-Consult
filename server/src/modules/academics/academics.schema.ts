@@ -32,6 +32,12 @@ export const createClassArmSchema = z.object({
   capacity: z.number().int().positive().optional(),
 });
 
+export const updateClassArmSchema = z.object({
+  name: z.string().min(1).max(30).optional(),
+  formTeacherId: z.string().cuid().nullable().optional(),
+  capacity: z.number().int().positive().optional(),
+});
+
 export const createSubjectSchema = z.object({
   name: z.string().min(2).max(60),
   code: z.string().min(1).max(20),

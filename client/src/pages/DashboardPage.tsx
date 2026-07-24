@@ -17,6 +17,10 @@ export function DashboardPage() {
       {user.role === "SCHOOL_ADMIN" && <AdminOverview />}
       {user.role === "TEACHER" && <TeacherOverview />}
       {user.role === "STUDENT" && <StudentOverview />}
+      {user.role === "NURSE" && <NurseOverview />}
+      {user.role === "HR_MANAGER" && <HRManagerOverview />}
+      {user.role === "TRANSPORT_OFFICER" && <TransportOfficerOverview />}
+      {user.role === "HOSTEL_WARDEN" && <HostelWardenOverview />}
       {(user.role === "LIBRARIAN" || user.role === "ACCOUNTANT") && (
         <Card>
           <p className="text-sm text-slate-600">Use the sidebar to navigate to your tools.</p>
@@ -69,6 +73,41 @@ function StudentOverview() {
       <StatCard label="My assignments" value="View" to="/assignments" />
       <StatCard label="My results" value="View" to="/results" />
       <StatCard label="Library" value="Browse" to="/library/books" />
+    </div>
+  );
+}
+
+function NurseOverview() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StatCard label="Health Records" value="Manage" to="/health-records" />
+      <StatCard label="HR & Payroll" value="Go" to="/hr" />
+    </div>
+  );
+}
+
+function HRManagerOverview() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StatCard label="HR & Payroll" value="Manage" to="/hr" />
+    </div>
+  );
+}
+
+function TransportOfficerOverview() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StatCard label="Transport" value="Manage" to="/transport" />
+      <StatCard label="HR & Payroll" value="Go" to="/hr" />
+    </div>
+  );
+}
+
+function HostelWardenOverview() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StatCard label="Hostel" value="Manage" to="/hostel" />
+      <StatCard label="HR & Payroll" value="Go" to="/hr" />
     </div>
   );
 }
