@@ -338,6 +338,7 @@ model Tenant {
   procurementRequests  ProcurementRequest[]
   courseMaterials      CourseMaterial[]
   onlineClassSessions  OnlineClassSession[]
+  alumni               Alumnus[]
 
   @@map("tenants")
 }
@@ -523,6 +524,7 @@ model ClassLevel {
   questions     Question[]
   exams         Exam[]
   feeStructures FeeStructure[]
+  alumni        Alumnus[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -628,6 +630,7 @@ model Student {
   scholarships          Scholarship[]
   transportAssignments  StudentTransportAssignment[]
   roomAllocations       RoomAllocation[]
+  alumnusProfile        Alumnus?
 
   @@unique([tenantId, admissionNumber])
   @@index([tenantId])
@@ -1706,4 +1709,39 @@ model OnlineClassSession {
 
   @@index([tenantId, classArmId, startsAt])
   @@map("online_class_sessions")
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Alumni
+// ──────────────────────────────────────────────────────────────────────────
+
+// studentId is optional and @unique (not a join table) because the alumni
+// directory needs to cover graduates who left before this system existed —
+// admin can add those manually with no Student row to point at. A student
+// who *is* in the system gets at most one Alumnus record (the @unique),
+// created via the "promote to alumnus" action rather than automatically
+// on Student.status flipping to GRADUATED, so admin controls the timing
+// and can fill in graduationYear/lastClassLevel themselves.
+model Alumnus {
+  id                String      @id @default(cuid())
+  tenantId          String
+  tenant            Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  studentId         String?     @unique
+  student           Student?    @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  graduationYear    Int
+  lastClassLevelId  String?
+  lastClassLevel    ClassLevel? @relation(fields: [lastClassLevelId], references: [id], onDelete: SetNull)
+  higherInstitution String?
+  occupation        String?
+  employer          String?
+  bio               String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([tenantId, graduationYear])
+  @@map("alumni")
 }

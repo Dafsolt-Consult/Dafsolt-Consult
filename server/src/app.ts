@@ -32,6 +32,7 @@ import libraryRoutes from "./modules/library/library.routes";
 import parentsRoutes from "./modules/parents/parents.routes";
 import assignmentsRoutes from "./modules/assignments/assignments.routes";
 import elearningRoutes from "./modules/elearning/elearning.routes";
+import alumniRoutes from "./modules/alumni/alumni.routes";
 import calendarRoutes from "./modules/calendar/calendar.routes";
 import announcementsRoutes from "./modules/announcements/announcements.routes";
 import notificationsRoutes from "./modules/notifications/notifications.routes";
@@ -96,6 +97,7 @@ export function createApp() {
   app.use("/api/parents", parentsRoutes);
   app.use("/api/assignments", assignmentsRoutes);
   app.use("/api/elearning", elearningRoutes);
+  app.use("/api/alumni", alumniRoutes);
   app.use("/api/calendar", calendarRoutes);
   app.use("/api/announcements", announcementsRoutes);
   app.use("/api/notifications", notificationsRoutes);

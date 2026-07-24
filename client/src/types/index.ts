@@ -284,6 +284,22 @@ export interface OnlineClassSession {
   classArm?: ClassArm & { classLevel: ClassLevel };
 }
 
+export interface Alumnus {
+  id: string;
+  studentId?: string | null;
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+  graduationYear: number;
+  lastClassLevelId?: string | null;
+  lastClassLevel?: ClassLevel | null;
+  higherInstitution?: string | null;
+  occupation?: string | null;
+  employer?: string | null;
+  bio?: string | null;
+}
+
 export type CalendarEventType = "HOLIDAY" | "EXAM" | "ACADEMIC" | "EVENT" | "MEETING";
 
 export interface CalendarEvent {
