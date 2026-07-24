@@ -12,6 +12,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/platform", label: "Dashboard" },
   { to: "/platform/schools", label: "Schools" },
   { to: "/platform/admins", label: "Platform Admins", roles: ["OWNER"] },
+  { to: "/platform/global-questions", label: "Exam Practice Library" },
   { to: "/platform/audit-log", label: "Audit Log" },
 ];
 

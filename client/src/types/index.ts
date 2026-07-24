@@ -65,6 +65,37 @@ export interface Question {
   classLevel?: { name: string };
 }
 
+export type ExamBoard = "WAEC" | "NECO" | "UTME" | "GENERAL";
+export type SchoolStage = "PRIMARY" | "JUNIOR_SECONDARY" | "SENIOR_SECONDARY";
+
+export interface GlobalSubject {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface GlobalQuestionOption {
+  id: string;
+  text: string;
+  isCorrect?: boolean;
+}
+
+export interface GlobalQuestion {
+  id: string;
+  globalSubjectId: string;
+  examBoard: ExamBoard;
+  stage: SchoolStage;
+  topic?: string | null;
+  type: QuestionType;
+  text: string;
+  imageUrl?: string | null;
+  correctText?: string | null;
+  points: number;
+  difficulty: Difficulty;
+  options: GlobalQuestionOption[];
+  globalSubject?: { name: string; code: string };
+}
+
 export interface Exam {
   id: string;
   title: string;

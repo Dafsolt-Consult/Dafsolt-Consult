@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import { authenticatePlatform, authorizePlatform } from "../../middleware/platformAuth";
 import { auditLog } from "../../middleware/audit";
 import * as platformController from "./platform.controller";
+import * as globalQuestionsController from "./globalQuestions.controller";
 
 const router = Router();
 
@@ -54,5 +55,35 @@ router.patch(
 );
 
 router.get("/audit-log", platformController.listAuditLog);
+
+// Shared exam-practice content library (WAEC/NECO/UTME-style questions),
+// visible to every tenant — see cbt/practiceLibrary.controller.ts for the
+// tenant-facing browse/import side.
+router.get("/global-subjects", globalQuestionsController.listGlobalSubjects);
+router.post(
+  "/global-subjects",
+  authorizePlatform("OWNER"),
+  auditLog("CREATE_GLOBAL_SUBJECT", "GlobalSubject"),
+  globalQuestionsController.createGlobalSubject
+);
+router.get("/global-questions", globalQuestionsController.listGlobalQuestions);
+router.post(
+  "/global-questions",
+  authorizePlatform("OWNER"),
+  auditLog("CREATE_GLOBAL_QUESTION", "GlobalQuestion"),
+  globalQuestionsController.createGlobalQuestion
+);
+router.patch(
+  "/global-questions/:questionId",
+  authorizePlatform("OWNER"),
+  auditLog("UPDATE_GLOBAL_QUESTION", "GlobalQuestion"),
+  globalQuestionsController.updateGlobalQuestion
+);
+router.delete(
+  "/global-questions/:questionId",
+  authorizePlatform("OWNER"),
+  auditLog("DELETE_GLOBAL_QUESTION", "GlobalQuestion"),
+  globalQuestionsController.deleteGlobalQuestion
+);
 
 export default router;

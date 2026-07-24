@@ -60,6 +60,11 @@ export const addExamQuestions = asyncHandler(async (req: Request, res: Response)
   const exam = await prisma.exam.findFirst({ where: { id: req.params.examId, tenantId } });
   if (!exam) throw ApiError.notFound("Exam not found");
 
+  const ownedCount = await prisma.question.count({ where: { id: { in: questionIds }, tenantId } });
+  if (ownedCount !== questionIds.length) {
+    throw ApiError.notFound("One or more questions not found");
+  }
+
   const existingCount = await prisma.examQuestion.count({ where: { examId: exam.id } });
 
   const created = await prisma.$transaction(

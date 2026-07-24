@@ -161,7 +161,6 @@ enum MaterialType {
   OTHER
 }
 
-
 enum QuestionType {
   MULTIPLE_CHOICE
   TRUE_FALSE
@@ -173,6 +172,13 @@ enum Difficulty {
   EASY
   MEDIUM
   HARD
+}
+
+enum ExamBoard {
+  WAEC
+  NECO
+  UTME
+  GENERAL
 }
 
 enum ExamStatus {
@@ -309,7 +315,7 @@ model Tenant {
   auditLogs            AuditLog[]
   disciplinaryRecords  DisciplinaryRecord[]
   lessonPlans          LessonPlan[]
-  timetablePeriods       TimetablePeriod[]
+  timetablePeriods     TimetablePeriod[]
   scholarships         Scholarship[]
   drivers              Driver[]
   vehicles             Vehicle[]
@@ -422,19 +428,20 @@ model PasswordResetToken {
 // hack) so a platform-admin id can never be mistaken for a tenant User FK,
 // and so tenant login/session code paths never need to reason about it.
 model PlatformAdmin {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String       @id @default(cuid())
+  email        String       @unique
   passwordHash String
   role         PlatformRole
   firstName    String
   lastName     String
-  isActive     Boolean   @default(true)
+  isActive     Boolean      @default(true)
   lastLoginAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
-  refreshTokens PlatformRefreshToken[]
-  auditLogs     AuditLog[]
+  refreshTokens          PlatformRefreshToken[]
+  auditLogs              AuditLog[]
+  globalQuestionsCreated GlobalQuestion[]
 
   @@map("platform_admins")
 }
@@ -490,13 +497,13 @@ model Term {
   endDate   DateTime
   isCurrent Boolean         @default(false)
 
-  classSubjects  ClassArmSubject[]
-  exams          Exam[]
-  feeStructures  FeeStructure[]
-  invoices       Invoice[]
-  resultEntries  ResultEntry[]
-  reportCards    ReportCard[]
-  lessonPlans    LessonPlan[]
+  classSubjects    ClassArmSubject[]
+  exams            Exam[]
+  feeStructures    FeeStructure[]
+  invoices         Invoice[]
+  resultEntries    ResultEntry[]
+  reportCards      ReportCard[]
+  lessonPlans      LessonPlan[]
   timetablePeriods TimetablePeriod[]
 
   @@index([tenantId, sessionId])
@@ -533,14 +540,14 @@ model ClassArm {
   formTeacher   Teacher?   @relation("FormTeacher", fields: [formTeacherId], references: [id])
   capacity      Int        @default(40)
 
-  enrollments    Enrollment[]
-  classSubjects  ClassArmSubject[]
-  attendances    Attendance[]
-  resultEntries  ResultEntry[]
-  reportCards    ReportCard[]
-  assignments    Assignment[]
-  lessonPlans    LessonPlan[]
-  timetablePeriods TimetablePeriod[]
+  enrollments         Enrollment[]
+  classSubjects       ClassArmSubject[]
+  attendances         Attendance[]
+  resultEntries       ResultEntry[]
+  reportCards         ReportCard[]
+  assignments         Assignment[]
+  lessonPlans         LessonPlan[]
+  timetablePeriods    TimetablePeriod[]
   courseMaterials     CourseMaterial[]
   onlineClassSessions OnlineClassSession[]
 
@@ -557,14 +564,14 @@ model Subject {
   code     String
   isCore   Boolean @default(true)
 
-  classLevels    ClassLevel[]      @relation("SubjectClassLevels")
-  classSubjects  ClassArmSubject[]
-  questions      Question[]
-  exams          Exam[]
-  resultEntries  ResultEntry[]
-  assignments    Assignment[]
-  lessonPlans    LessonPlan[]
-  timetablePeriods TimetablePeriod[]
+  classLevels         ClassLevel[]         @relation("SubjectClassLevels")
+  classSubjects       ClassArmSubject[]
+  questions           Question[]
+  exams               Exam[]
+  resultEntries       ResultEntry[]
+  assignments         Assignment[]
+  lessonPlans         LessonPlan[]
+  timetablePeriods    TimetablePeriod[]
   courseMaterials     CourseMaterial[]
   onlineClassSessions OnlineClassSession[]
 
@@ -657,11 +664,11 @@ model Teacher {
   qualification String?
   hireDate      DateTime @default(now())
 
-  formArms       ClassArm[]        @relation("FormTeacher")
-  classSubjects  ClassArmSubject[]
-  assignments    Assignment[]
-  lessonPlans    LessonPlan[]
-  timetablePeriods TimetablePeriod[]
+  formArms            ClassArm[]           @relation("FormTeacher")
+  classSubjects       ClassArmSubject[]
+  assignments         Assignment[]
+  lessonPlans         LessonPlan[]
+  timetablePeriods    TimetablePeriod[]
   courseMaterials     CourseMaterial[]
   onlineClassSessions OnlineClassSession[]
 
@@ -780,6 +787,60 @@ model QuestionOption {
   examAnswers ExamAnswer[]
 
   @@map("question_options")
+}
+
+// Shared exam-practice content, visible to every tenant (present and
+// future). Deliberately separate from Question/Subject/ClassLevel — those
+// are tenant-owned with no cross-tenant id space, mirroring why
+// PlatformAdmin is its own table rather than a nullable-tenantId hack on
+// User. Teachers "import" rows from here into their own tenant Question
+// bank (see cbt/practiceLibrary.controller.ts); nothing else in the CBT
+// exam-taking/grading pipeline ever reads these models directly.
+model GlobalSubject {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions GlobalQuestion[]
+
+  @@map("global_subjects")
+}
+
+model GlobalQuestion {
+  id               String        @id @default(cuid())
+  globalSubjectId  String
+  globalSubject    GlobalSubject @relation(fields: [globalSubjectId], references: [id], onDelete: Cascade)
+  examBoard        ExamBoard
+  stage            SchoolStage
+  topic            String?
+  type             QuestionType
+  text             String
+  imageUrl         String?
+  correctText      String?
+  points           Int           @default(1)
+  difficulty       Difficulty    @default(MEDIUM)
+  createdByAdminId String
+  createdByAdmin   PlatformAdmin @relation(fields: [createdByAdminId], references: [id])
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  options GlobalQuestionOption[]
+
+  @@index([globalSubjectId, examBoard, stage])
+  @@map("global_questions")
+}
+
+model GlobalQuestionOption {
+  id               String         @id @default(cuid())
+  globalQuestionId String
+  globalQuestion   GlobalQuestion @relation(fields: [globalQuestionId], references: [id], onDelete: Cascade)
+  text             String
+  isCorrect        Boolean        @default(false)
+  order            Int            @default(0)
+
+  @@map("global_question_options")
 }
 
 model Exam {

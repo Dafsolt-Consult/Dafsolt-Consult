@@ -49,6 +49,7 @@ import { PlatformSchoolsPage } from "./pages/platform/PlatformSchoolsPage";
 import { PlatformSchoolDetailPage } from "./pages/platform/PlatformSchoolDetailPage";
 import { PlatformAdminsPage } from "./pages/platform/PlatformAdminsPage";
 import { PlatformAuditLogPage } from "./pages/platform/PlatformAuditLogPage";
+import { PlatformGlobalQuestionsPage } from "./pages/platform/PlatformGlobalQuestionsPage";
 
 export default function App() {
   return (
@@ -84,6 +85,7 @@ export default function App() {
                   }
                 />
                 <Route path="audit-log" element={<PlatformAuditLogPage />} />
+                <Route path="global-questions" element={<PlatformGlobalQuestionsPage />} />
               </Route>
             </Routes>
           </PlatformAuthProvider>

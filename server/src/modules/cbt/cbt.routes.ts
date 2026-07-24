@@ -3,6 +3,7 @@ import { authenticate, authorize } from "../../middleware/auth";
 import * as questionsController from "./questions.controller";
 import * as examsController from "./exams.controller";
 import * as attemptsController from "./attempts.controller";
+import * as practiceLibraryController from "./practiceLibrary.controller";
 
 const router = Router();
 router.use(authenticate);
@@ -40,5 +41,12 @@ router.get(
 // Manual grading (staff)
 router.get("/attempts/:attemptId/grading", staffRoles, attemptsController.listAttemptAnswersForGrading);
 router.patch("/attempts/:attemptId/answers/:answerId/grade", staffRoles, attemptsController.gradeAnswer);
+
+// Shared exam-practice library (WAEC/NECO/UTME-style questions) — browse and
+// import into this tenant's own question bank. See platform/globalQuestions
+// for the platform-admin authoring side.
+router.get("/practice-library/subjects", staffRoles, practiceLibraryController.listPracticeSubjects);
+router.get("/practice-library/questions", staffRoles, practiceLibraryController.listPracticeQuestions);
+router.post("/practice-library/import", staffRoles, practiceLibraryController.importPracticeQuestions);
 
 export default router;

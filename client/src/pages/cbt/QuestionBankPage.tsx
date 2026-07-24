@@ -3,9 +3,27 @@ import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Select, Spinner, Table } from "../../components/ui";
 import { useClassLevels, useSubjects } from "../../hooks/useAcademics";
 import { useFetch } from "../../hooks/useFetch";
-import { Paginated, Question, QuestionType } from "../../types";
+import { GlobalQuestion, GlobalSubject, Paginated, Question, QuestionType } from "../../types";
 
 export function QuestionBankPage() {
+  const [tab, setTab] = useState<"bank" | "library">("bank");
+
+  return (
+    <div>
+      <div className="mb-4 flex gap-2">
+        <Button variant={tab === "bank" ? "primary" : "secondary"} onClick={() => setTab("bank")}>
+          My Bank
+        </Button>
+        <Button variant={tab === "library" ? "primary" : "secondary"} onClick={() => setTab("library")}>
+          Exam Practice Library
+        </Button>
+      </div>
+      {tab === "bank" ? <MyBankTab /> : <PracticeLibraryTab />}
+    </div>
+  );
+}
+
+function MyBankTab() {
   const { data: subjects } = useSubjects();
   const { data: classLevels } = useClassLevels();
   const [subjectId, setSubjectId] = useState("");
@@ -115,6 +133,176 @@ export function QuestionBankPage() {
         />
       )}
     </div>
+  );
+}
+
+function PracticeLibraryTab() {
+  const { data: subjects } = useFetch<GlobalSubject[]>("/cbt/practice-library/subjects");
+  const [globalSubjectId, setGlobalSubjectId] = useState("");
+  const [examBoard, setExamBoard] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [showImport, setShowImport] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const query = new URLSearchParams({ pageSize: "50" });
+  if (globalSubjectId) query.set("globalSubjectId", globalSubjectId);
+  if (examBoard) query.set("examBoard", examBoard);
+
+  const { data, loading, error, refetch } = useFetch<Paginated<GlobalQuestion>>(`/cbt/practice-library/questions?${query}`, [globalSubjectId, examBoard]);
+
+  function toggle(id: string) {
+    setSelected((ids) => (ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id]));
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title="Exam Practice Library"
+        subtitle="Original WAEC/NECO/UTME-style practice questions, shared across every school"
+        actions={
+          <Button disabled={!selected.length} onClick={() => setShowImport(true)}>
+            Import selected ({selected.length})
+          </Button>
+        }
+      />
+
+      <div className="mb-4 flex flex-wrap gap-3">
+        <Select className="w-52" value={globalSubjectId} onChange={(e) => setGlobalSubjectId(e.target.value)}>
+          <option value="">All subjects</option>
+          {subjects?.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </Select>
+        <Select className="w-52" value={examBoard} onChange={(e) => setExamBoard(e.target.value)}>
+          <option value="">All exam boards</option>
+          <option value="WAEC">WAEC</option>
+          <option value="NECO">NECO</option>
+          <option value="UTME">UTME</option>
+          <option value="GENERAL">General</option>
+        </Select>
+      </div>
+
+      {(error || actionError) && <ErrorBanner message={error || actionError!} />}
+      {loading ? (
+        <Spinner />
+      ) : !data?.items.length ? (
+        <EmptyState message="No practice questions match this filter yet." />
+      ) : (
+        <Table>
+          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-3"></th>
+              <th className="px-4 py-3">Question</th>
+              <th className="px-4 py-3">Subject</th>
+              <th className="px-4 py-3">Board</th>
+              <th className="px-4 py-3">Topic</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {data.items.map((q) => (
+              <tr key={q.id}>
+                <td className="px-4 py-3">
+                  <input type="checkbox" checked={selected.includes(q.id)} onChange={() => toggle(q.id)} />
+                </td>
+                <td className="max-w-md truncate px-4 py-3 text-slate-800">{q.text}</td>
+                <td className="px-4 py-3 text-slate-600">{q.globalSubject?.name}</td>
+                <td className="px-4 py-3">
+                  <Badge>{q.examBoard}</Badge>
+                </td>
+                <td className="px-4 py-3 text-slate-600">{q.topic ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
+
+      {showImport && (
+        <ImportModal
+          globalQuestionIds={selected}
+          onClose={() => setShowImport(false)}
+          onImported={() => {
+            setShowImport(false);
+            setSelected([]);
+            refetch();
+          }}
+          onError={setActionError}
+        />
+      )}
+    </div>
+  );
+}
+
+function ImportModal({
+  globalQuestionIds,
+  onClose,
+  onImported,
+  onError,
+}: {
+  globalQuestionIds: string[];
+  onClose: () => void;
+  onImported: () => void;
+  onError: (message: string) => void;
+}) {
+  const { data: subjects } = useSubjects();
+  const { data: classLevels } = useClassLevels();
+  const [subjectId, setSubjectId] = useState("");
+  const [classLevelId, setClassLevelId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api.post("/cbt/practice-library/import", { globalQuestionIds, subjectId, classLevelId });
+      onImported();
+    } catch (err) {
+      const message = apiErrorMessage(err);
+      setError(message);
+      onError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title={`Import ${globalQuestionIds.length} question(s) into my bank`} onClose={onClose}>
+      {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} />
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label>File under subject</Label>
+          <Select required value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+            <option value="">Select</option>
+            {subjects?.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <Label>File under class level</Label>
+          <Select required value={classLevelId} onChange={(e) => setClassLevelId(e.target.value)}>
+            <option value="">Select</option>
+            {classLevels?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <Button type="submit" disabled={submitting} className="w-full">
+          {submitting ? "Importing..." : "Import into my bank"}
+        </Button>
+      </form>
+    </Modal>
   );
 }
 
