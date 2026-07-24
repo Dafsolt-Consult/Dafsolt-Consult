@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, Card, ErrorBanner, Input, Label, PageHeader, Select, Spinner } from "../../components/ui";
-import { currentSessionId, currentTermId, useClassArms, useClassLevels, useSessions, useSubjects } from "../../hooks/useAcademics";
+import { currentSessionId, useClassArms, useClassLevels, useSessions, useSubjects } from "../../hooks/useAcademics";
 import { useFetch } from "../../hooks/useFetch";
 import { useAuth } from "../../context/AuthContext";
 import { ClassArmSubject, Teacher } from "../../types";
@@ -411,7 +411,10 @@ function TeacherAssignmentsTab({ canEdit }: { canEdit: boolean }) {
 
   const activeSessionId = sessionId || currentSessionId(sessions);
   const activeSession = sessions?.find((s) => s.id === activeSessionId);
-  const activeTermId = termId || currentTermId(sessions);
+  // Derived from activeSession (which already accounts for a manual session
+  // pick), not recomputed independently — otherwise switching sessions
+  // could reset back to whichever session happens to be marked current.
+  const activeTermId = termId || activeSession?.terms?.find((t) => t.isCurrent)?.id || activeSession?.terms?.[0]?.id || "";
   const activeClassArmId = classArmId || classArms?.[0]?.id || "";
 
   const query = activeClassArmId && activeTermId ? `?classArmId=${activeClassArmId}&termId=${activeTermId}` : "";
