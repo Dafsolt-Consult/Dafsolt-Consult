@@ -42,6 +42,13 @@ carries a `tenantId` column; a middleware (`resolveTenantId`) pins every
 request to the caller's own school, except platform `SUPER_ADMIN` accounts,
 which pass an explicit `x-tenant-id` header to act on a specific school.
 
+**Platform admin**: `SUPER_ADMIN` now lives entirely outside the tenant
+app — a separate `PlatformAdmin` table/auth flow (`server/src/modules/platform`)
+and its own `/platform/*` route tree on the client, covering tenant
+provisioning, plan/status management, admin impersonation, and the Global
+Question Library. No `SUPER_ADMIN` role or route exists on the tenant side
+anymore.
+
 **Roles**: `SUPER_ADMIN` (platform), `SCHOOL_ADMIN`, `TEACHER`, `STUDENT`,
 `PARENT`, `LIBRARIAN`, `ACCOUNTANT`. Every route is gated by role via
 `authorize(...)` middleware.
@@ -66,6 +73,12 @@ sessions). Delivery is log-based until a real email/SMS provider is wired up
   `ExamAttempt` → `ExamAnswer`. Question order and MCQ option order are
   shuffled per-student using a seeded PRNG (`utils/shuffle.ts`) so the shuffle
   is anti-cheating yet reproducible if the student reloads mid-exam.
+  Separately, a platform-curated **Global Question Library**
+  (`GlobalSubject`/`GlobalQuestion`/`GlobalQuestionOption`) lets platform
+  admins maintain a shared, cross-tenant bank of WAEC/NECO/UTME-tagged
+  practice questions; tenant teachers import from it into their own
+  `Question` bank (`cbt/practiceLibrary.controller.ts`) — the exam-taking
+  and grading pipeline never reads the global tables directly.
 - **Library**: `Book` (physical/ebook/both) + `BookCategory` + `BorrowRecord`
   with automatic fine calculation on late return.
 - **Fees**: `FeeStructure` → `Invoice` → `Payment`, amounts stored in minor
@@ -157,42 +170,56 @@ and `client` build and type-check cleanly (`npm run build` in each).
 
 ## Known limitations / roadmap
 
-- Payment gateway and SMS provider integrations are stubbed (env vars are
-  wired in `server/.env.example`) — swap in real Paystack/Flutterwave/Africa's
-  Talking calls when a school is ready to go live with billing/notifications
-  (in-app notifications already work end-to-end; SMS/email are the same
-  `notifyUsers()` call site away).
+- Payment gateway (Paystack/Flutterwave) integration is still stubbed (env
+  vars wired in `server/.env.example`) — swap in real provider calls when a
+  school is ready to go live with billing. SMS (Africa's Talking) is also
+  still stubbed; email is not — see below.
+- Real email delivery (SMTP) is wired end-to-end; SMS is the one
+  `notifyUsers()` call site away once a provider is chosen.
 - File uploads (book covers, ebook files, question images, assignment
   attachments) currently expect a hosted URL; wiring up direct upload (e.g.
   to S3-compatible storage) is a follow-up.
 - Announcement/notification audience targeting by school stage assumes a
   student has a single current enrollment; mid-term class transfers mid-day
   aren't specially handled (the next enrollment record simply takes over).
+- Direct teacher↔parent/student messaging (beyond announcements/notifications),
+  newsletters, and emergency broadcast alerts are not built.
+- E-Learning has a data model only: `CourseMaterial` and `OnlineClassSession`
+  exist in `schema.prisma` (linked to `ClassArm`/`Subject`/`Teacher`), but
+  there's no controller, route, or frontend page for either yet — nothing
+  reads or writes them.
 
-## v1.1 module coverage vs. the full ERP spec
+## v1.2 module coverage vs. the full ERP spec
 
-v1.0/v1.1 cover Student Information Management, the Parent Portal, most of
-the Teacher Portal, most of the Administrator Dashboard, core Academic
-Management, core Fee & Finance Management, Announcements, Library
-Management, Examination & Results, and Security & Access Control (role-based
-permissions, JWT auth) — each with the gaps noted below carried into v1.2.
+v1.0–v1.2 cover Student Information Management, the Parent Portal, the
+Teacher Portal, the Administrator Dashboard (including a dedicated Settings
+UI and Compliance/Analytics reporting — `server/src/modules/compliance`,
+`.../analytics`), Academic Management, Fee & Finance Management,
+Announcements, Library Management, Examination & Results (plus the
+platform-curated Global Question Library), Security & Access Control
+(role-based permissions, JWT auth), and a standalone Platform-Admin app for
+tenant provisioning/plan management/impersonation — **and**, contrary to the
+v1.1-era plan below, all of the following are now built and live, each with
+its own `server/src/modules/*` and `client/src/pages/*` pair:
 
-**Deferred to v1.2:**
+- Student disciplinary/conduct records (`disciplinary`)
+- Teacher lesson planning (`lesson-plans`)
+- Timetable / period scheduling (`timetable`)
+- Scholarships / fee discounts (`scholarships`)
+- Transport Management (`transport`)
+- Hostel/Boarding Management (`hostel`)
+- Human Resources & Payroll (`hr`)
+- Inventory & Asset Management (`inventory`)
+- Audit trail of admin/staff actions (`middleware/audit.ts`, applied to
+  tenants/platform/inventory/hostel/compliance routes)
 
-- Student disciplinary/conduct records
-- Teacher lesson planning; direct teacher↔parent/student messaging (beyond
-  announcements/notifications)
-- Admin settings UI (school profile is API-only today); compliance reporting
-- Timetable / period scheduling (daily class schedule, distinct from CBT exam
-  scheduling); richer curriculum/syllabus content beyond subjects & class levels
-- Scholarships/fee discounts; financial reporting/summary dashboards (beyond
-  raw invoice & payment lists)
-- Newsletters, emergency broadcast alerts, direct messaging; real SMS/email
-  delivery (provider integration, not just the in-app notification log)
-- Custom analytics dashboards, compliance reports, predictive analytics
-- Audit trail of admin/staff actions
-- **Not started**: Transport Management, Hostel/Boarding Management, Human
-  Resources & Payroll, Inventory & Asset Management
-- **Advanced modules not started**: E-Learning/LMS (live classes), Alumni
-  Management, Health & Medical Records, true Multi-School (school-group)
-  management with consolidated cross-campus reporting
+**Still genuinely outstanding** (see Known limitations above for the first
+two):
+
+- Direct teacher↔parent/student messaging, newsletters, emergency broadcast
+  alerts; real SMS delivery; real payment gateway integration
+- E-Learning/LMS — schema exists (`CourseMaterial`, `OnlineClassSession`),
+  no API or UI
+- **Not started at all**: Alumni Management, Health & Medical Records, true
+  Multi-School (school-group) management with consolidated cross-campus
+  reporting beyond the existing per-tenant platform-admin view
