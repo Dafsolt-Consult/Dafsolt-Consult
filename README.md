@@ -242,6 +242,17 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
   Added `PATCH /academics/class-arms/:id` (validates the teacher belongs to
   the tenant, same as other mutation endpoints) and a form-teacher picker
   on the Class Arms tab that shows/changes it per arm.
+  Also, the per-subject teacher assignment wasn't actually flexible: the
+  dropdown's blank option was a silent no-op (`if (!teacherId) return`) and
+  `teacherId` was `.cuid().optional()` — accepts a missing field, not an
+  explicit `null` — so once a teacher was assigned to a class+subject there
+  was no way to ever unassign them, only overwrite with a different real
+  teacher. Reassigning to a different class or subject already worked (each
+  row upserts independently); removing one didn't. Made `teacherId`
+  `.nullable()`, dropped the frontend guard, relabeled the blank option
+  "Unassigned", and added a tenant-ownership check on the teacher id while
+  in there (`assignClassSubject` accepted any cuid before, cross-tenant or
+  not).
 - Non-teaching-staff dashboards (`NURSE`, `HR_MANAGER`,
   `TRANSPORT_OFFICER`, `HOSTEL_WARDEN`): `DashboardPage.tsx` only branched
   on `SCHOOL_ADMIN`/`TEACHER`/`STUDENT`/`LIBRARIAN`/`ACCOUNTANT` — the other

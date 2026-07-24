@@ -424,14 +424,13 @@ function TeacherAssignmentsTab({ canEdit }: { canEdit: boolean }) {
   const assignmentBySubject = new Map((assignments ?? []).map((a) => [a.subjectId, a]));
 
   async function assignTeacher(subjectId: string, teacherId: string) {
-    if (!teacherId) return;
     setError(null);
     setSavingSubjectId(subjectId);
     try {
       await api.post("/academics/class-subjects", {
         classArmId: activeClassArmId,
         subjectId,
-        teacherId,
+        teacherId: teacherId || null,
         sessionId: activeSessionId,
         termId: activeTermId,
       });
@@ -450,7 +449,8 @@ function TeacherAssignmentsTab({ canEdit }: { canEdit: boolean }) {
   return (
     <div>
       <p className="mb-4 text-sm text-slate-500">
-        Pick a class and term, then assign the teacher responsible for each subject in that class.
+        Pick a class and term, then assign the teacher responsible for each subject in that class. Change the
+        selection any time to reassign a subject to a different teacher, or pick "Unassigned" to remove one.
       </p>
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -516,7 +516,7 @@ function TeacherAssignmentsTab({ canEdit }: { canEdit: boolean }) {
                     disabled={savingSubjectId === s.id}
                     onChange={(e) => assignTeacher(s.id, e.target.value)}
                   >
-                    <option value="">Select teacher</option>
+                    <option value="">Unassigned</option>
                     {teachers?.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.user.firstName} {t.user.lastName}

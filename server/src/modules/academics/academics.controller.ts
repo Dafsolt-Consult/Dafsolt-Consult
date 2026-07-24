@@ -138,6 +138,12 @@ export const createSubject = asyncHandler(async (req: Request, res: Response) =>
 export const assignClassSubject = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
   const input = assignClassSubjectSchema.parse(req.body);
+
+  if (input.teacherId) {
+    const teacher = await prisma.teacher.findFirst({ where: { id: input.teacherId, tenantId } });
+    if (!teacher) throw ApiError.notFound("Teacher not found");
+  }
+
   const assignment = await prisma.classArmSubject.upsert({
     where: {
       classArmId_subjectId_termId: {

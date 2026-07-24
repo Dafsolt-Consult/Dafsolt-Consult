@@ -48,7 +48,10 @@ export const createSubjectSchema = z.object({
 export const assignClassSubjectSchema = z.object({
   classArmId: z.string().cuid(),
   subjectId: z.string().cuid(),
-  teacherId: z.string().cuid().optional(),
+  // Nullable (not just optional): a school admin removing a teacher from a
+  // class+subject sends `teacherId: null` explicitly, distinct from
+  // omitting the field entirely.
+  teacherId: z.string().cuid().nullable().optional(),
   // See createTermSchema above for why these aren't .cuid().
   sessionId: z.string().min(1),
   termId: z.string().min(1),
