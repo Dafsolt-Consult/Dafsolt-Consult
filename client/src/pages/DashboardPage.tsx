@@ -46,6 +46,7 @@ function AdminOverview() {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard label="Students" value={students?.total ?? "—"} to="/students" />
       <StatCard label="Teachers" value="View" to="/teachers" />
+      <StatCard label="Teacher Assignments" value="Manage" to={`/academics?tab=${encodeURIComponent("Teacher Assignments")}`} />
       <StatCard label="Question Bank" value="Manage" to="/cbt/questions" />
       <StatCard label="Library" value="Browse" to="/library/books" />
       <StatCard label="Assignments" value="Manage" to="/assignments" />

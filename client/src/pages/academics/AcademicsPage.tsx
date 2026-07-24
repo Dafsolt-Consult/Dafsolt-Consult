@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, Card, ErrorBanner, Input, Label, PageHeader, Select, Spinner } from "../../components/ui";
 import { currentSessionId, currentTermId, useClassArms, useClassLevels, useSessions, useSubjects } from "../../hooks/useAcademics";
@@ -9,7 +10,9 @@ import { ClassArmSubject, Teacher } from "../../types";
 const TABS = ["Sessions & Terms", "Class Levels", "Class Arms", "Subjects", "Teacher Assignments"] as const;
 
 export function AcademicsPage() {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Sessions & Terms");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const tab = (TABS as readonly string[]).includes(tabParam ?? "") ? (tabParam as (typeof TABS)[number]) : "Sessions & Terms";
   const { user } = useAuth();
   const isAdmin = user?.role === "SCHOOL_ADMIN";
 
@@ -20,7 +23,7 @@ export function AcademicsPage() {
         {TABS.map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => setSearchParams({ tab: t })}
             className={`border-b-2 px-3 py-2 text-sm font-medium ${
               tab === t ? "border-brand-600 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
