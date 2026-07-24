@@ -256,6 +256,34 @@ export interface Assignment {
   mySubmission?: AssignmentSubmission | null;
 }
 
+export type MaterialType = "DOCUMENT" | "VIDEO" | "LINK" | "OTHER";
+
+export interface CourseMaterial {
+  id: string;
+  classArmId: string;
+  subjectId: string;
+  title: string;
+  description?: string | null;
+  type: MaterialType;
+  url: string;
+  createdAt: string;
+  subject?: { name: string };
+  classArm?: ClassArm & { classLevel: ClassLevel };
+}
+
+export interface OnlineClassSession {
+  id: string;
+  classArmId: string;
+  subjectId: string;
+  title: string;
+  meetingUrl: string;
+  startsAt: string;
+  endsAt?: string | null;
+  createdAt: string;
+  subject?: { name: string };
+  classArm?: ClassArm & { classLevel: ClassLevel };
+}
+
 export type CalendarEventType = "HOLIDAY" | "EXAM" | "ACADEMIC" | "EVENT" | "MEETING";
 
 export interface CalendarEvent {

@@ -24,6 +24,7 @@ import { ExamTakingPage } from "./pages/cbt/ExamTakingPage";
 import { LibraryCatalogPage } from "./pages/library/LibraryCatalogPage";
 import { BorrowRecordsPage } from "./pages/library/BorrowRecordsPage";
 import { AssignmentsPage } from "./pages/assignments/AssignmentsPage";
+import { ElearningPage } from "./pages/elearning/ElearningPage";
 import { LessonPlansPage } from "./pages/lesson-plans/LessonPlansPage";
 import { TimetablePage } from "./pages/timetable/TimetablePage";
 import { ComplianceReportsPage } from "./pages/compliance/ComplianceReportsPage";
@@ -125,6 +126,7 @@ export default function App() {
         <Route path="/library/books" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "LIBRARIAN", "TEACHER", "STUDENT", "PARENT"]}><LibraryCatalogPage /></ProtectedRoute>} />
         <Route path="/library/borrow-records" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "LIBRARIAN"]}><BorrowRecordsPage /></ProtectedRoute>} />
         <Route path="/assignments" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><AssignmentsPage /></ProtectedRoute>} />
+        <Route path="/elearning" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><ElearningPage /></ProtectedRoute>} />
         <Route path="/lesson-plans" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><LessonPlansPage /></ProtectedRoute>} />
         <Route path="/timetable" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><TimetablePage /></ProtectedRoute>} />
         <Route path="/calendar" element={<CalendarPage />} />

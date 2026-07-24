@@ -23,6 +23,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/cbt/exams", label: "Exams", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/cbt/available", label: "My Exams", roles: ["STUDENT"] },
   { to: "/assignments", label: "Assignments", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
+  { to: "/elearning", label: "E-Learning", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/calendar", label: "School Calendar", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/announcements", label: "Announcements", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "PARENT"] },
