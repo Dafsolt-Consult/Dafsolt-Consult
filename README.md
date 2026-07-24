@@ -238,6 +238,18 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
 - Disciplinary Records (`/disciplinary-records`): staff log/filter/resolve
   view, a student's own read-only view, and a "Conduct" tab on the parent
   portal. Same backend-only gap E-Learning had before this session.
+- Health & Medical Records (`/health-records`): a per-student medical
+  profile (blood group, genotype, allergies, chronic conditions,
+  medications, emergency contact, physician) plus a clinic-visit incident
+  log, mirroring Disciplinary Records' shape (`HealthRecord` is 1:1 per
+  student like `Alumnus`; `HealthIncident` is a 1:many log like
+  `DisciplinaryRecord`). `SCHOOL_ADMIN`/`NURSE` can create/edit both;
+  `TEACHER` gets read access; students see their own via a read-only view
+  reused on a "Health" tab in the parent portal. This was the interrupted
+  edit found mid-session: `schema.prisma` had the `HealthRecord[]`/
+  `HealthIncident[]` relation stubs added to `Tenant`/`User`/`Student` but
+  no model bodies, no migration, no controller/routes, and no UI — the
+  schema wouldn't even validate. All of that now exists.
 - Scholarships turned out to **not** be a gap — it doesn't have its own
   `client/src/pages` directory, but it's fully built as `ScholarshipsSection`
   inside `client/src/pages/fees/FeesPage.tsx` (search-select a student,
@@ -249,6 +261,6 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
 
 - Direct teacher↔parent/student messaging, newsletters, emergency broadcast
   alerts; real SMS delivery; real payment gateway integration
-- **Not started at all**: Health & Medical Records, true Multi-School
-  (school-group) management with consolidated cross-campus reporting
-  beyond the existing per-tenant platform-admin view
+- **Not started at all**: true Multi-School (school-group) management with
+  consolidated cross-campus reporting beyond the existing per-tenant
+  platform-admin view

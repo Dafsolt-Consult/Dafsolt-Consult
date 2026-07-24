@@ -6,12 +6,14 @@ import { Announcement, Assignment, CalendarEvent, Invoice, ReportCard, ResultEnt
 import { ParentChildTimetable } from "../timetable/TimetablePage";
 import { ParentChildElearning } from "../elearning/ElearningPage";
 import { StudentRecords as DisciplinaryStudentRecords } from "../disciplinary/DisciplinaryPage";
+import { StudentHealthView } from "../health/HealthPage";
 
 const TABS = [
   "Performance",
   "Assignments",
   "E-Learning",
   "Conduct",
+  "Health",
   "Exam Results",
   "Timetable",
   "School Calendar",
@@ -80,6 +82,7 @@ export function ParentPage() {
           {tab === "Assignments" && <AssignmentsTab studentId={activeChildId} />}
           {tab === "E-Learning" && <ParentChildElearning studentId={activeChildId} />}
           {tab === "Conduct" && <DisciplinaryStudentRecords studentId={activeChildId} />}
+          {tab === "Health" && <StudentHealthView studentId={activeChildId} />}
           {tab === "Exam Results" && <ExamResultsTab studentId={activeChildId} />}
           {tab === "Timetable" && <ParentChildTimetable studentId={activeChildId} />}
           {tab === "School Calendar" && <CalendarTab />}

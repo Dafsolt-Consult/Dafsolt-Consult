@@ -215,6 +215,33 @@ export interface DisciplinaryRecord {
   student?: { user: { firstName: string; lastName: string } };
 }
 
+export interface HealthRecord {
+  id: string;
+  studentId: string;
+  bloodGroup?: string | null;
+  genotype?: string | null;
+  allergies?: string | null;
+  chronicConditions?: string | null;
+  medications?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  emergencyContactRelation?: string | null;
+  physicianName?: string | null;
+  physicianPhone?: string | null;
+  notes?: string | null;
+  updatedAt: string;
+}
+
+export interface HealthIncident {
+  id: string;
+  studentId: string;
+  incidentDate: string;
+  description: string;
+  actionTaken?: string | null;
+  createdAt: string;
+  student?: { user: { firstName: string; lastName: string } };
+}
+
 export interface LessonPlan {
   id: string;
   classArmId: string;

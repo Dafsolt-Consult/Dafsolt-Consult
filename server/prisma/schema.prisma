@@ -339,6 +339,8 @@ model Tenant {
   courseMaterials      CourseMaterial[]
   onlineClassSessions  OnlineClassSession[]
   alumni               Alumnus[]
+  healthRecords        HealthRecord[]
+  healthIncidents      HealthIncident[]
 
   @@map("tenants")
 }
@@ -392,6 +394,8 @@ model User {
   recordedSupplyMovements     SupplyMovement[]       @relation("SupplyMovementRecorder")
   requestedProcurements       ProcurementRequest[]   @relation("ProcurementRequester")
   approvedProcurements        ProcurementRequest[]   @relation("ProcurementApprover")
+  updatedHealthRecords        HealthRecord[]         @relation("HealthRecordUpdater")
+  recordedHealthIncidents     HealthIncident[]       @relation("HealthIncidentRecorder")
 
   @@index([tenantId])
   @@map("users")
@@ -631,6 +635,8 @@ model Student {
   transportAssignments  StudentTransportAssignment[]
   roomAllocations       RoomAllocation[]
   alumnusProfile        Alumnus?
+  healthRecord          HealthRecord?
+  healthIncidents       HealthIncident[]
 
   @@unique([tenantId, admissionNumber])
   @@index([tenantId])
@@ -655,6 +661,55 @@ model DisciplinaryRecord {
 
   @@index([tenantId, studentId])
   @@map("disciplinary_records")
+}
+
+// One per student: the static medical profile (allergies, conditions,
+// emergency/physician contacts), distinct from HealthIncident's per-visit
+// clinic log. NURSE is the primary editor; SCHOOL_ADMIN can also maintain it.
+model HealthRecord {
+  id                       String   @id @default(cuid())
+  tenantId                 String
+  tenant                   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  studentId                String   @unique
+  student                  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  bloodGroup               String?
+  genotype                 String?
+  allergies                String?
+  chronicConditions        String?
+  medications              String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  physicianName            String?
+  physicianPhone           String?
+  notes                    String?
+  updatedById              String?
+  updatedBy                User?    @relation("HealthRecordUpdater", fields: [updatedById], references: [id])
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("health_records")
+}
+
+// Per-visit clinic log entry — the school infirmary equivalent of
+// DisciplinaryRecord's incident log.
+model HealthIncident {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  incidentDate DateTime
+  description  String
+  actionTaken  String?
+  recordedById String?
+  recordedBy   User?    @relation("HealthIncidentRecorder", fields: [recordedById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId, studentId])
+  @@map("health_incidents")
 }
 
 model Teacher {
