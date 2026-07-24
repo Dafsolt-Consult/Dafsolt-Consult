@@ -224,18 +224,26 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
   not a personal record).
 - The platform-curated Global Question Library (see CBT section above).
 
-**Known but not yet fixed — backend exists, frontend doesn't:**
-
-- Assigning a teacher to a subject in a class (`POST /academics/class-subjects`)
-  works correctly at the API level but has no UI anywhere in the client —
-  there is currently no way to do this through the actual product. The
-  same endpoint also rejects the demo seed data's session/term ids (the
-  seed script gives them deterministic non-cuid ids for idempotent
-  re-seeding; the zod schema validates with `.cuid()`).
-- `disciplinary` and `scholarships` are fully wired on the backend
-  (`server/src/modules/*`) but have **no `client/src/pages` directory at
-  all** — same "backend-only" gap E-Learning had before this session,
-  not yet closed for these two.
+- Teacher ↔ subject ↔ class assignment: a "Teacher Assignments" tab on
+  Classes & Subjects (pick class + session + term, assign a teacher per
+  subject). The backend (`POST /academics/class-subjects`) worked
+  correctly but had no UI anywhere; also fixed a real bug found while
+  verifying it — `sessionId`/`termId` were validated with zod's `.cuid()`,
+  which rejected the demo seed data's deterministic non-cuid ids (the seed
+  script uses `${tenantId}-2025-2026`-style ids so re-seeding is
+  idempotent). Loosened to `.min(1)`; existence is enforced by the DB
+  foreign key either way. The same `.cuid()`-on-session/term pattern is
+  still present in seven other schema files (exams, fees, hostel,
+  timetable, students, lesson-plans, results) — not fixed there yet.
+- Disciplinary Records (`/disciplinary-records`): staff log/filter/resolve
+  view, a student's own read-only view, and a "Conduct" tab on the parent
+  portal. Same backend-only gap E-Learning had before this session.
+- Scholarships turned out to **not** be a gap — it doesn't have its own
+  `client/src/pages` directory, but it's fully built as `ScholarshipsSection`
+  inside `client/src/pages/fees/FeesPage.tsx` (search-select a student,
+  grant a PERCENT/FIXED discount, deactivate/reactivate), rendered for
+  `SCHOOL_ADMIN`/`ACCOUNTANT` on the existing `/fees` page. An earlier pass
+  of this doc claimed it had no frontend at all — that was wrong.
 
 **Still genuinely outstanding:**
 
