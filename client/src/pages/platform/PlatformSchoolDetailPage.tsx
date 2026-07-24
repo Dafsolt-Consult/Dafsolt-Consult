@@ -25,11 +25,20 @@ export function PlatformSchoolDetailPage() {
     if (!tenantId) return;
     setImpersonateError(null);
     setImpersonating(true);
+    // Opened synchronously, inside the click handler, before any `await` —
+    // Safari (and Chrome after a delay) silently blocks window.open() once
+    // it's no longer in the direct call stack of a user gesture, and
+    // window.open() returns null instead of throwing, so a post-await open
+    // just does nothing with no error. Navigate this already-open tab once
+    // the token is ready instead of opening a new one then.
+    const tab = window.open("", "_blank");
     try {
       const { data } = await platformApi.post(`/tenants/${tenantId}/impersonate`, {});
       localStorage.setItem(TENANT_ACCESS_TOKEN_KEY, data.accessToken);
-      window.open("/", "_blank");
+      if (tab) tab.location.href = "/";
+      else setImpersonateError("Your browser blocked the new tab — allow pop-ups for this site and try again.");
     } catch (err) {
+      tab?.close();
       setImpersonateError(apiErrorMessage(err));
     } finally {
       setImpersonating(false);
