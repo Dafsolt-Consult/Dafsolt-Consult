@@ -5,3 +5,16 @@ export const importGlobalQuestionsSchema = z.object({
   subjectId: z.string().cuid(),
   classLevelId: z.string().cuid(),
 });
+
+export const checkPracticeAnswersSchema = z.object({
+  answers: z
+    .array(
+      z.object({
+        questionId: z.string().cuid(),
+        selectedOptionId: z.string().cuid().optional(),
+        textAnswer: z.string().max(5000).optional(),
+      })
+    )
+    .min(1)
+    .max(50),
+});

@@ -50,4 +50,11 @@ router.get("/practice-library/subjects", staffRoles, practiceLibraryController.l
 router.get("/practice-library/questions", staffRoles, practiceLibraryController.listPracticeQuestions);
 router.post("/practice-library/import", staffRoles, practiceLibraryController.importPracticeQuestions);
 
+// Student-facing practice mode over the same GlobalQuestion pool — distinct
+// from /practice-library above (staff-only, exposes answer keys to build
+// exams with). These never leak isCorrect/correctText until checked.
+router.get("/practice/subjects", authorize("STUDENT"), practiceLibraryController.listPracticeSubjects);
+router.get("/practice/questions", authorize("STUDENT"), practiceLibraryController.startPracticeSession);
+router.post("/practice/check", authorize("STUDENT"), practiceLibraryController.checkPracticeAnswers);
+
 export default router;

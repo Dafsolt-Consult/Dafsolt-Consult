@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/cbt/questions", label: "Question Bank", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/cbt/exams", label: "Exams", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/cbt/available", label: "My CBT Exams", roles: ["STUDENT"] },
+  { to: "/cbt/practice", label: "CBT Practice", roles: ["STUDENT"] },
   { to: "/assignments", label: "Assignments", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/elearning", label: "E-Learning", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/alumni", label: "Alumni", roles: ["SCHOOL_ADMIN", "TEACHER"] },

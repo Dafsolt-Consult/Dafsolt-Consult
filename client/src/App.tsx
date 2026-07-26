@@ -22,6 +22,7 @@ import { ExamDetailPage } from "./pages/cbt/ExamDetailPage";
 import { GradingPage } from "./pages/cbt/GradingPage";
 import { AvailableExamsPage } from "./pages/cbt/AvailableExamsPage";
 import { ExamTakingPage } from "./pages/cbt/ExamTakingPage";
+import { PracticeModePage } from "./pages/cbt/PracticeModePage";
 import { LibraryCatalogPage } from "./pages/library/LibraryCatalogPage";
 import { BorrowRecordsPage } from "./pages/library/BorrowRecordsPage";
 import { AssignmentsPage } from "./pages/assignments/AssignmentsPage";
@@ -132,6 +133,7 @@ export default function App() {
         <Route path="/cbt/exams/:examId" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><ExamDetailPage /></ProtectedRoute>} />
         <Route path="/cbt/exams/:examId/attempts/:attemptId/grade" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER"]}><GradingPage /></ProtectedRoute>} />
         <Route path="/cbt/available" element={<ProtectedRoute roles={["STUDENT"]}><AvailableExamsPage /></ProtectedRoute>} />
+        <Route path="/cbt/practice" element={<ProtectedRoute roles={["STUDENT"]}><PracticeModePage /></ProtectedRoute>} />
         <Route path="/library/books" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "LIBRARIAN", "TEACHER", "STUDENT", "PARENT"]}><LibraryCatalogPage /></ProtectedRoute>} />
         <Route path="/library/borrow-records" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "LIBRARIAN"]}><BorrowRecordsPage /></ProtectedRoute>} />
         <Route path="/assignments" element={<ProtectedRoute roles={["SCHOOL_ADMIN", "TEACHER", "STUDENT"]}><AssignmentsPage /></ProtectedRoute>} />

@@ -3,7 +3,8 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
-import { bulkCreateQuestionsSchema, createQuestionSchema, findQuestionShapeIssue, updateQuestionSchema } from "./questions.schema";
+import { bulkCreateQuestionsSchema, createQuestionSchema, updateQuestionSchema } from "./questions.schema";
+import { findQuestionShapeIssue } from "../../utils/questionShape";
 
 export const listQuestions = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);

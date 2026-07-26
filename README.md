@@ -329,7 +329,27 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
   Also added `POST /cbt/questions/bulk`: a teacher builds several questions
   for one subject + class level in a single form and commits them together
   (`BulkAddQuestionsModal.tsx`) instead of repeating the single-add modal
-  per question.
+  per question. The identical `findQuestionShapeIssue` gap existed in
+  `globalQuestions.schema.ts` too — fixed there via the same now-shared
+  `utils/questionShape.ts`, plus a matching `POST /platform/global-questions/bulk`
+  for platform admins.
+- Student-facing CBT practice mode (`GET /cbt/practice/questions`,
+  `POST /cbt/practice/check`, `PracticeModePage.tsx`): the platform-curated
+  Global Question Library existed but only teachers could reach it (to
+  import into their own exams); students had no access at all. Added a
+  stateless practice quiz — pick a subject (or "mixed" across all subjects)
+  and exam board, get a randomized set (`utils/shuffle.ts`'s existing
+  `seededShuffle`, fresh seed per request), answer instant-feedback
+  questions with the answer key withheld until submission (same discipline
+  as real exam-taking), see per-question results after. Deliberately no new
+  DB model — no persisted practice history, since this is meant to be
+  low-stakes repeatable practice, not a graded record.
+  Also added `GlobalQuestion.year` (nullable) so imported practice content
+  can carry its real exam year — original practice content (all of it
+  today) leaves it `null` rather than fabricate a sitting it wasn't part
+  of; see `seedGlobalQuestions.ts`'s existing disclaimer, now covering two
+  more subjects (Government, Literature-in-English) in the same
+  original-content style as the other five.
 
 **Still genuinely outstanding:**
 

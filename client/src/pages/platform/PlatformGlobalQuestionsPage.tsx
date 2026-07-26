@@ -4,12 +4,14 @@ import { apiErrorMessage } from "../../api/client";
 import { Badge, Button, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Select, Spinner, Table } from "../../components/ui";
 import { usePlatformFetch } from "../../hooks/usePlatformFetch";
 import { ExamBoard, GlobalQuestion, GlobalSubject, Paginated, QuestionType, SchoolStage } from "../../types";
+import { BulkAddGlobalQuestionsModal } from "./BulkAddGlobalQuestionsModal";
 
 export function PlatformGlobalQuestionsPage() {
   const { data: subjects, refetch: refetchSubjects } = usePlatformFetch<GlobalSubject[]>("/global-subjects");
   const [globalSubjectId, setGlobalSubjectId] = useState("");
   const [examBoard, setExamBoard] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [editQuestion, setEditQuestion] = useState<GlobalQuestion | null>(null);
   const [showNewSubject, setShowNewSubject] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -36,7 +38,14 @@ export function PlatformGlobalQuestionsPage() {
       <PageHeader
         title="Exam Practice Library"
         subtitle={`${data?.total ?? 0} practice questions, visible to every school`}
-        actions={<Button onClick={() => setShowCreate(true)}>+ Add question</Button>}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setShowBulkAdd(true)}>
+              Bulk add
+            </Button>
+            <Button onClick={() => setShowCreate(true)}>+ Add question</Button>
+          </>
+        }
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -72,6 +81,7 @@ export function PlatformGlobalQuestionsPage() {
               <th className="px-4 py-3">Question</th>
               <th className="px-4 py-3">Subject</th>
               <th className="px-4 py-3">Board</th>
+              <th className="px-4 py-3">Year</th>
               <th className="px-4 py-3">Topic</th>
               <th className="px-4 py-3">Difficulty</th>
               <th className="px-4 py-3"></th>
@@ -85,6 +95,7 @@ export function PlatformGlobalQuestionsPage() {
                 <td className="px-4 py-3">
                   <Badge>{q.examBoard}</Badge>
                 </td>
+                <td className="px-4 py-3 text-slate-600">{q.year ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{q.topic ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{q.difficulty}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
@@ -128,6 +139,16 @@ export function PlatformGlobalQuestionsPage() {
           onSaved={() => {
             refetch();
             setEditQuestion(null);
+          }}
+        />
+      )}
+      {showBulkAdd && (
+        <BulkAddGlobalQuestionsModal
+          subjects={subjects ?? []}
+          onClose={() => setShowBulkAdd(false)}
+          onSaved={() => {
+            refetch();
+            setShowBulkAdd(false);
           }}
         />
       )}
@@ -198,6 +219,7 @@ function QuestionFormModal({
   const [text, setText] = useState(question?.text ?? "");
   const [topic, setTopic] = useState(question?.topic ?? "");
   const [points, setPoints] = useState(String(question?.points ?? 1));
+  const [year, setYear] = useState(question?.year ? String(question.year) : "");
   const [correctText, setCorrectText] = useState(question?.correctText ?? "");
   const originalOptions = question?.options?.length ? question.options.map((o) => ({ text: o.text, isCorrect: !!o.isCorrect })) : null;
   const [options, setOptions] = useState(
@@ -236,7 +258,12 @@ function QuestionFormModal({
         { text: "False", isCorrect: !(options[0]?.isCorrect ?? true) },
       ];
       if (isEdit) {
-        const payload: Record<string, unknown> = { topic: topic || undefined, text, points: Number(points) };
+        const payload: Record<string, unknown> = {
+          topic: topic || undefined,
+          text,
+          points: Number(points),
+          year: year ? Number(year) : undefined,
+        };
         if (optionsDirty && (type === "MULTIPLE_CHOICE" || type === "TRUE_FALSE")) {
           payload.options = type === "TRUE_FALSE" ? trueFalseOptions : options;
         }
@@ -251,6 +278,7 @@ function QuestionFormModal({
           text,
           topic: topic || undefined,
           points: Number(points),
+          year: year ? Number(year) : undefined,
         };
         if (type === "MULTIPLE_CHOICE" || type === "TRUE_FALSE") {
           payload.options = type === "TRUE_FALSE" ? trueFalseOptions : options;
@@ -304,9 +332,22 @@ function QuestionFormModal({
             </Select>
           </div>
         </div>
-        <div>
-          <Label>Topic (optional)</Label>
-          <Input value={topic} onChange={(e) => setTopic(e.target.value)} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Topic (optional)</Label>
+            <Input value={topic} onChange={(e) => setTopic(e.target.value)} />
+          </div>
+          <div>
+            <Label>Exam year (optional)</Label>
+            <Input
+              type="number"
+              min={1980}
+              max={2100}
+              placeholder="e.g. 2019"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            />
+          </div>
         </div>
         <div>
           <Label>Question type</Label>
