@@ -4,6 +4,7 @@ import { Badge, Button, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader
 import { useClassLevels, useSubjects } from "../../hooks/useAcademics";
 import { useFetch } from "../../hooks/useFetch";
 import { GlobalQuestion, GlobalSubject, Paginated, Question, QuestionType } from "../../types";
+import { BulkAddQuestionsModal } from "./BulkAddQuestionsModal";
 
 export function QuestionBankPage() {
   const [tab, setTab] = useState<"bank" | "library">("bank");
@@ -29,6 +30,7 @@ function MyBankTab() {
   const [subjectId, setSubjectId] = useState("");
   const [classLevelId, setClassLevelId] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [editQuestion, setEditQuestion] = useState<Question | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -51,7 +53,18 @@ function MyBankTab() {
 
   return (
     <div>
-      <PageHeader title="Question Bank" subtitle={`${data?.total ?? 0} questions`} actions={<Button onClick={() => setShowCreate(true)}>+ Add question</Button>} />
+      <PageHeader
+        title="Question Bank"
+        subtitle={`${data?.total ?? 0} questions`}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setShowBulkAdd(true)}>
+              Bulk add
+            </Button>
+            <Button onClick={() => setShowCreate(true)}>+ Add question</Button>
+          </>
+        }
+      />
 
       <div className="mb-4 flex flex-wrap gap-3">
         <Select className="w-52" value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
@@ -129,6 +142,15 @@ function MyBankTab() {
           onSaved={() => {
             refetch();
             setEditQuestion(null);
+          }}
+        />
+      )}
+      {showBulkAdd && (
+        <BulkAddQuestionsModal
+          onClose={() => setShowBulkAdd(false)}
+          onSaved={() => {
+            refetch();
+            setShowBulkAdd(false);
           }}
         />
       )}

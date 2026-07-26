@@ -315,6 +315,21 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
   `POST /students/:id/enroll` per selected student — no new write endpoint.
   Graduating a final-year class isn't handled here at all; the page points
   admins at the existing Alumni "promote student" action for that instead.
+- CBT question-bank validation hardening + bulk authoring: `questions.schema.ts`'s
+  "exactly one correct option" rule was only ever enforced as "at least one" —
+  a direct API call could mark 2+ options correct on a `MULTIPLE_CHOICE`
+  question, and grading (`options.find((o) => o.isCorrect)`) would silently
+  count only the first one, marking a student wrong for picking any other
+  "correct" option. The shipped UI already prevented this (a radio-button
+  group), so it wasn't user-facing, but `updateQuestionSchema` had no shape
+  validation on `options` at all — an update could zero out a question's
+  correct answer entirely, breaking grading for every future exam using it.
+  Both now share one `findQuestionShapeIssue` check (schema-level on create,
+  controller-level on update, since `type` isn't part of the update payload).
+  Also added `POST /cbt/questions/bulk`: a teacher builds several questions
+  for one subject + class level in a single form and commits them together
+  (`BulkAddQuestionsModal.tsx`) instead of repeating the single-add modal
+  per question.
 
 **Still genuinely outstanding:**
 

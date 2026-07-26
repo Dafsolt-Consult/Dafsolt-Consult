@@ -70,7 +70,7 @@ function TeacherOverview() {
 function StudentOverview() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <StatCard label="My exams" value="View" to="/cbt/available" />
+      <StatCard label="My CBT Exams" value="View" to="/cbt/available" />
       <StatCard label="My assignments" value="View" to="/assignments" />
       <StatCard label="My results" value="View" to="/results" />
       <StatCard label="Library" value="Browse" to="/library/books" />

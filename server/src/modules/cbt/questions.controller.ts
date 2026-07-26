@@ -3,7 +3,7 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
-import { createQuestionSchema, updateQuestionSchema } from "./questions.schema";
+import { bulkCreateQuestionsSchema, createQuestionSchema, findQuestionShapeIssue, updateQuestionSchema } from "./questions.schema";
 
 export const listQuestions = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
@@ -71,6 +71,9 @@ export const updateQuestion = asyncHandler(async (req: Request, res: Response) =
     if (answerCount > 0) {
       throw ApiError.conflict("This question has already been answered in an exam attempt, so its options can no longer be changed");
     }
+
+    const issue = findQuestionShapeIssue({ type: existing.type, options, correctText: existing.correctText ?? undefined });
+    if (issue) throw ApiError.badRequest(issue);
   }
 
   const question = await prisma.$transaction(async (tx) => {
@@ -84,6 +87,44 @@ export const updateQuestion = asyncHandler(async (req: Request, res: Response) =
   });
 
   res.json(question);
+});
+
+export const bulkCreateQuestions = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
+  const { subjectId, classLevelId, questions } = bulkCreateQuestionsSchema.parse(req.body);
+
+  const [subject, classLevel] = await Promise.all([
+    prisma.subject.findFirst({ where: { id: subjectId, tenantId } }),
+    prisma.classLevel.findFirst({ where: { id: classLevelId, tenantId } }),
+  ]);
+  if (!subject) throw ApiError.notFound("Subject not found");
+  if (!classLevel) throw ApiError.notFound("Class level not found");
+
+  const createdById = req.auth.userId;
+  const created = await prisma.$transaction(
+    questions.map((q) =>
+      prisma.question.create({
+        data: {
+          tenantId,
+          subjectId,
+          classLevelId,
+          topic: q.topic,
+          type: q.type,
+          text: q.text,
+          imageUrl: q.imageUrl,
+          correctText: q.correctText,
+          points: q.points,
+          difficulty: q.difficulty,
+          createdById,
+          options: q.options ? { create: q.options.map((o, order) => ({ ...o, order })) } : undefined,
+        },
+        include: { options: true },
+      })
+    )
+  );
+
+  res.status(201).json(created);
 });
 
 export const deleteQuestion = asyncHandler(async (req: Request, res: Response) => {

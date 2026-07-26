@@ -13,6 +13,7 @@ const staffRoles = authorize("SCHOOL_ADMIN", "TEACHER");
 // Question bank
 router.get("/questions", staffRoles, questionsController.listQuestions);
 router.post("/questions", staffRoles, questionsController.createQuestion);
+router.post("/questions/bulk", staffRoles, questionsController.bulkCreateQuestions);
 router.patch("/questions/:questionId", staffRoles, questionsController.updateQuestion);
 router.delete("/questions/:questionId", staffRoles, questionsController.deleteQuestion);
 
