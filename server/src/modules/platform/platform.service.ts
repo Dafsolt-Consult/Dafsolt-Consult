@@ -113,6 +113,7 @@ export async function listTenants(page: number, pageSize: number) {
         subscriptionStatus: true,
         trialEndsAt: true,
         createdAt: true,
+        groupId: true,
         _count: { select: { students: true, users: true } },
       },
     }),

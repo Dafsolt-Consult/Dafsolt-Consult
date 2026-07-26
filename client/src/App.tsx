@@ -52,6 +52,8 @@ import { PlatformLoginPage } from "./pages/platform/PlatformLoginPage";
 import { PlatformDashboardPage } from "./pages/platform/PlatformDashboardPage";
 import { PlatformSchoolsPage } from "./pages/platform/PlatformSchoolsPage";
 import { PlatformSchoolDetailPage } from "./pages/platform/PlatformSchoolDetailPage";
+import { PlatformSchoolGroupsPage } from "./pages/platform/PlatformSchoolGroupsPage";
+import { PlatformSchoolGroupDetailPage } from "./pages/platform/PlatformSchoolGroupDetailPage";
 import { PlatformAdminsPage } from "./pages/platform/PlatformAdminsPage";
 import { PlatformAuditLogPage } from "./pages/platform/PlatformAuditLogPage";
 import { PlatformGlobalQuestionsPage } from "./pages/platform/PlatformGlobalQuestionsPage";
@@ -81,6 +83,8 @@ export default function App() {
                 <Route index element={<PlatformDashboardPage />} />
                 <Route path="schools" element={<PlatformSchoolsPage />} />
                 <Route path="schools/:tenantId" element={<PlatformSchoolDetailPage />} />
+                <Route path="school-groups" element={<PlatformSchoolGroupsPage />} />
+                <Route path="school-groups/:groupId" element={<PlatformSchoolGroupDetailPage />} />
                 <Route
                   path="admins"
                   element={

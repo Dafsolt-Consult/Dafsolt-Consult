@@ -20,7 +20,55 @@ export interface PlatformTenantRow {
   subscriptionStatus: "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED";
   trialEndsAt: string | null;
   createdAt: string;
+  groupId: string | null;
   _count: { students: number; users: number };
+}
+
+export interface SchoolGroupRow {
+  id: string;
+  name: string;
+  createdAt: string;
+  _count: { tenants: number };
+}
+
+export interface SchoolGroupTenantSummary {
+  id: string;
+  name: string;
+  slug: string;
+  planTier: "FREE" | "BASIC" | "PREMIUM";
+  subscriptionStatus: "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED";
+  _count: { students: number; users: number };
+}
+
+export interface SchoolGroupDetail {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  tenants: SchoolGroupTenantSummary[];
+}
+
+export interface SchoolGroupCampusReport {
+  tenantId: string;
+  tenantName: string;
+  latestEnrollment: number;
+  averageAttendanceRate: number;
+  feeBilled: number;
+  feePaid: number;
+  feeCollectionRate: number;
+  examPerformance: { examTitle: string; attempts: number; averageScore: number; passRate: number }[];
+}
+
+export interface SchoolGroupReport {
+  group: { id: string; name: string };
+  campuses: SchoolGroupCampusReport[];
+  totals: {
+    totalEnrollment: number;
+    averageAttendanceRate: number;
+    totalFeeBilled: number;
+    totalFeePaid: number;
+    feeCollectionRate: number;
+  };
 }
 
 export interface PlatformTenantDetail extends PlatformTenantRow {

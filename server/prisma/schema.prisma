@@ -264,6 +264,17 @@ enum AnnouncementAudience {
 // Platform / Tenancy
 // ──────────────────────────────────────────────────────────────────────────
 
+model SchoolGroup {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenants Tenant[]
+
+  @@map("school_groups")
+}
+
 model Tenant {
   id       String  @id @default(cuid())
   name     String
@@ -288,6 +299,12 @@ model Tenant {
   // uses to pre-tick a student as ready to move up; the school admin can
   // always override per student.
   promotionPassMark  Int                @default(40)
+
+  // A tenant is one campus; several campuses run by the same customer can
+  // share a SchoolGroup for consolidated cross-campus reporting in the
+  // platform-admin app. Nullable: most tenants are a standalone school.
+  groupId String?
+  group   SchoolGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

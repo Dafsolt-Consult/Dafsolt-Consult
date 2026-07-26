@@ -208,6 +208,17 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
 - Inventory & Asset Management (`inventory`)
 - Audit trail of admin/staff actions (`middleware/audit.ts`, applied to
   tenants/platform/inventory/hostel/compliance routes)
+- School Groups (`school-groups`): platform-admin-only grouping of multiple
+  `Tenant`s under one `SchoolGroup` (e.g. a customer running several
+  campuses as separate tenants), with a consolidated cross-campus report
+  (current-snapshot enrollment/attendance/fee-collection numbers per campus
+  plus combined totals) on each group's detail page in the platform-admin
+  app. Purely additive — no changes to tenant-facing auth, roles, or data
+  isolation; a tenant belongs to at most one group (nullable `Tenant.groupId`).
+  The four per-tenant metric functions backing this were extracted from
+  `analytics.controller.ts` into an exported `analytics.service.ts` so both
+  the tenant-facing overview and this platform-facing report reuse the same
+  logic instead of duplicating it.
 
 **Built but not yet deployed** (committed on this branch, pending the next
 `prisma migrate deploy` + container rebuild — see `DEPLOYMENT.md` § updates):
@@ -309,6 +320,7 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
 
 - Direct teacher↔parent/student messaging, newsletters, emergency broadcast
   alerts; real SMS delivery; real payment gateway integration
-- **Not started at all**: true Multi-School (school-group) management with
-  consolidated cross-campus reporting beyond the existing per-tenant
-  platform-admin view
+- A self-service group-admin login (so a customer's own head office could
+  log into their group's consolidated report directly, instead of a Dafsolt
+  platform admin viewing it on their behalf) — School Groups today is
+  platform-admin-only by design; see the `school-groups` entry above.
