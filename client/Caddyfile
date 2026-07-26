@@ -13,8 +13,22 @@ http://{$DOMAIN} {
 		reverse_proxy server:4000
 	}
 
+	# Vite content-hashes these filenames, so a given URL's content never
+	# changes — safe to cache forever. index.html references the current
+	# hash, so a new deploy always gets a new URL here.
+	handle /assets/* {
+		root * /srv
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# The SPA shell itself must never be served stale, or the browser can
+	# keep pointing at pre-deploy asset hashes indefinitely (no explicit
+	# Cache-Control here previously meant browsers fell back to heuristic
+	# caching instead of always revalidating).
 	handle {
 		root * /srv
+		header Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server
 	}
