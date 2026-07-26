@@ -2,8 +2,11 @@ import { z } from "zod";
 
 export const createFeeStructureSchema = z.object({
   classLevelId: z.string().cuid().optional(),
-  sessionId: z.string().cuid(),
-  termId: z.string().cuid(),
+  // Not .cuid(): the seed script assigns AcademicSession/Term deterministic
+  // non-cuid ids (`${tenantId}-2025-2026`) for idempotent re-seeding, so
+  // existence is enforced by the DB foreign key instead.
+  sessionId: z.string().min(1),
+  termId: z.string().min(1),
   name: z.string().min(2).max(80),
   amount: z.number().int().positive(), // minor units (kobo)
 });

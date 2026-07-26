@@ -9,7 +9,10 @@ export const createStudentSchema = z.object({
   dateOfBirth: z.coerce.date().optional(),
   gender: z.enum(["MALE", "FEMALE"]).optional(),
   classArmId: z.string().cuid(),
-  sessionId: z.string().cuid(),
+  // Not .cuid(): the seed script assigns AcademicSession/Term deterministic
+  // non-cuid ids (`${tenantId}-2025-2026`) for idempotent re-seeding, so
+  // existence is enforced by the DB foreign key instead.
+  sessionId: z.string().min(1),
   guardian: z
     .object({
       firstName: z.string().min(1).max(60),
@@ -50,5 +53,8 @@ export const updateStudentSchema = z.object({
 
 export const enrollStudentSchema = z.object({
   classArmId: z.string().cuid(),
-  sessionId: z.string().cuid(),
+  // Not .cuid(): the seed script assigns AcademicSession/Term deterministic
+  // non-cuid ids (`${tenantId}-2025-2026`) for idempotent re-seeding, so
+  // existence is enforced by the DB foreign key instead.
+  sessionId: z.string().min(1),
 });

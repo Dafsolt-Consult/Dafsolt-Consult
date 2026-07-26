@@ -4,8 +4,11 @@ export const createExamSchema = z.object({
   title: z.string().min(2).max(150),
   subjectId: z.string().cuid(),
   classLevelId: z.string().cuid(),
-  sessionId: z.string().cuid(),
-  termId: z.string().cuid(),
+  // Not .cuid(): the seed script assigns AcademicSession/Term deterministic
+  // non-cuid ids (`${tenantId}-2025-2026`) for idempotent re-seeding, so
+  // existence is enforced by the DB foreign key instead.
+  sessionId: z.string().min(1),
+  termId: z.string().min(1),
   instructions: z.string().max(2000).optional(),
   durationMinutes: z.number().int().positive().max(300).default(30),
   passMark: z.number().int().min(0).max(100).default(50),

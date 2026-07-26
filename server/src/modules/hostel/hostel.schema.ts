@@ -23,7 +23,10 @@ export const updateRoomSchema = z.object({
 export const createAllocationSchema = z.object({
   studentId: z.string().cuid(),
   roomId: z.string().cuid(),
-  sessionId: z.string().cuid(),
+  // Not .cuid(): the seed script assigns AcademicSession/Term deterministic
+  // non-cuid ids (`${tenantId}-2025-2026`) for idempotent re-seeding, so
+  // existence is enforced by the DB foreign key instead.
+  sessionId: z.string().min(1),
   feeAmount: z.number().int().nonnegative().default(0),
 });
 
