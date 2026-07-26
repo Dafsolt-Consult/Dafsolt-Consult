@@ -18,8 +18,15 @@ export const env = {
   // Separate signing secret for platform-admin tokens (src/utils/platformJwt.ts)
   // so a leaked tenant secret can't forge a platform token, or vice versa.
   jwtPlatformSecret: required("JWT_PLATFORM_SECRET"),
+  // Same isolation, for the CBT exam-hall kiosk login (src/utils/kioskJwt.ts)
+  // — a supervised, name+admission-number "login" that must never be able
+  // to reach anything but exam-taking, even if this secret ever leaked.
+  jwtKioskSecret: required("JWT_KIOSK_SECRET"),
   jwtAccessTtl: process.env.JWT_ACCESS_TTL ?? "15m",
   jwtRefreshTtl: process.env.JWT_REFRESH_TTL ?? "7d",
+  // Short — a kiosk session covers one supervised sitting, not a persistent
+  // account. No refresh token: re-login is cheap and expected here.
+  jwtKioskTtl: process.env.JWT_KIOSK_TTL ?? "4h",
 
   // Bootstrap credentials for the first PlatformAdmin (role OWNER), created
   // once by bootstrap.ts if the platform_admins table is empty. No fallback

@@ -350,6 +350,28 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
   of; see `seedGlobalQuestions.ts`'s existing disclaimer, now covering two
   more subjects (Government, Literature-in-English) in the same
   original-content style as the other five.
+- CBT exam-hall kiosk login (`modules/cbt/kiosk.*`, `utils/kioskJwt.ts`,
+  `middleware/kioskAuth.ts`, `client/src/pages/kiosk/*`): a supervised,
+  on-premises alternative to the real student login for sitting a CBT exam —
+  full name + admission/registration number instead of email+password,
+  matching real exam-hall CBT centers where a staff member has already
+  verified identity in person, so the login only needs to route to the
+  right student, not provide real account security. Deliberately isolated
+  as a **third, fully separate auth system** (own JWT secret
+  `JWT_KIOSK_SECRET`, own payload shape, own middleware, own router mounted
+  at `/api/cbt-kiosk` rather than inside `cbt.routes.ts`), mirroring how
+  `PlatformAdmin` auth is already kept separate from tenant `User` auth —
+  a leaked kiosk secret can only ever forge a kiosk session, which can
+  reach nothing but exam-taking (no fees, messages, results history, or any
+  other student's data). Short-lived (`JWT_KIOSK_TTL`, default 4h), no
+  refresh token. `attempts.controller.ts`'s five student exam-taking
+  handlers were refactored (not duplicated) into `(tenantId, studentId) →`
+  core functions shared by both the real STUDENT-authenticated routes and
+  the new kiosk routes, so eligibility/shuffling/deadline/auto-grading
+  logic has exactly one implementation. Every login failure (unknown
+  school, unknown admission number, inactive student, name mismatch)
+  returns the same generic error, matching the real login's
+  don't-reveal-which-part-was-wrong convention.
 
 **Still genuinely outstanding:**
 

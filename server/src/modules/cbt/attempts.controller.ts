@@ -6,7 +6,7 @@ import { ApiError } from "../../utils/ApiError";
 import { seededShuffle } from "../../utils/shuffle";
 import { resolveStudentParam } from "../../utils/resolveStudentId";
 import { autoGradeAttempt, recomputeAttemptTotals } from "./grading.service";
-import { gradeAnswerSchema, submitAnswerSchema } from "./attempts.schema";
+import { AnswerInput, gradeAnswerSchema, submitAnswerSchema } from "./attempts.schema";
 import { Exam, ExamAttempt } from "@prisma/client";
 
 function attemptDeadline(exam: Exam, attempt: ExamAttempt): Date {
@@ -21,23 +21,27 @@ async function currentStudentId(userId: string, tenantId: string) {
   return student.id;
 }
 
+// ── Core exam-taking logic ───────────────────────────────────────────────────
+// Parameterized purely by (tenantId, studentId) rather than derived from
+// req.auth, so both the normal STUDENT-authenticated routes below AND the
+// exam-hall kiosk routes (modules/cbt/kiosk.controller.ts — a real Student
+// row, but with no backing User/req.auth at all) can share the exact same
+// eligibility, shuffling, deadline and auto-grading behavior instead of
+// keeping two copies in sync.
+
 /** Lists exams a student is eligible to sit: matching class level, currently
  * open (SCHEDULED/ONGOING and within the start/end window) and not already
  * submitted or graded. */
-export const listAvailableExams = asyncHandler(async (req: Request, res: Response) => {
-  const tenantId = resolveTenantId(req);
-  if (!req.auth) throw ApiError.unauthorized();
-  const studentId = await currentStudentId(req.auth.userId, tenantId);
-
+export async function listAvailableExamsCore(tenantId: string, studentId: string) {
   const enrollment = await prisma.enrollment.findFirst({
     where: { studentId },
     orderBy: { enrolledAt: "desc" },
     include: { classArm: true },
   });
-  if (!enrollment) return res.json([]);
+  if (!enrollment) return [];
 
   const now = new Date();
-  const exams = await prisma.exam.findMany({
+  return prisma.exam.findMany({
     where: {
       tenantId,
       classLevelId: enrollment.classArm.classLevelId,
@@ -51,32 +55,11 @@ export const listAvailableExams = asyncHandler(async (req: Request, res: Respons
       _count: { select: { examQuestions: true } },
     },
   });
+}
 
-  res.json(exams);
-});
-
-/** CBT exam history (across all exams, not just one) for a student — used by
- * the student portal and the parent dashboard's "exam results" view. */
-export const listAttemptsForStudent = asyncHandler(async (req: Request, res: Response) => {
-  const tenantId = resolveTenantId(req);
-  const studentId = await resolveStudentParam(req, tenantId, req.params.studentId);
-
-  const attempts = await prisma.examAttempt.findMany({
-    where: { studentId, exam: { tenantId } },
-    include: { exam: { include: { subject: true } } },
-    orderBy: { startedAt: "desc" },
-  });
-
-  res.json(attempts);
-});
-
-export const startAttempt = asyncHandler(async (req: Request, res: Response) => {
-  const tenantId = resolveTenantId(req);
-  if (!req.auth) throw ApiError.unauthorized();
-  const studentId = await currentStudentId(req.auth.userId, tenantId);
-
+export async function startAttemptCore(tenantId: string, studentId: string, examId: string) {
   const exam = await prisma.exam.findFirst({
-    where: { id: req.params.examId, tenantId },
+    where: { id: examId, tenantId },
     include: { examQuestions: { include: { question: { include: { options: true } } }, orderBy: { order: "asc" } } },
   });
   if (!exam) throw ApiError.notFound("Exam not found");
@@ -105,15 +88,11 @@ export const startAttempt = asyncHandler(async (req: Request, res: Response) => 
     throw ApiError.conflict("You have already submitted this exam");
   }
 
-  res.status(200).json(serializeAttemptForStudent(exam, attempt));
-});
+  return serializeAttemptForStudent(exam, attempt);
+}
 
-export const getAttempt = asyncHandler(async (req: Request, res: Response) => {
-  const tenantId = resolveTenantId(req);
-  if (!req.auth) throw ApiError.unauthorized();
-  const studentId = await currentStudentId(req.auth.userId, tenantId);
-
-  const attempt = await prisma.examAttempt.findFirst({ where: { id: req.params.attemptId, studentId } });
+export async function getAttemptCore(tenantId: string, studentId: string, attemptId: string) {
+  const attempt = await prisma.examAttempt.findFirst({ where: { id: attemptId, studentId } });
   if (!attempt) throw ApiError.notFound("Attempt not found");
 
   const exam = await prisma.exam.findFirstOrThrow({
@@ -124,16 +103,11 @@ export const getAttempt = asyncHandler(async (req: Request, res: Response) => {
   const finalAttempt = await autoSubmitIfExpired(exam, attempt);
   const answers = await prisma.examAnswer.findMany({ where: { attemptId: attempt.id } });
 
-  res.json({ ...serializeAttemptForStudent(exam, finalAttempt), answers: answers.map(publicAnswer) });
-});
+  return { ...serializeAttemptForStudent(exam, finalAttempt), answers: answers.map(publicAnswer) };
+}
 
-export const answerQuestion = asyncHandler(async (req: Request, res: Response) => {
-  const tenantId = resolveTenantId(req);
-  if (!req.auth) throw ApiError.unauthorized();
-  const studentId = await currentStudentId(req.auth.userId, tenantId);
-  const input = submitAnswerSchema.parse(req.body);
-
-  const attempt = await prisma.examAttempt.findFirst({ where: { id: req.params.attemptId, studentId } });
+export async function answerQuestionCore(tenantId: string, studentId: string, attemptId: string, input: AnswerInput) {
+  const attempt = await prisma.examAttempt.findFirst({ where: { id: attemptId, studentId } });
   if (!attempt) throw ApiError.notFound("Attempt not found");
 
   const exam = await prisma.exam.findFirstOrThrow({ where: { id: attempt.examId, tenantId } });
@@ -151,23 +125,71 @@ export const answerQuestion = asyncHandler(async (req: Request, res: Response) =
     },
   });
 
-  res.status(200).json(publicAnswer(answer));
-});
+  return publicAnswer(answer);
+}
 
-export const submitAttempt = asyncHandler(async (req: Request, res: Response) => {
-  const tenantId = resolveTenantId(req);
-  if (!req.auth) throw ApiError.unauthorized();
-  const studentId = await currentStudentId(req.auth.userId, tenantId);
-
-  const attempt = await prisma.examAttempt.findFirst({ where: { id: req.params.attemptId, studentId } });
+export async function submitAttemptCore(tenantId: string, studentId: string, attemptId: string) {
+  const attempt = await prisma.examAttempt.findFirst({ where: { id: attemptId, studentId } });
   if (!attempt) throw ApiError.notFound("Attempt not found");
   if (attempt.status !== "IN_PROGRESS") throw ApiError.conflict("This attempt has already been submitted");
 
   await prisma.examAttempt.update({ where: { id: attempt.id }, data: { submittedAt: new Date(), status: "SUBMITTED" } });
   await autoGradeAttempt(attempt.id);
 
-  const graded = await prisma.examAttempt.findUniqueOrThrow({ where: { id: attempt.id } });
-  res.json(graded);
+  return prisma.examAttempt.findUniqueOrThrow({ where: { id: attempt.id } });
+}
+
+// ── Student-authenticated Express routes ─────────────────────────────────────
+
+export const listAvailableExams = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
+  const studentId = await currentStudentId(req.auth.userId, tenantId);
+  res.json(await listAvailableExamsCore(tenantId, studentId));
+});
+
+/** CBT exam history (across all exams, not just one) for a student — used by
+ * the student portal and the parent dashboard's "exam results" view. */
+export const listAttemptsForStudent = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  const studentId = await resolveStudentParam(req, tenantId, req.params.studentId);
+
+  const attempts = await prisma.examAttempt.findMany({
+    where: { studentId, exam: { tenantId } },
+    include: { exam: { include: { subject: true } } },
+    orderBy: { startedAt: "desc" },
+  });
+
+  res.json(attempts);
+});
+
+export const startAttempt = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
+  const studentId = await currentStudentId(req.auth.userId, tenantId);
+  res.status(200).json(await startAttemptCore(tenantId, studentId, req.params.examId));
+});
+
+export const getAttempt = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
+  const studentId = await currentStudentId(req.auth.userId, tenantId);
+  res.json(await getAttemptCore(tenantId, studentId, req.params.attemptId));
+});
+
+export const answerQuestion = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
+  const studentId = await currentStudentId(req.auth.userId, tenantId);
+  const input = submitAnswerSchema.parse(req.body);
+  res.status(200).json(await answerQuestionCore(tenantId, studentId, req.params.attemptId, input));
+});
+
+export const submitAttempt = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  if (!req.auth) throw ApiError.unauthorized();
+  const studentId = await currentStudentId(req.auth.userId, tenantId);
+  res.json(await submitAttemptCore(tenantId, studentId, req.params.attemptId));
 });
 
 // ── Teacher-side manual grading of theory answers ───────────────────────────
