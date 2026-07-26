@@ -7,7 +7,10 @@ export const createPeriodSchema = z
     classArmId: z.string().cuid(),
     subjectId: z.string().cuid(),
     teacherId: z.string().cuid().optional(),
-    termId: z.string().cuid(),
+    // Not .cuid(): the seed script assigns AcademicSession/Term deterministic
+    // non-cuid ids (`${tenantId}-2025-2026`) for idempotent re-seeding, so
+    // existence is enforced by the DB foreign key instead.
+    termId: z.string().min(1),
     dayOfWeek: z.number().int().min(1).max(7),
     startTime: timeString,
     endTime: timeString,

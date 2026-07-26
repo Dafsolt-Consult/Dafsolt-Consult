@@ -232,9 +232,10 @@ its own `server/src/modules/*` and `client/src/pages/*` pair:
   which rejected the demo seed data's deterministic non-cuid ids (the seed
   script uses `${tenantId}-2025-2026`-style ids so re-seeding is
   idempotent). Loosened to `.min(1)`; existence is enforced by the DB
-  foreign key either way. The same `.cuid()`-on-session/term pattern is
-  still present in seven other schema files (exams, fees, hostel,
-  timetable, students, lesson-plans, results) — not fixed there yet.
+  foreign key either way. The same `.cuid()`-on-session/term pattern was
+  also present in seven other schema files (exams, fees, hostel,
+  timetable, students, lesson-plans, results) — now loosened to `.min(1)`
+  there too, same rationale.
   Assigning a teacher as a class's form/homeroom teacher
   (`ClassArm.formTeacherId`) had the same "backend exists, no way to reach
   it" gap: `createClassArm` accepted it, but there was no update route and
