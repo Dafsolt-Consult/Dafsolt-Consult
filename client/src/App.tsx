@@ -23,6 +23,10 @@ import { GradingPage } from "./pages/cbt/GradingPage";
 import { AvailableExamsPage } from "./pages/cbt/AvailableExamsPage";
 import { ExamTakingPage } from "./pages/cbt/ExamTakingPage";
 import { PracticeModePage } from "./pages/cbt/PracticeModePage";
+import { KioskLoginPage } from "./pages/kiosk/KioskLoginPage";
+import { KioskAvailableExamsPage } from "./pages/kiosk/KioskAvailableExamsPage";
+import { KioskExamTakingPage } from "./pages/kiosk/KioskExamTakingPage";
+import { KioskProtectedRoute } from "./routes/KioskProtectedRoute";
 import { LibraryCatalogPage } from "./pages/library/LibraryCatalogPage";
 import { BorrowRecordsPage } from "./pages/library/BorrowRecordsPage";
 import { AssignmentsPage } from "./pages/assignments/AssignmentsPage";
@@ -99,6 +103,17 @@ export default function App() {
               </Route>
             </Routes>
           </PlatformAuthProvider>
+        }
+      />
+
+      <Route
+        path="/kiosk/*"
+        element={
+          <Routes>
+            <Route path="login" element={<KioskLoginPage />} />
+            <Route index element={<KioskProtectedRoute><KioskAvailableExamsPage /></KioskProtectedRoute>} />
+            <Route path="attempts/:attemptId" element={<KioskProtectedRoute><KioskExamTakingPage /></KioskProtectedRoute>} />
+          </Routes>
         }
       />
 

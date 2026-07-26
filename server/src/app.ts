@@ -28,6 +28,7 @@ import inventoryRoutes from "./modules/inventory/inventory.routes";
 import resultsRoutes from "./modules/results/results.routes";
 import feesRoutes from "./modules/fees/fees.routes";
 import cbtRoutes from "./modules/cbt/cbt.routes";
+import cbtKioskRoutes from "./modules/cbt/kiosk.routes";
 import libraryRoutes from "./modules/library/library.routes";
 import parentsRoutes from "./modules/parents/parents.routes";
 import assignmentsRoutes from "./modules/assignments/assignments.routes";
@@ -94,6 +95,7 @@ export function createApp() {
   app.use("/api/results", resultsRoutes);
   app.use("/api/fees", feesRoutes);
   app.use("/api/cbt", cbtRoutes);
+  app.use("/api/cbt-kiosk", cbtKioskRoutes);
   app.use("/api/library", libraryRoutes);
   app.use("/api/parents", parentsRoutes);
   app.use("/api/assignments", assignmentsRoutes);
