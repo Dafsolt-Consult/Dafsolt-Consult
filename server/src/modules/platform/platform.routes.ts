@@ -102,6 +102,12 @@ router.post(
   auditLog("CREATE_GLOBAL_QUESTION", "GlobalQuestion"),
   globalQuestionsController.createGlobalQuestion
 );
+router.post(
+  "/global-questions/bulk",
+  authorizePlatform("OWNER"),
+  auditLog("BULK_CREATE_GLOBAL_QUESTIONS", "GlobalQuestion"),
+  globalQuestionsController.bulkCreateGlobalQuestions
+);
 router.patch(
   "/global-questions/:questionId",
   authorizePlatform("OWNER"),

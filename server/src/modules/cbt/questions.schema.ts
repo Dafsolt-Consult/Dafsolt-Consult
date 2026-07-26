@@ -1,32 +1,10 @@
 import { z } from "zod";
+import { findQuestionShapeIssue } from "../../utils/questionShape";
 
 const optionSchema = z.object({
   text: z.string().min(1).max(500),
   isCorrect: z.boolean().default(false),
 });
-
-export type QuestionTypeValue = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "THEORY" | "FILL_IN_BLANK";
-
-/** Shared by createQuestionSchema's superRefine (type is known up front) and
- * questions.controller.ts's updateQuestion (type comes from the existing DB
- * row, since it can't be changed after creation) — the same type/options/
- * correctText shape must hold either way. */
-export function findQuestionShapeIssue(input: {
-  type: QuestionTypeValue;
-  options?: { isCorrect: boolean }[];
-  correctText?: string;
-}): string | null {
-  if (input.type === "MULTIPLE_CHOICE") {
-    if (!input.options || input.options.length < 2) return "Multiple choice questions need at least 2 options";
-    if (input.options.filter((o) => o.isCorrect).length !== 1) return "Exactly one option must be marked correct";
-  }
-  if (input.type === "TRUE_FALSE") {
-    if (!input.options || input.options.length !== 2) return "True/False questions need exactly 2 options";
-    if (input.options.filter((o) => o.isCorrect).length !== 1) return "Exactly one of True/False must be marked correct";
-  }
-  if (input.type === "FILL_IN_BLANK" && !input.correctText) return "correctText is required for fill-in-the-blank questions";
-  return null;
-}
 
 const questionBaseSchema = z.object({
   topic: z.string().max(80).optional(),

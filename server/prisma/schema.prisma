@@ -893,6 +893,10 @@ model GlobalQuestion {
   globalSubject    GlobalSubject @relation(fields: [globalSubjectId], references: [id], onDelete: Cascade)
   examBoard        ExamBoard
   stage            SchoolStage
+  // Nullable: original practice content isn't tied to a real sitting, so it
+  // stays null. Exists for genuinely-dated licensed past papers imported
+  // later through the bulk-import path.
+  year             Int?
   topic            String?
   type             QuestionType
   text             String

@@ -85,6 +85,7 @@ export interface GlobalQuestion {
   globalSubjectId: string;
   examBoard: ExamBoard;
   stage: SchoolStage;
+  year?: number | null;
   topic?: string | null;
   type: QuestionType;
   text: string;
