@@ -4,6 +4,7 @@ import { authenticatePlatform, authorizePlatform } from "../../middleware/platfo
 import { auditLog } from "../../middleware/audit";
 import * as platformController from "./platform.controller";
 import * as globalQuestionsController from "./globalQuestions.controller";
+import * as schoolGroupsController from "../school-groups/school-groups.controller";
 
 const router = Router();
 
@@ -38,6 +39,34 @@ router.post(
   "/tenants/:tenantId/impersonate",
   authorizePlatform("OWNER", "SUPPORT"),
   platformController.impersonate
+);
+
+router.get("/school-groups", schoolGroupsController.listSchoolGroups);
+router.post(
+  "/school-groups",
+  authorizePlatform("OWNER"),
+  auditLog("CREATE_SCHOOL_GROUP", "SchoolGroup"),
+  schoolGroupsController.createSchoolGroup
+);
+router.get("/school-groups/:groupId", schoolGroupsController.getSchoolGroupById);
+router.patch(
+  "/school-groups/:groupId",
+  authorizePlatform("OWNER"),
+  auditLog("UPDATE_SCHOOL_GROUP", "SchoolGroup"),
+  schoolGroupsController.updateSchoolGroup
+);
+router.get("/school-groups/:groupId/report", schoolGroupsController.getGroupConsolidatedReport);
+router.post(
+  "/school-groups/:groupId/tenants",
+  authorizePlatform("OWNER"),
+  auditLog("ASSIGN_TENANT_TO_GROUP", "Tenant"),
+  schoolGroupsController.assignTenantToGroup
+);
+router.delete(
+  "/school-groups/tenants/:tenantId",
+  authorizePlatform("OWNER"),
+  auditLog("REMOVE_TENANT_FROM_GROUP", "Tenant"),
+  schoolGroupsController.removeTenantFromGroup
 );
 
 router.get("/admins", authorizePlatform("OWNER"), platformController.listAdmins);
