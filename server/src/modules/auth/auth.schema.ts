@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { COUNTRIES } from "../../utils/geography";
 
 export const onboardSchoolSchema = z.object({
   schoolName: z.string().min(2).max(120),
@@ -9,7 +10,10 @@ export const onboardSchoolSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Slug may only contain lowercase letters, numbers and hyphens")
     .optional()
     .or(z.literal("")),
-  country: z.string().min(2).max(60).default("Nigeria"),
+  address: z.string().max(255).optional().or(z.literal("")),
+  landmark: z.string().max(255).optional().or(z.literal("")),
+  state: z.string().min(2).max(100),
+  country: z.enum(COUNTRIES).default("Nigeria"),
   currency: z.string().min(3).max(3).default("NGN"),
   adminFirstName: z.string().min(1).max(60),
   adminLastName: z.string().min(1).max(60),

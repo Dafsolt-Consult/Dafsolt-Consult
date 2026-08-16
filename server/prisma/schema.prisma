@@ -285,6 +285,7 @@ model Tenant {
   slug     String  @unique
   logoUrl  String?
   address  String?
+  landmark String?
   city     String?
   state    String?
   country  String  @default("Nigeria")

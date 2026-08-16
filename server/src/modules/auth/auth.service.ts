@@ -45,6 +45,9 @@ export async function onboardSchool(input: OnboardSchoolInput) {
     data: {
       name: input.schoolName,
       slug,
+      address: input.address || undefined,
+      landmark: input.landmark || undefined,
+      state: input.state,
       country: input.country,
       currency: input.currency,
       trialEndsAt,

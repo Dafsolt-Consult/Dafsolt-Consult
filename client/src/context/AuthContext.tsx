@@ -5,6 +5,9 @@ import { AuthUser } from "../types";
 interface OnboardInput {
   schoolName: string;
   slug: string;
+  address?: string;
+  landmark?: string;
+  state: string;
   country?: string;
   currency?: string;
   adminFirstName: string;

@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { ErrorBanner, Input, Label, Select } from "../components/ui";
 import { apiErrorMessage } from "../api/client";
 import { AuthGateShell } from "../components/AuthGateShell";
+import { COUNTRIES, NIGERIAN_STATES } from "../lib/geography";
 
 const PLAN_OPTIONS = [
   { value: "STARTER", label: "Starter", students: "1–150 students", price: "₦50,000/term" },
@@ -24,6 +25,10 @@ export function OnboardPage() {
   const [form, setForm] = useState({
     schoolName: "",
     slug: "",
+    address: "",
+    landmark: "",
+    country: "Nigeria",
+    state: "",
     adminFirstName: "",
     adminLastName: "",
     adminEmail: "",
@@ -47,7 +52,7 @@ export function OnboardPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await onboardSchool({ ...form, country: "Nigeria", currency: "NGN", planTier });
+      await onboardSchool({ ...form, currency: "NGN", planTier });
       navigate("/");
     } catch (err) {
       setError(apiErrorMessage(err));
@@ -85,6 +90,65 @@ export function OnboardPage() {
             pattern="[a-z0-9-]*"
             value={form.slug}
             onChange={(e) => update("slug", e.target.value.toLowerCase())}
+            className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
+          />
+        </div>
+        <div>
+          <Label>School address</Label>
+          <Input
+            value={form.address}
+            onChange={(e) => update("address", e.target.value)}
+            className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Country</Label>
+            <Select
+              value={form.country}
+              onChange={(e) => update("country", e.target.value)}
+              className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
+            >
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label>State / region</Label>
+            {form.country === "Nigeria" ? (
+              <Select
+                required
+                value={form.state}
+                onChange={(e) => update("state", e.target.value)}
+                className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
+              >
+                <option value="">Select state</option>
+                {NIGERIAN_STATES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <Input
+                required
+                placeholder="State / region"
+                value={form.state}
+                onChange={(e) => update("state", e.target.value)}
+                className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
+              />
+            )}
+          </div>
+        </div>
+        <div>
+          <Label>Closest landmark (optional)</Label>
+          <Input
+            placeholder="e.g. opposite First Bank"
+            value={form.landmark}
+            onChange={(e) => update("landmark", e.target.value)}
             className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
           />
         </div>
