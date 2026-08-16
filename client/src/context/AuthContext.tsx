@@ -10,6 +10,7 @@ interface OnboardInput {
   adminFirstName: string;
   adminLastName: string;
   adminEmail: string;
+  adminPhone: string;
   adminPassword: string;
   planTier?: "STARTER" | "GROWTH" | "PROFESSIONAL" | "ENTERPRISE";
 }

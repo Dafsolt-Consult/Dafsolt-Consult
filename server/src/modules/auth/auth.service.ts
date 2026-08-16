@@ -58,6 +58,7 @@ export async function onboardSchool(input: OnboardSchoolInput) {
           role: "SCHOOL_ADMIN",
           firstName: input.adminFirstName,
           lastName: input.adminLastName,
+          phone: input.adminPhone,
         },
       },
     },

@@ -27,6 +27,7 @@ export function OnboardPage() {
     adminFirstName: "",
     adminLastName: "",
     adminEmail: "",
+    adminPhone: "",
     adminPassword: "",
   });
   const [planTier, setPlanTier] = useState<(typeof PLAN_OPTIONS)[number]["value"]>(() =>
@@ -131,6 +132,16 @@ export function OnboardPage() {
             required
             value={form.adminEmail}
             onChange={(e) => update("adminEmail", e.target.value)}
+            className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
+          />
+        </div>
+        <div>
+          <Label>Admin phone number</Label>
+          <Input
+            type="tel"
+            required
+            value={form.adminPhone}
+            onChange={(e) => update("adminPhone", e.target.value)}
             className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
           />
         </div>
