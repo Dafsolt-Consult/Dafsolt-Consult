@@ -46,7 +46,7 @@ export async function notifyUsers(
       externalChannels.map(async (channel) => {
         const result =
           channel === "EMAIL"
-            ? await sendEmail(recipient.email, input.subject ?? "School Manager notification", input.message)
+            ? await sendEmail(recipient.email, input.subject ?? "DAFSOLT OS notification", input.message)
             : recipient.phone
               ? await sendSms(recipient.phone, input.message)
               : { ok: false as const, reason: "No phone number on file" };

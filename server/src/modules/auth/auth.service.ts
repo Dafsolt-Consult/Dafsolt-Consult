@@ -143,7 +143,7 @@ export async function requestPasswordReset(email: string) {
 
   const result = await sendEmail(
     user.email,
-    "Reset your School Manager password",
+    "Reset your DAFSOLT OS password",
     `Hi ${user.firstName}, use this link to reset your password (expires in 1 hour): ${resetLink}`
   );
 

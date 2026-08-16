@@ -11,7 +11,7 @@ ensurePlatformOwner()
   })
   .finally(() => {
     app.listen(env.port, () => {
-      console.log(`School Manager API listening on port ${env.port} [${env.nodeEnv}]`);
+      console.log(`DAFSOLT OS API listening on port ${env.port} [${env.nodeEnv}]`);
     });
     startScheduler();
   });

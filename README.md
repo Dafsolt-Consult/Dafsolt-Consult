@@ -1,4 +1,4 @@
-# School Manager
+# DAFSOLT OS
 
 A multi-tenant School Management SaaS built for primary and secondary schools
 across Africa, with a full built-in Computer-Based Testing (CBT) engine and a
