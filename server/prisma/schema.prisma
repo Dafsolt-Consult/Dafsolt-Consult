@@ -16,9 +16,11 @@ datasource db {
 // ──────────────────────────────────────────────────────────────────────────
 
 enum PlanTier {
-  FREE
-  BASIC
-  PREMIUM
+  STARTER
+  GROWTH
+  PROFESSIONAL
+  ENTERPRISE
+  SCHOOL_GROUP
 }
 
 enum SubscriptionStatus {
@@ -45,6 +47,8 @@ enum UserRole {
 enum PlatformRole {
   OWNER // full access: billing/plan, platform admin management, impersonation
   SUPPORT // read tenants, start impersonation sessions; no admin/plan management
+  BILLING // manage tenant subscriptions/plans, view revenue analytics; no admin management or impersonation
+  CONTENT_MANAGER // manage the shared exam-practice question library; no billing, admin management or impersonation
 }
 
 enum Gender {
@@ -289,12 +293,12 @@ model Tenant {
   currency String  @default("NGN")
   timezone String  @default("Africa/Lagos")
 
-  planTier           PlanTier           @default(FREE)
+  planTier           PlanTier           @default(STARTER)
   subscriptionStatus SubscriptionStatus @default(TRIALING)
   trialEndsAt        DateTime?
   subscriptionEndsAt DateTime?
-  maxStudents        Int                @default(100)
-  maxStaff           Int                @default(15)
+  maxStudents        Int                @default(150)
+  maxStaff           Int                @default(20)
   // Suggested (not enforced) average-score threshold the Promotions page
   // uses to pre-tick a student as ready to move up; the school admin can
   // always override per student.

@@ -1,18 +1,41 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { platformApi } from "../../api/platformClient";
 import { apiErrorMessage } from "../../api/client";
-import { Card, ErrorBanner, PageHeader, Select, Table } from "../../components/ui";
+import { Card, ErrorBanner, Input, PageHeader, Select, Table } from "../../components/ui";
 import { usePlatformFetch } from "../../hooks/usePlatformFetch";
 import { Paginated } from "../../types";
 import { PlatformTenantRow } from "../../types/platform";
 import { usePlatformAuth } from "../../context/PlatformAuthContext";
 
+function useDebounced<T>(value: T, delayMs = 300): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+  return debounced;
+}
+
 export function PlatformSchoolsPage() {
   const { admin } = usePlatformAuth();
-  const { data, loading, error, refetch } = usePlatformFetch<Paginated<PlatformTenantRow>>("/tenants");
+  const [search, setSearch] = useState("");
+  const [planFilter, setPlanFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const debouncedSearch = useDebounced(search);
+
+  const url = useMemo(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (planFilter) params.set("planTier", planFilter);
+    if (statusFilter) params.set("subscriptionStatus", statusFilter);
+    const qs = params.toString();
+    return qs ? `/tenants?${qs}` : "/tenants";
+  }, [debouncedSearch, planFilter, statusFilter]);
+
+  const { data, loading, error, refetch } = usePlatformFetch<Paginated<PlatformTenantRow>>(url);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const canEditBilling = admin?.role === "OWNER";
+  const canEditBilling = admin?.role === "OWNER" || admin?.role === "BILLING";
 
   async function updateSubscription(tenantId: string, patch: Record<string, string>) {
     setSaveError(null);
@@ -33,6 +56,31 @@ export function PlatformSchoolsPage() {
           <ErrorBanner message={saveError} />
         </div>
       )}
+
+      <div className="mb-4 flex flex-wrap gap-3">
+        <Input
+          placeholder="Search by name or URL slug..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)} className="w-44">
+          <option value="">All plans</option>
+          <option value="STARTER">Starter</option>
+          <option value="GROWTH">Growth</option>
+          <option value="PROFESSIONAL">Professional</option>
+          <option value="ENTERPRISE">Enterprise</option>
+          <option value="SCHOOL_GROUP">School Group</option>
+        </Select>
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-40">
+          <option value="">All statuses</option>
+          <option value="TRIALING">Trialing</option>
+          <option value="ACTIVE">Active</option>
+          <option value="PAST_DUE">Past due</option>
+          <option value="CANCELED">Canceled</option>
+        </Select>
+      </div>
+
       {loading ? (
         <p className="text-sm text-slate-500">Loading...</p>
       ) : (
@@ -63,11 +111,13 @@ export function PlatformSchoolsPage() {
                     value={t.planTier}
                     disabled={!canEditBilling}
                     onChange={(e) => updateSubscription(t.id, { planTier: e.target.value })}
-                    className="w-28"
+                    className="w-36"
                   >
-                    <option value="FREE">Free</option>
-                    <option value="BASIC">Basic</option>
-                    <option value="PREMIUM">Premium</option>
+                    <option value="STARTER">Starter</option>
+                    <option value="GROWTH">Growth</option>
+                    <option value="PROFESSIONAL">Professional</option>
+                    <option value="ENTERPRISE">Enterprise</option>
+                    <option value="SCHOOL_GROUP">School Group</option>
                   </Select>
                 </td>
                 <td className="px-4 py-3">
@@ -95,7 +145,9 @@ export function PlatformSchoolsPage() {
       )}
       {!loading && !data?.items.length && (
         <Card className="mt-4">
-          <p className="text-sm text-slate-500">No schools have registered yet.</p>
+          <p className="text-sm text-slate-500">
+            {search || planFilter || statusFilter ? "No schools match these filters." : "No schools have registered yet."}
+          </p>
         </Card>
       )}
     </div>

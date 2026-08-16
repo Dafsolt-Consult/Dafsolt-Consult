@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useFetch } from "../hooks/useFetch";
 
 /* ---------- small local icon set (no new dependency) ---------- */
 
@@ -12,12 +13,14 @@ function Icon({ path, className = "h-6 w-6" }: { path: string; className?: strin
 }
 
 const icons = {
+  administration: "M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z",
   academics: "M12 3 1 8l11 5 9-4.09V15h2V8L12 3Zm-7 8.18V16c0 1.1 3.13 3 7 3s7-1.9 7-3v-4.82l-7 3.18-7-3.18Z",
-  cbt: "M9 12.75 11.25 15 15 9.75M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9Z",
-  library: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15Z",
-  fees: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
-  parents: "M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm11 10v-2a4 4 0 0 0-3-3.87M16 2.13a4 4 0 0 1 0 7.75",
-  attendance: "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm2 10 3 3 5-6",
+  finance: "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+  people: "M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm11 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+  communication:
+    "M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z",
+  operations: "M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2-2 2.8-2.8Z",
+  analytics: "M3 3v18h18M8 17V9m5 8V5m5 12v-5",
   reports: "M3 3v18h18M8 17V9m5 8V5m5 12v-5",
   chevronDown: "m6 9 6 6 6-6",
   check: "M20 6 9 17l-5-5",
@@ -70,117 +73,233 @@ function CountUp({ to, suffix = "", duration = 1400 }: { to: number; suffix?: st
 /* ---------- data ---------- */
 
 const NAV_LINKS = [
-  { href: "#modules", label: "Modules" },
-  { href: "#workflow", label: "How it works" },
+  { href: "#showcase", label: "See it live" },
+  { href: "#pillars", label: "What's inside" },
   { href: "#roles", label: "Who it's for" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
 ];
 
-const MODULES = [
+const SHOWCASE = [
   {
-    key: "academics",
-    label: "Academics",
-    title: "Africa-first academic structure, ready on day one",
-    body: "Primary 1–6, JSS 1–3, SSS 1–3 out of the box, with class arms, subjects, and per-term teacher assignments. WAEC/NECO-style A–F grading and a full result-entry-to-report-card pipeline, including attendance counts and class position.",
-    points: ["Academic sessions & terms", "Class levels & arms", "Auto-graded report cards"],
+    key: "proprietor",
+    persona: "Proprietor",
+    title: "Proprietor Dashboard",
+    body: "Enrollment trend, attendance rate, fee collection and exam performance — the whole school's health on one screen, updated the moment staff record anything.",
+    image: "/screenshots/proprietor-dashboard.webp",
   },
   {
-    key: "cbt",
-    label: "CBT Engine",
-    title: "Computer-Based Testing that's a first-class module",
-    body: "A reusable question bank across multiple choice, true/false, fill-in-the-blank and theory. A real exam builder, timed exam-taking with per-student shuffling via a seeded PRNG, instant auto-grading for objective questions, and manual grading for theory answers.",
-    points: ["Anti-cheating shuffled exams", "Instant objective auto-grading", "Manual theory grading queue"],
+    key: "academic",
+    persona: "Academic office",
+    title: "Academic Dashboard",
+    body: "Sessions, terms, class arms, subjects and exactly who teaches what, per term — the academic backbone every other module reads from.",
+    image: "/screenshots/academic-dashboard.webp",
   },
   {
-    key: "library",
-    label: "Library",
-    title: "Physical and digital lending in one catalog",
-    body: "Track physical copies with borrow/return, due dates and automatic fine calculation on late return, alongside self-hosted ebook links — all tagged by target audience so the library stays relevant whether a Primary 3 pupil or an SSS 3 student is browsing.",
-    points: ["Borrow/return with fine automation", "Physical + ebook catalog", "Primary vs. secondary tagging"],
+    key: "bursar",
+    persona: "Bursar",
+    title: "Bursar Dashboard",
+    body: "Fee structures, invoices and payments per student, scholarships and discounts applied inline — nothing lives in a separate spreadsheet.",
+    image: "/screenshots/bursar-dashboard.webp",
   },
   {
-    key: "fees",
-    label: "Fees & Billing",
-    title: "Fee structures, invoices, and payments — in Naira by default",
-    body: "Fee structures roll up into invoices and payments, amounts stored in kobo to avoid floating-point errors. Naira as the default currency and Africa/Lagos timezone, with stubs ready for Paystack, Flutterwave, and Africa's Talking SMS.",
-    points: ["Kobo-precise invoicing", "Paystack / Flutterwave ready", "Per-term fee structures"],
+    key: "teacher",
+    persona: "Teacher",
+    title: "Teacher Dashboard",
+    body: "CA and exam scores entered per class, auto-totalled and auto-graded the moment a teacher hits Save — no manual averaging, ever.",
+    image: "/screenshots/teacher-dashboard.webp",
   },
   {
-    key: "parents",
-    label: "Parent Portal",
-    title: "A real parent portal, not just a role flag",
-    body: "Guardians get their own login, linked to one or more children, and can switch between them to monitor grades, attendance, teacher comments, assignments, CBT results, the school calendar, and fee history — with notifications firing automatically as things change.",
-    points: ["Multi-child switching", "Automatic in-app notifications", "Fee & report card visibility"],
-  },
-  {
-    key: "attendance",
-    label: "Attendance & Calendar",
-    title: "Daily attendance, a shared calendar, and announcements",
-    body: "Teachers mark attendance per class per day; it rolls straight into report cards. A shared school calendar tracks holidays, exams and academic dates, and announcements are targeted by audience — all staff, all parents, or a specific school stage.",
-    points: ["Daily attendance capture", "Shared academic calendar", "Audience-targeted announcements"],
+    key: "parent",
+    persona: "Parent",
+    title: "Parent Portal",
+    body: "Attendance, class position, subject scores and teacher & principal comments — one login switches between every child a guardian has at the school.",
+    image: "/screenshots/parent-portal.webp",
   },
 ] as const;
 
-const MODULE_LIST = MODULES;
+const PILLARS = [
+  {
+    key: "administration",
+    label: "Administration",
+    tagline: "The command center for the whole school",
+    points: [
+      "Multi-tenant workspace with fully isolated data per campus",
+      "Student records, admissions & promotions",
+      "Staff & teacher directory",
+      "Class levels, arms & academic structure",
+      "School Groups — run multiple campuses from one account",
+      "Role-based access across 11 staff & family roles",
+    ],
+  },
+  {
+    key: "academics",
+    label: "Academics",
+    tagline: "Everything between the timetable and the report card",
+    points: [
+      "Academic sessions, terms & class arms",
+      "Subjects & per-term teacher assignments",
+      "Timetable builder",
+      "Lesson plans",
+      "CBT engine — question bank, exam builder, shuffled anti-cheat delivery, instant auto-grading",
+      "Results entry & WAEC/NECO-style auto-graded report cards",
+      "Library — physical lending plus an ebook catalog",
+      "E-learning course materials & live classes",
+      "Assignments, submissions & grading",
+    ],
+  },
+  {
+    key: "finance",
+    label: "Finance",
+    tagline: "Every naira, tracked from invoice to receipt",
+    points: [
+      "Fee structures by class, session & term",
+      "Kobo-precise invoicing & payments",
+      "Paystack / Flutterwave-ready",
+      "Scholarships & discounts",
+      "Inventory, assets & procurement spend",
+    ],
+  },
+  {
+    key: "people",
+    label: "People",
+    tagline: "Staff, students and everyone in between",
+    points: [
+      "HR & payroll — staff attendance, leave requests, payroll runs",
+      "Staff performance reviews",
+      "Alumni directory",
+      "Health & medical records",
+      "Disciplinary records",
+      "Hostel / boarding management",
+    ],
+  },
+  {
+    key: "communication",
+    label: "Communication",
+    tagline: "Nobody finds out by phone call",
+    points: [
+      "Parent Portal — one login, every child",
+      "Announcements targeted by audience",
+      "In-app + SMS notifications (Africa's Talking-ready)",
+      "Shared school calendar",
+    ],
+  },
+  {
+    key: "operations",
+    label: "Operations",
+    tagline: "The logistics that keep a campus running",
+    points: [
+      "Transport — routes, vehicles, drivers & student assignments",
+      "Hostel — rooms, occupancy & boarding fees",
+      "Inventory & asset maintenance",
+      "Offline exam kiosk mode for CBT",
+      "Compliance reporting",
+    ],
+  },
+  {
+    key: "analytics",
+    label: "Analytics",
+    tagline: "The proof, not just the promise",
+    points: [
+      "Enrollment trend across sessions",
+      "Daily attendance rate, last 30 days",
+      "Fee collection: billed vs. paid, by term",
+      "Exam performance: average score & pass rate",
+      "Full audit log",
+    ],
+  },
+] as const;
 
 const WORKFLOW_STEPS = [
   {
     title: "Register your school",
-    body: "Create your school's isolated workspace in minutes — pick FREE, BASIC, or PREMIUM based on your student and staff seat count.",
+    body: "Create your school's isolated workspace in minutes — pick Starter, Growth, Professional or Enterprise based on your student count. Every plan gets the full Dafsolt BOS for School.",
     icon: icons.shield,
   },
   {
     title: "Bring your people in",
     body: "Add teachers, enroll students by class arm, and invite parents — guardians can be linked to more than one child automatically.",
-    icon: icons.parents,
+    icon: icons.people,
   },
   {
     title: "Run the term",
-    body: "Take attendance, assign work, run CBT exams, issue invoices, and lend library books — all inside one shared platform.",
+    body: "Take attendance, assign work, run CBT exams, issue invoices, and lend library books — all inside one connected system.",
     icon: icons.bolt,
   },
   {
     title: "Report and repeat",
     body: "Report cards, fee histories, and CBT results roll up automatically, ready for the next term or academic session.",
-    icon: icons.reports,
+    icon: icons.analytics,
   },
 ];
 
 const ROLES = [
-  { role: "School Admin", detail: "Full control of the school's workspace — staff, students, fee structures, and settings." },
+  { role: "Proprietor / School Admin", detail: "Full control of the school's workspace — staff, students, fee structures, and settings." },
+  { role: "Bursar / Accountant", detail: "Fee structures, invoices, payments and scholarships across the school." },
   { role: "Teacher", detail: "Attendance, results entry, question banks, exams, and assignments for assigned classes." },
   { role: "Student", detail: "Timed CBT exams, assignments, results, library, and the school calendar." },
   { role: "Parent", detail: "A dedicated portal to track every child's academics, attendance, fees, and announcements." },
-  { role: "Librarian", detail: "Full catalog control, borrow/return processing, and automatic fine tracking." },
-  { role: "Accountant", detail: "Fee structures, invoices, and payment records across the school." },
+  { role: "HR Manager", detail: "Staff attendance, leave requests, payroll runs and performance reviews." },
+];
+
+function naira(n: number) {
+  return `₦${n.toLocaleString()}`;
+}
+
+const INCLUDED_CATEGORIES = [
+  "Academic Management",
+  "Student & Parent Management",
+  "Finance",
+  "CBT & Examination",
+  "HR & Payroll",
+  "School Operations",
+  "Communication",
+  "Analytics",
+  "E-Learning",
+  "Multi-campus (higher plans)",
 ];
 
 const PLANS = [
   {
-    name: "Free",
-    price: "₦0",
-    cadence: "/ 30 days",
-    blurb: "A 30-day trial to get a single class arm onto digital records.",
-    features: ["Up to 50 students", "Core academics & attendance", "1 staff seat cap tier", "Community support"],
-    cta: "Start for free",
+    name: "Starter",
+    students: "1–150 students",
+    normalPrice: 75000,
+    foundingPrice: 50000,
+    annualNormal: 210000,
+    blurb: "Nursery, primary or a small secondary school digitizing for the first time.",
+    features: ["The complete Dafsolt BOS for School — every module included", "Up to 150 students", "Core admin seats", "Standard support"],
+    cta: "Start on Starter",
   },
   {
-    name: "Basic",
-    price: "₦80,000",
-    cadence: "/month",
-    blurb: "For a full primary or secondary school running day-to-day.",
-    features: ["Higher student & staff caps", "Full CBT engine", "Library + fee invoicing", "Email support"],
-    cta: "Choose Basic",
+    name: "Growth",
+    students: "151–400 students",
+    normalPrice: 150000,
+    foundingPrice: 100000,
+    annualNormal: 420000,
+    blurb: "The plan most Nigerian private schools land on.",
+    features: ["Everything in Starter", "Full CBT engine + global question library", "HR & payroll, transport, hostel, e-learning", "Priority support"],
+    cta: "Start on Growth",
     highlighted: true,
   },
   {
-    name: "Premium",
-    price: "₦200,000",
-    cadence: "/month",
-    blurb: "For multi-arm schools that need the full ERP surface area.",
-    features: ["Highest seat caps", "Parent Portal for every guardian", "Priority support", "Early access to new modules"],
-    cta: "Choose Premium",
+    name: "Professional",
+    students: "401–800 students",
+    normalPrice: 250000,
+    foundingPrice: 175000,
+    annualNormal: 700000,
+    blurb: "For larger schools that need more admin seats and deeper reporting.",
+    features: ["Everything in Growth", "Advanced analytics & compliance reporting", "More admin users & storage", "School branding"],
+    cta: "Start on Professional",
+  },
+  {
+    name: "Enterprise",
+    students: "801–1,500 students",
+    normalPrice: 400000,
+    foundingPrice: 280000,
+    annualNormal: 1120000,
+    blurb: "For large institutions that need dedicated support and tighter control.",
+    features: ["Everything in Professional", "Dedicated onboarding", "Enhanced security controls", "Multi-campus ready"],
+    cta: "Talk to sales",
   },
 ];
 
@@ -207,12 +326,16 @@ const TESTIMONIALS = [
 
 const FAQS = [
   {
-    q: "Is School Manager built for African schools specifically?",
+    q: "What exactly is Dafsolt BOS for School?",
+    a: "An operating system for running a school — not a single app bolted onto a spreadsheet. Administration, Academics, Finance, People, Communication, Operations and Analytics all read and write to the same data, so a result entered by a teacher is the same result a parent sees, the bursar bills against, and the proprietor's analytics chart counts.",
+  },
+  {
+    q: "Is Dafsolt BOS for School built for African schools specifically?",
     a: "Yes. Nigerian/West African curriculum structure (Primary 1–6, JSS 1–3, SSS 1–3) and WAEC/NECO-style A–F grading are the defaults, along with Naira currency, Africa/Lagos timezone, and local payment and SMS rails so intermittent connectivity and mobile-money billing aren't an afterthought.",
   },
   {
     q: "Can more than one school use the same platform?",
-    a: "Yes — it's a true multi-tenant SaaS. Every school gets its own isolated workspace, and a platform-level Super Admin can manage every tenant from a single account.",
+    a: "Yes — it's a true multi-tenant SaaS. Every school gets its own isolated workspace, and School Groups let an operator running several campuses manage every one of them from a single account.",
   },
   {
     q: "How does the CBT anti-cheating shuffle work?",
@@ -224,7 +347,7 @@ const FAQS = [
   },
   {
     q: "Can I change plans as my school grows?",
-    a: "Yes. FREE, BASIC, and PREMIUM plans each carry a student and staff seat cap enforced at creation time — upgrade whenever you're ready to add more.",
+    a: "Yes. Plans are keyed to your student count, so as you grow from Starter to Growth to Professional to Enterprise, you're upgrading capacity — not unlocking modules you were previously missing. School Groups running multiple campuses move to custom pricing.",
   },
 ];
 
@@ -233,9 +356,14 @@ const FAQS = [
 export function LandingPage() {
   const [navOpen, setNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [activeModule, setActiveModule] = useState<string>(MODULE_LIST[0].key);
+  const [activeShowcase, setActiveShowcase] = useState<string>(SHOWCASE[0].key);
+  const [activePillar, setActivePillar] = useState<string>(PILLARS[0].key);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const { data: signupStats } = useFetch<{ schoolsRegistered: number; foundingCohortSize: number }>("/public/signup-stats");
+  const schoolsRegistered = signupStats?.schoolsRegistered ?? 0;
+  const foundingCohortSize = signupStats?.foundingCohortSize ?? 1000;
+  const foundingProgressPct = Math.min((schoolsRegistered / foundingCohortSize) * 100, 100);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -251,7 +379,8 @@ export function LandingPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const active = MODULE_LIST.find((m) => m.key === activeModule) ?? MODULE_LIST[0];
+  const activeShot = SHOWCASE.find((s) => s.key === activeShowcase) ?? SHOWCASE[0];
+  const activePillarData = PILLARS.find((p) => p.key === activePillar) ?? PILLARS[0];
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -264,9 +393,9 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2E3192] text-white">
-              <Icon path={icons.academics} className="h-5 w-5" />
+              <Icon path={icons.administration} className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold text-[#2E3192]">School Manager</span>
+            <span className="text-lg font-bold tracking-tight text-[#2E3192]">Dafsolt BOS</span>
           </div>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -278,6 +407,9 @@ export function LandingPage() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
+            <a href="/kiosk/login" className="text-sm font-medium text-slate-500 transition hover:text-[#2E3192]">
+              Exam Kiosk
+            </a>
             <Link to="/login" className="text-sm font-medium text-slate-700 transition hover:text-[#2E3192]">
               Sign in
             </Link>
@@ -313,6 +445,9 @@ export function LandingPage() {
                 </a>
               ))}
               <div className="mt-2 flex flex-col gap-2 border-t border-[#E6E6E6] pt-3">
+                <a href="/kiosk/login" className="rounded-lg px-2 py-2 text-sm font-medium text-slate-500 hover:bg-[#E6E6E6]">
+                  Exam Kiosk
+                </a>
                 <Link to="/login" className="rounded-lg px-2 py-2 text-sm font-medium text-slate-700 hover:bg-[#E6E6E6]">
                   Sign in
                 </Link>
@@ -334,140 +469,144 @@ export function LandingPage() {
           <div className="absolute -top-40 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-[#D0E3FF] blur-3xl" />
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 pb-16 pt-14 sm:px-6 sm:pt-20 lg:px-8 lg:pt-28">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-[#81AEEB]/40 bg-[#D0E3FF] px-3 py-1 text-xs font-semibold text-[#2E3192]">
-                <Icon path={icons.globe} className="h-3.5 w-3.5" />
-                Built for African primary & secondary schools
-              </span>
+        <div className="mx-auto max-w-7xl px-4 pb-10 pt-14 text-center sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#81AEEB]/40 bg-[#D0E3FF] px-3 py-1 text-xs font-semibold text-[#2E3192]">
+            <Icon path={icons.globe} className="h-3.5 w-3.5" />
+            Dafsolt BOS for School
+          </span>
 
-              <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-                One platform to run your <span className="text-[#2E3192]">entire school</span>
-              </h1>
+          <h1 className="mx-auto mt-5 max-w-4xl text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+            The complete <span className="text-[#2E3192]">operating system</span> for your school
+          </h1>
 
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
-                Academics, computer-based testing, a library, fees, attendance, and a real parent portal — in one
-                multi-tenant SaaS, with Nigerian curriculum structure, WAEC/NECO grading, and Naira billing built in
-                from day one.
-              </p>
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-600">
+            Administration, Academics, Finance, People, Communication, Operations and Analytics — all connected through
+            one system, so nothing lives in a separate spreadsheet again.
+          </p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Link
-                  to="/onboard"
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#2E3192] px-6 py-3 text-base font-semibold text-white shadow-md transition hover:opacity-90 hover:shadow-lg"
-                >
-                  Register your school
-                  <Icon path={icons.arrowRight} className="h-5 w-5" />
-                </Link>
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-700 transition hover:border-[#81AEEB] hover:text-[#2E3192]"
-                >
-                  Sign in to your school
-                </Link>
-              </div>
-
-              <div className="mt-6 flex items-center gap-2 text-sm text-slate-500">
-                <Icon path={icons.check} className="h-4 w-4 text-[#2E3192]" />
-                No card required for the Free plan
-              </div>
-            </div>
-
-            {/* interactive preview card */}
-            <div className="relative">
-              <div className="rounded-2xl border border-[#E6E6E6] bg-white p-2 shadow-2xl shadow-[#2E3192]/10">
-                <div className="rounded-xl bg-[#E6E6E6]/50 p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#81AEEB]" />
-                    </div>
-                    <span className="text-xs font-medium text-slate-400">Demo Academy — Term Overview</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: "Students enrolled", value: 842, tone: "bg-[#D0E3FF] text-[#2E3192]" },
-                      { label: "Active exams", value: 6, tone: "bg-sky-50 text-sky-800" },
-                      { label: "Fees collected", value: "₦4.2M", tone: "bg-amber-50 text-amber-800", raw: true },
-                      { label: "Library titles", value: 1240, tone: "bg-violet-50 text-violet-800" },
-                    ].map((stat) => (
-                      <div key={stat.label} className={`rounded-lg p-3 ${stat.tone}`}>
-                        <div className="text-xl font-bold">
-                          {stat.raw ? stat.value : <CountUp to={stat.value as number} />}
-                        </div>
-                        <div className="mt-0.5 text-xs font-medium opacity-80">{stat.label}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 space-y-2 rounded-lg bg-white p-3">
-                    {["Result submitted — SS2 Chemistry", "Fee invoice paid — Fatima B.", "CBT exam graded — 48 students"].map((row) => (
-                      <div key={row} className="flex items-center gap-2 text-xs text-slate-600">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#81AEEB]" />
-                        {row}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              to="/onboard"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#2E3192] px-6 py-3 text-base font-semibold text-white shadow-md transition hover:opacity-90 hover:shadow-lg"
+            >
+              Register your school
+              <Icon path={icons.arrowRight} className="h-5 w-5" />
+            </Link>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-700 transition hover:border-[#81AEEB] hover:text-[#2E3192]"
+            >
+              Sign in to your school
+            </Link>
           </div>
 
-          {/* stat strip */}
-          <div className="mt-16 grid grid-cols-2 gap-6 border-t border-[#E6E6E6] pt-10 sm:grid-cols-4">
-            {[
-              { to: 7, suffix: "", label: "User roles supported" },
-              { to: 4, suffix: "", label: "Question types in the CBT engine" },
-              { to: 3, suffix: "", label: "Subscription tiers" },
-              { to: 100, suffix: "%", label: "Multi-tenant isolated data" },
-            ].map((s) => (
-              <div key={s.label}>
-                <div className="text-3xl font-extrabold text-[#2E3192] sm:text-4xl">
-                  <CountUp to={s.to} suffix={s.suffix} />
-                </div>
-                <div className="mt-1 text-sm text-slate-500">{s.label}</div>
-              </div>
-            ))}
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-500">
+            <Icon path={icons.check} className="h-4 w-4 text-[#2E3192]" />
+            No card required for your 30-day guided trial
           </div>
         </div>
       </section>
 
-      {/* ---------- modules (interactive tabs) ---------- */}
-      <section id="modules" className="border-t border-[#E6E6E6] bg-[#E6E6E6]/50 py-20">
+      {/* ---------- live dashboard showcase ---------- */}
+      <section id="showcase" className="border-t border-[#E6E6E6] bg-[#0B1220] py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">Every module a school needs, one login</h2>
-            <p className="mt-4 text-lg text-slate-600">
-              Explore what's inside — each module is production-built, not a placeholder.
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-[#81AEEB]">
+              Real screens, real data
+            </span>
+            <h2 className="mt-4 text-3xl font-bold text-white sm:text-4xl">This is the actual software</h2>
+            <p className="mt-4 text-lg text-slate-300">
+              Not mockups — live screens from a running Dafsolt BOS for School, one per role. Pick a persona to see their screen.
             </p>
           </div>
 
-          <div className="mt-12 grid gap-8 lg:grid-cols-[280px_1fr]">
+          <div className="mt-10 flex flex-wrap justify-center gap-2">
+            {SHOWCASE.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setActiveShowcase(s.key)}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  activeShowcase === s.key
+                    ? "border-[#81AEEB] bg-[#81AEEB]/15 text-white"
+                    : "border-white/10 bg-white/5 text-slate-300 hover:border-white/30 hover:text-white"
+                }`}
+              >
+                {s.persona}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-center">
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl">
+              <img
+                src={activeShot.image}
+                alt={`${activeShot.title} in Dafsolt BOS for School`}
+                className="block w-full"
+                loading="eager"
+              />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-[#81AEEB]">{activeShot.persona}</p>
+              <h3 className="mt-2 text-2xl font-bold text-white">{activeShot.title}</h3>
+              <p className="mt-4 text-base leading-relaxed text-slate-300">{activeShot.body}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- stat strip ---------- */}
+      <section className="border-t border-[#E6E6E6] py-12">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 sm:grid-cols-4 sm:px-6 lg:px-8">
+          {[
+            { to: 7, suffix: "", label: "Connected pillars, one system" },
+            { to: 20, suffix: "+", label: "Modules, from admission to graduation" },
+            { to: 11, suffix: "", label: "Staff & family roles supported" },
+            { to: 100, suffix: "%", label: "Multi-tenant isolated data" },
+          ].map((s) => (
+            <div key={s.label}>
+              <div className="text-3xl font-extrabold text-[#2E3192] sm:text-4xl">
+                <CountUp to={s.to} suffix={s.suffix} />
+              </div>
+              <div className="mt-1 text-sm text-slate-500">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------- pillars (interactive tabs) ---------- */}
+      <section id="pillars" className="border-t border-[#E6E6E6] bg-[#E6E6E6]/50 py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">Seven pillars. One system.</h2>
+            <p className="mt-4 text-lg text-slate-600">
+              Administration, Academics, Finance, People, Communication, Operations and Analytics — each one is a
+              production-built module, and every one of them shares the same data.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-8 lg:grid-cols-[300px_1fr]">
             <div className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
-              {MODULE_LIST.map((m) => (
+              {PILLARS.map((p) => (
                 <button
-                  key={m.key}
-                  onClick={() => setActiveModule(m.key)}
+                  key={p.key}
+                  onClick={() => setActivePillar(p.key)}
                   className={`flex shrink-0 items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition lg:shrink ${
-                    activeModule === m.key
+                    activePillar === p.key
                       ? "border-[#81AEEB] bg-[#D0E3FF] text-[#2E3192] shadow-sm"
                       : "border-[#E6E6E6] bg-white text-slate-600 hover:border-[#81AEEB] hover:text-[#2E3192]"
                   }`}
                 >
-                  <Icon path={icons[m.key as keyof typeof icons]} className="h-5 w-5 shrink-0" />
-                  {m.label}
+                  <Icon path={icons[p.key as keyof typeof icons]} className="h-5 w-5 shrink-0" />
+                  {p.label}
                 </button>
               ))}
             </div>
 
             <div className="rounded-2xl border border-[#E6E6E6] bg-white p-8 shadow-sm">
-              <h3 className="text-2xl font-bold text-slate-900">{active.title}</h3>
-              <p className="mt-4 text-base leading-relaxed text-slate-600">{active.body}</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-[#2E3192]">{activePillarData.label}</p>
+              <h3 className="mt-1 text-2xl font-bold text-slate-900">{activePillarData.tagline}</h3>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-                {active.points.map((p) => (
+                {activePillarData.points.map((p) => (
                   <li key={p} className="flex items-start gap-2 text-sm text-slate-700">
                     <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
                     {p}
@@ -484,7 +623,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">From sign-up to a running term</h2>
-            <p className="mt-4 text-lg text-slate-600">Four steps, and the whole school is on one platform.</p>
+            <p className="mt-4 text-lg text-slate-600">Four steps, and the whole school is on one system.</p>
           </div>
 
           <div className="relative mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -510,7 +649,10 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">Built for everyone in the building</h2>
-            <p className="mt-4 text-lg text-slate-600">Every role gets exactly the access it needs — nothing more.</p>
+            <p className="mt-4 text-lg text-slate-600">
+              Every role gets exactly the access it needs — nothing more. Nurses, transport officers, librarians and
+              hostel wardens get their own screens too.
+            </p>
           </div>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -520,7 +662,7 @@ export function LandingPage() {
                 className="group rounded-2xl border border-[#E6E6E6] bg-white p-6 transition hover:-translate-y-1 hover:border-[#81AEEB] hover:shadow-lg"
               >
                 <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#D0E3FF] text-[#2E3192] transition group-hover:bg-[#2E3192] group-hover:text-white">
-                  <Icon path={icons.parents} className="h-5 w-5" />
+                  <Icon path={icons.people} className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-slate-900">{r.role}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">{r.detail}</p>
@@ -571,11 +713,52 @@ export function LandingPage() {
       <section id="pricing" className="border-t border-[#E6E6E6] bg-[#E6E6E6]/50 py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">Plans that scale with your school</h2>
-            <p className="mt-4 text-lg text-slate-600">Seat caps enforced automatically — upgrade the moment you need to.</p>
+            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">One system. One price. No feature toll-gates.</h2>
+            <p className="mt-4 text-lg text-slate-600">
+              Every plan includes the complete Dafsolt BOS for School. Plans scale by student count, admin seats, storage and
+              support — never by which module you're allowed to use.
+            </p>
           </div>
 
-          <div className="mt-14 grid gap-8 lg:grid-cols-3">
+          <div className="mx-auto mt-8 flex max-w-4xl flex-wrap justify-center gap-2">
+            {INCLUDED_CATEGORIES.map((c) => (
+              <span
+                key={c}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#E6E6E6] bg-white px-3 py-1 text-xs font-medium text-slate-600"
+              >
+                <Icon path={icons.check} className="h-3.5 w-3.5 text-[#2E3192]" />
+                {c}
+              </span>
+            ))}
+          </div>
+
+          <div className="mx-auto mt-10 max-w-4xl rounded-2xl border border-[#81AEEB]/40 bg-[#2E3192] px-6 py-5 text-center sm:px-10">
+            <p className="text-sm font-bold uppercase tracking-wide text-[#D0E3FF]">🎓 Dafsolt BOS Founding Schools Programme</p>
+            <p className="mt-2 text-lg font-semibold text-white">
+              The first 1,000 schools to register lock in the founding prices below for their first year.
+            </p>
+            <p className="mt-1 text-sm text-[#D0E3FF]">
+              Free setup, free onboarding and free data migration — normally ₦50,000–₦100,000. After Year 1, standard
+              pricing applies.
+            </p>
+
+            <div className="mx-auto mt-4 max-w-md">
+              <div className="flex items-baseline justify-between text-xs font-semibold text-[#D0E3FF]">
+                <span>
+                  <CountUp to={schoolsRegistered} /> of {foundingCohortSize.toLocaleString()} founding spots claimed
+                </span>
+                <span>{Math.round(foundingProgressPct)}%</span>
+              </div>
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-white/15">
+                <div
+                  className="h-full rounded-full bg-white transition-all duration-700"
+                  style={{ width: `${foundingProgressPct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 grid gap-8 lg:grid-cols-4">
             {PLANS.map((plan) => (
               <div
                 key={plan.name}
@@ -591,11 +774,25 @@ export function LandingPage() {
                   </span>
                 )}
                 <h3 className="text-lg font-semibold text-slate-900">{plan.name}</h3>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900">{plan.price}</span>
-                  <span className="text-sm text-slate-500">{plan.cadence}</span>
+                <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">{plan.students}</p>
+
+                <div className="mt-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-slate-400 line-through">{naira(plan.normalPrice)}</span>
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                      Founding price
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-extrabold text-slate-900">{naira(plan.foundingPrice)}</span>
+                    <span className="text-sm text-slate-500">/term</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Standard pricing: {naira(plan.normalPrice)}/term, or {naira(plan.annualNormal)}/year.
+                  </p>
                 </div>
-                <p className="mt-3 text-sm text-slate-600">{plan.blurb}</p>
+
+                <p className="mt-4 text-sm text-slate-600">{plan.blurb}</p>
 
                 <ul className="mt-6 flex-1 space-y-3">
                   {plan.features.map((f) => (
@@ -607,7 +804,7 @@ export function LandingPage() {
                 </ul>
 
                 <Link
-                  to="/onboard"
+                  to={`/onboard?plan=${plan.name.toLowerCase()}`}
                   className={`mt-8 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
                     plan.highlighted
                       ? "bg-[#2E3192] text-white hover:opacity-90"
@@ -619,6 +816,42 @@ export function LandingPage() {
                 </Link>
               </div>
             ))}
+          </div>
+
+          <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-[#E6E6E6] bg-white p-8 text-center sm:flex-row sm:text-left">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">School Group — 1,500+ students or multiple campuses</h3>
+              <p className="mt-2 max-w-2xl text-sm text-slate-600">
+                Custom pricing based on campuses, total students, admin seats, storage, SLA and integrations — built on
+                the same School Groups feature that lets one account run every campus.
+              </p>
+            </div>
+            <a
+              href="mailto:hello@dafsolt.com"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#81AEEB] hover:text-[#2E3192]"
+            >
+              Talk to us
+              <Icon path={icons.arrowRight} className="h-4 w-4" />
+            </a>
+          </div>
+
+          <div className="mx-auto mt-10 grid max-w-4xl gap-4 text-sm text-slate-600 sm:grid-cols-2">
+            <div className="flex items-start gap-2">
+              <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
+              One school subscription — no per-teacher, per-parent or per-student account fees.
+            </div>
+            <div className="flex items-start gap-2">
+              <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
+              Online payments are billed at the payment gateway's own rate, never a hidden Dafsolt BOS markup.
+            </div>
+            <div className="flex items-start gap-2">
+              <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
+              SMS is usage-based — pay for bundles as you send them, not a flat "unlimited" tax.
+            </div>
+            <div className="flex items-start gap-2">
+              <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
+              CBT, the question bank and every other module are included at every tier — never an add-on.
+            </div>
           </div>
         </div>
       </section>
@@ -661,7 +894,9 @@ export function LandingPage() {
       {/* ---------- final CTA ---------- */}
       <section className="border-t border-[#E6E6E6] bg-[#2E3192] py-16">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white sm:text-4xl">Ready to bring your school onto one platform?</h2>
+          <h2 className="text-3xl font-bold text-white sm:text-4xl">
+            From admission to graduation, Dafsolt BOS for School puts your entire school in one place.
+          </h2>
           <p className="mt-4 text-lg text-[#D0E3FF]">
             Register your school in minutes, or sign in if your school already has an account.
           </p>
@@ -689,11 +924,11 @@ export function LandingPage() {
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2E3192] text-white">
-                <Icon path={icons.academics} className="h-4 w-4" />
+                <Icon path={icons.administration} className="h-4 w-4" />
               </div>
-              <span className="text-base font-bold text-white">School Manager</span>
+              <span className="text-base font-bold text-white">Dafsolt BOS</span>
             </div>
-            <p className="text-sm">A Dafsolt Consult product, built for schools across Africa.</p>
+            <p className="text-sm">Built for schools across Africa.</p>
             <div className="flex gap-6 text-sm">
               <Link to="/login" className="hover:text-white">
                 Sign in
@@ -701,10 +936,13 @@ export function LandingPage() {
               <Link to="/onboard" className="hover:text-white">
                 Register
               </Link>
+              <a href="/kiosk/login" className="hover:text-white">
+                Exam Kiosk Login
+              </a>
             </div>
           </div>
           <div className="mt-8 border-t border-slate-800 pt-6 text-center text-xs">
-            © {new Date().getFullYear()} Dafsolt Consult. All rights reserved.
+            © {new Date().getFullYear()} Dafsolt BOS. All rights reserved.
           </div>
         </div>
       </footer>

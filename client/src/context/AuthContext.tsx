@@ -11,6 +11,7 @@ interface OnboardInput {
   adminLastName: string;
   adminEmail: string;
   adminPassword: string;
+  planTier?: "STARTER" | "GROWTH" | "PROFESSIONAL" | "ENTERPRISE";
 }
 
 interface AuthContextValue {

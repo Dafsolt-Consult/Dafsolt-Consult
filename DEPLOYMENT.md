@@ -79,7 +79,7 @@ Watch it come up:
 docker compose -f docker-compose.prod.yml logs -f
 ```
 
-Look for `School Manager API listening on port 4000 [production]` from
+Look for `DAFSOLT OS API listening on port 4000 [production]` from
 the `server` container. Visiting `https://school.yourdomain.com` should load
 the login screen within a minute or two (certificate issuance takes a
 moment the very first time).

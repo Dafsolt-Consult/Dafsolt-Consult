@@ -11,7 +11,7 @@ import {
   verifyPlatformRefreshToken,
 } from "../../utils/platformJwt";
 import ms from "../../utils/ms";
-import { PLAN_DEFAULTS } from "../../utils/planLimits";
+import { PLAN_DEFAULTS, STAFF_ROLES } from "../../utils/planLimits";
 import {
   CreatePlatformAdminInput,
   ImpersonateInput,
@@ -98,9 +98,27 @@ export async function getMe(platformAdminId: string) {
   return prisma.platformAdmin.findUniqueOrThrow({ where: { id: platformAdminId }, select: ADMIN_SELECT });
 }
 
-export async function listTenants(page: number, pageSize: number) {
+export async function listTenants(
+  page: number,
+  pageSize: number,
+  filters: { search?: string; planTier?: string; subscriptionStatus?: string } = {}
+) {
+  const where = {
+    ...(filters.search
+      ? {
+          OR: [
+            { name: { contains: filters.search, mode: "insensitive" as const } },
+            { slug: { contains: filters.search, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+    ...(filters.planTier ? { planTier: filters.planTier as never } : {}),
+    ...(filters.subscriptionStatus ? { subscriptionStatus: filters.subscriptionStatus as never } : {}),
+  };
+
   const [items, total] = await Promise.all([
     prisma.tenant.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -114,10 +132,10 @@ export async function listTenants(page: number, pageSize: number) {
         trialEndsAt: true,
         createdAt: true,
         groupId: true,
-        _count: { select: { students: true, users: true } },
+        _count: { select: { students: true, users: { where: { role: { in: STAFF_ROLES } } } } },
       },
     }),
-    prisma.tenant.count(),
+    prisma.tenant.count({ where }),
   ]);
   return { items, total, page, pageSize };
 }
@@ -125,7 +143,7 @@ export async function listTenants(page: number, pageSize: number) {
 export async function getTenantById(tenantId: string) {
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
-    include: { _count: { select: { students: true, users: true } } },
+    include: { _count: { select: { students: true, users: { where: { role: { in: STAFF_ROLES } } } } } },
   });
   if (!tenant) throw ApiError.notFound("School not found");
   return tenant;
@@ -170,7 +188,7 @@ export async function updateAdmin(
   const existing = await prisma.platformAdmin.findUnique({ where: { id: adminId } });
   if (!existing) throw ApiError.notFound("Platform admin not found");
 
-  if (adminId === actingAdminId && (input.isActive === false || input.role === "SUPPORT")) {
+  if (adminId === actingAdminId && (input.isActive === false || (input.role && input.role !== "OWNER"))) {
     throw ApiError.badRequest("You cannot deactivate or demote your own account");
   }
 

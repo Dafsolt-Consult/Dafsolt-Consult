@@ -1,8 +1,9 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Button, Card, ErrorBanner, Input, Label } from "../components/ui";
+import { ErrorBanner, Input, Label } from "../components/ui";
 import { apiErrorMessage } from "../api/client";
+import { AuthGateShell } from "../components/AuthGateShell";
 
 export function LoginPage() {
   const { login, user } = useAuth();
@@ -31,50 +32,69 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <Card className="w-full max-w-sm">
-        <h1 className="mb-1 text-xl font-bold text-brand-700">School Manager</h1>
-        <p className="mb-6 text-sm text-slate-500">Sign in to your school account</p>
+    <AuthGateShell
+      title="Welcome back"
+      subtitle="Sign in at your school's gate"
+      footer={
+        <>
+          Built for schools across Africa.
+        </>
+      }
+    >
+      {passwordResetSuccess && (
+        <div className="mb-4 rounded-lg bg-[#D0E3FF] px-4 py-3 text-sm text-[#2E3192]">
+          Your password has been reset. Please sign in with your new password.
+        </div>
+      )}
 
-        {passwordResetSuccess && (
-          <div className="mb-4 rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-800">
-            Your password has been reset. Please sign in with your new password.
-          </div>
-        )}
+      {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} />
+        </div>
+      )}
 
-        {error && (
-          <div className="mb-4">
-            <ErrorBanner message={error} />
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label>Email</Label>
+          <Input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
+          />
+        </div>
+        <div>
+          <Label>Password</Label>
+          <Input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-lg bg-[#2E3192] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {submitting ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Email</Label>
-            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-          <div>
-            <Label>Password</Label>
-            <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? "Signing in..." : "Sign in"}
-          </Button>
-        </form>
+      <p className="mt-4 text-center text-sm">
+        <Link to="/forgot-password" className="font-medium text-[#2E3192] hover:underline">
+          Forgot password?
+        </Link>
+      </p>
 
-        <p className="mt-3 text-center text-sm">
-          <Link to="/forgot-password" className="font-medium text-brand-700 hover:underline">
-            Forgot password?
-          </Link>
-        </p>
-
-        <p className="mt-3 text-center text-sm text-slate-500">
-          New school?{" "}
-          <Link to="/onboard" className="font-medium text-brand-700 hover:underline">
-            Register your school
-          </Link>
-        </p>
-      </Card>
-    </div>
+      <p className="mt-3 text-center text-sm text-slate-500">
+        New school?{" "}
+        <Link to="/onboard" className="font-medium text-[#2E3192] hover:underline">
+          Register your school
+        </Link>
+      </p>
+    </AuthGateShell>
   );
 }

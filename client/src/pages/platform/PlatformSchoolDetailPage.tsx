@@ -80,7 +80,7 @@ export function PlatformSchoolDetailPage() {
         <Card>
           <h2 className="mb-3 text-sm font-semibold text-slate-700">Plan & usage</h2>
           <dl className="space-y-2 text-sm">
-            <Row label="Plan" value={<Badge>{tenant.planTier}</Badge>} />
+            <Row label="Plan" value={<Badge>{tenant.planTier.replace("_", " ")}</Badge>} />
             <Row label="Status" value={<Badge tone={tenant.subscriptionStatus === "ACTIVE" ? "success" : "warning"}>{tenant.subscriptionStatus}</Badge>} />
             <Row label="Students" value={`${tenant._count.students} / ${tenant.maxStudents}`} />
             <Row label="Staff" value={`${tenant._count.users} / ${tenant.maxStaff}`} />

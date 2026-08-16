@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Spinner } from "./components/ui";
-import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardPage } from "./pages/OnboardPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
@@ -54,7 +53,10 @@ import { PlatformAuthProvider } from "./context/PlatformAuthContext";
 import { PlatformProtectedRoute } from "./routes/PlatformProtectedRoute";
 import { PlatformLayout } from "./layout/PlatformLayout";
 import { PlatformLoginPage } from "./pages/platform/PlatformLoginPage";
-import { PlatformDashboardPage } from "./pages/platform/PlatformDashboardPage";
+// Code-split: recharts is a heavy dependency, same reasoning as AnalyticsPage above.
+const PlatformDashboardPage = lazy(() =>
+  import("./pages/platform/PlatformDashboardPage").then((m) => ({ default: m.PlatformDashboardPage }))
+);
 import { PlatformSchoolsPage } from "./pages/platform/PlatformSchoolsPage";
 import { PlatformSchoolDetailPage } from "./pages/platform/PlatformSchoolDetailPage";
 import { PlatformSchoolGroupsPage } from "./pages/platform/PlatformSchoolGroupsPage";
@@ -66,7 +68,10 @@ import { PlatformGlobalQuestionsPage } from "./pages/platform/PlatformGlobalQues
 export default function App() {
   return (
     <Routes>
-      <Route path="/welcome" element={<LandingPage />} />
+      {/* The landing page now lives at the official root URL (rendered by
+          ProtectedRoute for signed-out visitors) — /welcome is kept as a
+          redirect so any existing links/bookmarks still land somewhere. */}
+      <Route path="/welcome" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboard" element={<OnboardPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -85,7 +90,14 @@ export default function App() {
                   </PlatformProtectedRoute>
                 }
               >
-                <Route index element={<PlatformDashboardPage />} />
+                <Route
+                  index
+                  element={
+                    <Suspense fallback={<div className="flex justify-center py-12"><Spinner /></div>}>
+                      <PlatformDashboardPage />
+                    </Suspense>
+                  }
+                />
                 <Route path="schools" element={<PlatformSchoolsPage />} />
                 <Route path="schools/:tenantId" element={<PlatformSchoolDetailPage />} />
                 <Route path="school-groups" element={<PlatformSchoolGroupsPage />} />

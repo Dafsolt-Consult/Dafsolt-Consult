@@ -1,4 +1,4 @@
-export type PlatformRole = "OWNER" | "SUPPORT";
+export type PlatformRole = "OWNER" | "SUPPORT" | "BILLING" | "CONTENT_MANAGER";
 
 export interface PlatformAdminUser {
   id: string;
@@ -16,7 +16,7 @@ export interface PlatformTenantRow {
   name: string;
   slug: string;
   country: string;
-  planTier: "FREE" | "BASIC" | "PREMIUM";
+  planTier: "STARTER" | "GROWTH" | "PROFESSIONAL" | "ENTERPRISE" | "SCHOOL_GROUP";
   subscriptionStatus: "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED";
   trialEndsAt: string | null;
   createdAt: string;
@@ -35,7 +35,7 @@ export interface SchoolGroupTenantSummary {
   id: string;
   name: string;
   slug: string;
-  planTier: "FREE" | "BASIC" | "PREMIUM";
+  planTier: "STARTER" | "GROWTH" | "PROFESSIONAL" | "ENTERPRISE" | "SCHOOL_GROUP";
   subscriptionStatus: "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED";
   _count: { students: number; users: number };
 }

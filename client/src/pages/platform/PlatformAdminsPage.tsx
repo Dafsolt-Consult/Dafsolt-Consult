@@ -69,9 +69,11 @@ export function PlatformAdminsPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-600">{a.email}</td>
                   <td className="px-4 py-3">
-                    <Select value={a.role} disabled={isSelf} onChange={(e) => changeRole(a, e.target.value as PlatformRole)} className="w-28">
+                    <Select value={a.role} disabled={isSelf} onChange={(e) => changeRole(a, e.target.value as PlatformRole)} className="w-40">
                       <option value="OWNER">Owner</option>
                       <option value="SUPPORT">Support</option>
+                      <option value="BILLING">Billing</option>
+                      <option value="CONTENT_MANAGER">Content Manager</option>
                     </Select>
                   </td>
                   <td className="px-4 py-3">
@@ -155,6 +157,8 @@ function CreateAdminModal({ onClose, onCreated }: { onClose: () => void; onCreat
           <Label>Role</Label>
           <Select value={role} onChange={(e) => setRole(e.target.value as PlatformRole)}>
             <option value="SUPPORT">Support — read schools, start impersonation sessions</option>
+            <option value="BILLING">Billing — manage subscriptions/plans, view revenue analytics</option>
+            <option value="CONTENT_MANAGER">Content Manager — manage the exam-practice question library</option>
             <option value="OWNER">Owner — full access</option>
           </Select>
         </div>

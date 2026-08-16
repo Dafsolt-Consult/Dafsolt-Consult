@@ -14,13 +14,13 @@ export const createPlatformAdminSchema = z.object({
   password: z.string().min(8).max(72),
   firstName: z.string().min(1).max(60),
   lastName: z.string().min(1).max(60),
-  role: z.enum(["OWNER", "SUPPORT"]),
+  role: z.enum(["OWNER", "SUPPORT", "BILLING", "CONTENT_MANAGER"]),
 });
 
 export const updatePlatformAdminSchema = z.object({
   firstName: z.string().min(1).max(60).optional(),
   lastName: z.string().min(1).max(60).optional(),
-  role: z.enum(["OWNER", "SUPPORT"]).optional(),
+  role: z.enum(["OWNER", "SUPPORT", "BILLING", "CONTENT_MANAGER"]).optional(),
   isActive: z.boolean().optional(),
   // OWNER-driven password reset — no self-service email flow for v1 (see
   // plan doc); this lets an OWNER recover a locked-out admin directly.
@@ -28,7 +28,7 @@ export const updatePlatformAdminSchema = z.object({
 });
 
 export const updateTenantSubscriptionSchema = z.object({
-  planTier: z.enum(["FREE", "BASIC", "PREMIUM"]).optional(),
+  planTier: z.enum(["STARTER", "GROWTH", "PROFESSIONAL", "ENTERPRISE", "SCHOOL_GROUP"]).optional(),
   subscriptionStatus: z.enum(["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED"]).optional(),
   subscriptionEndsAt: z.coerce.date().optional(),
   maxStudents: z.number().int().positive().optional(),

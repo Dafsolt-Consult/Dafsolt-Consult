@@ -9,6 +9,7 @@ import { LoginInput, OnboardSchoolInput } from "./auth.schema";
 import ms from "../../utils/ms";
 import { slugify } from "../../utils/slugify";
 import { sendEmail } from "../../utils/email";
+import { PLAN_DEFAULTS } from "../../utils/planLimits";
 
 const TRIAL_DAYS = 30;
 const RESET_TOKEN_TTL_MS = ms("1h");
@@ -37,6 +38,8 @@ export async function onboardSchool(input: OnboardSchoolInput) {
 
   const passwordHash = await hashPassword(input.adminPassword);
   const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+  const planTier = input.planTier ?? "STARTER";
+  const { maxStudents, maxStaff } = PLAN_DEFAULTS[planTier];
 
   const tenant = await prisma.tenant.create({
     data: {
@@ -45,6 +48,9 @@ export async function onboardSchool(input: OnboardSchoolInput) {
       country: input.country,
       currency: input.currency,
       trialEndsAt,
+      planTier,
+      maxStudents,
+      maxStaff,
       users: {
         create: {
           email: input.adminEmail,
@@ -137,7 +143,7 @@ export async function requestPasswordReset(email: string) {
 
   const result = await sendEmail(
     user.email,
-    "Reset your School Manager password",
+    "Reset your Dafsolt BOS password",
     `Hi ${user.firstName}, use this link to reset your password (expires in 1 hour): ${resetLink}`
   );
 
