@@ -15,6 +15,9 @@ export const onboardSchoolSchema = z.object({
   adminLastName: z.string().min(1).max(60),
   adminEmail: z.string().email(),
   adminPassword: z.string().min(8).max(72),
+  // SCHOOL_GROUP is custom-priced and applied manually by a platform admin
+  // after a sales conversation — not selectable through self-serve signup.
+  planTier: z.enum(["STARTER", "GROWTH", "PROFESSIONAL", "ENTERPRISE"]).optional(),
 });
 
 export const loginSchema = z.object({

@@ -16,9 +16,11 @@ datasource db {
 // ──────────────────────────────────────────────────────────────────────────
 
 enum PlanTier {
-  FREE
-  BASIC
-  PREMIUM
+  STARTER
+  GROWTH
+  PROFESSIONAL
+  ENTERPRISE
+  SCHOOL_GROUP
 }
 
 enum SubscriptionStatus {
@@ -289,12 +291,12 @@ model Tenant {
   currency String  @default("NGN")
   timezone String  @default("Africa/Lagos")
 
-  planTier           PlanTier           @default(FREE)
+  planTier           PlanTier           @default(STARTER)
   subscriptionStatus SubscriptionStatus @default(TRIALING)
   trialEndsAt        DateTime?
   subscriptionEndsAt DateTime?
-  maxStudents        Int                @default(100)
-  maxStaff           Int                @default(15)
+  maxStudents        Int                @default(150)
+  maxStaff           Int                @default(20)
   // Suggested (not enforced) average-score threshold the Promotions page
   // uses to pre-tick a student as ready to move up; the school admin can
   // always override per student.

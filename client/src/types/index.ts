@@ -14,7 +14,7 @@ export interface Tenant {
   id: string;
   name: string;
   slug: string;
-  planTier: "FREE" | "BASIC" | "PREMIUM";
+  planTier: "STARTER" | "GROWTH" | "PROFESSIONAL" | "ENTERPRISE" | "SCHOOL_GROUP";
   currency?: string;
 }
 

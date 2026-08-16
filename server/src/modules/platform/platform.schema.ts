@@ -28,7 +28,7 @@ export const updatePlatformAdminSchema = z.object({
 });
 
 export const updateTenantSubscriptionSchema = z.object({
-  planTier: z.enum(["FREE", "BASIC", "PREMIUM"]).optional(),
+  planTier: z.enum(["STARTER", "GROWTH", "PROFESSIONAL", "ENTERPRISE", "SCHOOL_GROUP"]).optional(),
   subscriptionStatus: z.enum(["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED"]).optional(),
   subscriptionEndsAt: z.coerce.date().optional(),
   maxStudents: z.number().int().positive().optional(),

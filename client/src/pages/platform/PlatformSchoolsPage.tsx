@@ -63,11 +63,13 @@ export function PlatformSchoolsPage() {
                     value={t.planTier}
                     disabled={!canEditBilling}
                     onChange={(e) => updateSubscription(t.id, { planTier: e.target.value })}
-                    className="w-28"
+                    className="w-36"
                   >
-                    <option value="FREE">Free</option>
-                    <option value="BASIC">Basic</option>
-                    <option value="PREMIUM">Premium</option>
+                    <option value="STARTER">Starter</option>
+                    <option value="GROWTH">Growth</option>
+                    <option value="PROFESSIONAL">Professional</option>
+                    <option value="ENTERPRISE">Enterprise</option>
+                    <option value="SCHOOL_GROUP">School Group</option>
                   </Select>
                 </td>
                 <td className="px-4 py-3">

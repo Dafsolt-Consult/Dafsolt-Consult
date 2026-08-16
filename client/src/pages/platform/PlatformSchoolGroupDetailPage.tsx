@@ -134,7 +134,7 @@ export function PlatformSchoolGroupDetailPage() {
                 <p className="font-medium text-slate-800">{t.name}</p>
                 <p className="text-xs text-slate-400">{t.slug}</p>
               </td>
-              <td className="px-4 py-3 text-slate-600">{t.planTier}</td>
+              <td className="px-4 py-3 text-slate-600">{t.planTier.replace("_", " ")}</td>
               <td className="px-4 py-3 text-slate-600">{t._count.students}</td>
               <td className="px-4 py-3 text-slate-600">{t._count.users}</td>
               <td className="px-4 py-3">

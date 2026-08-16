@@ -1,12 +1,25 @@
 import { FormEvent, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Button, Card, ErrorBanner, Input, Label } from "../components/ui";
+import { Button, Card, ErrorBanner, Input, Label, Select } from "../components/ui";
 import { apiErrorMessage } from "../api/client";
+
+const PLAN_OPTIONS = [
+  { value: "STARTER", label: "Starter", students: "1–150 students", price: "₦50,000/term" },
+  { value: "GROWTH", label: "Growth", students: "151–400 students", price: "₦100,000/term" },
+  { value: "PROFESSIONAL", label: "Professional", students: "401–800 students", price: "₦175,000/term" },
+  { value: "ENTERPRISE", label: "Enterprise", students: "801–1,500 students", price: "₦280,000/term" },
+] as const;
+
+function resolvePlanFromQuery(raw: string | null): (typeof PLAN_OPTIONS)[number]["value"] {
+  const match = PLAN_OPTIONS.find((p) => p.value === raw?.toUpperCase());
+  return match?.value ?? "STARTER";
+}
 
 export function OnboardPage() {
   const { onboardSchool, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState({
     schoolName: "",
     slug: "",
@@ -15,6 +28,9 @@ export function OnboardPage() {
     adminEmail: "",
     adminPassword: "",
   });
+  const [planTier, setPlanTier] = useState<(typeof PLAN_OPTIONS)[number]["value"]>(() =>
+    resolvePlanFromQuery(searchParams.get("plan"))
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,7 +45,7 @@ export function OnboardPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await onboardSchool({ ...form, country: "Nigeria", currency: "NGN" });
+      await onboardSchool({ ...form, country: "Nigeria", currency: "NGN", planTier });
       navigate("/");
     } catch (err) {
       setError(apiErrorMessage(err));
@@ -63,6 +79,19 @@ export function OnboardPage() {
               value={form.slug}
               onChange={(e) => update("slug", e.target.value.toLowerCase())}
             />
+          </div>
+          <div>
+            <Label>Plan</Label>
+            <Select value={planTier} onChange={(e) => setPlanTier(e.target.value as typeof planTier)}>
+              {PLAN_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label} — {p.students} — {p.price}
+                </option>
+              ))}
+            </Select>
+            <p className="mt-1 text-xs text-slate-500">
+              Founding Schools Programme pricing for your first 1,000-school cohort — change anytime after signup.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

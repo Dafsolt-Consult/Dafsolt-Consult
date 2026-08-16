@@ -53,8 +53,11 @@ anymore.
 `PARENT`, `LIBRARIAN`, `ACCOUNTANT`. Every route is gated by role via
 `authorize(...)` middleware.
 
-**Subscription plans**: `FREE` / `BASIC` / `PREMIUM`, each with a student and
-staff seat cap enforced at creation time — the natural SaaS upsell lever.
+**Subscription plans**: `STARTER` / `GROWTH` / `PROFESSIONAL` / `ENTERPRISE` —
+keyed to student count (1–150 / 151–400 / 401–800 / 801–1,500), each with a
+seat cap enforced at creation time — the natural SaaS upsell lever. A fifth
+tier, `SCHOOL_GROUP`, is custom-priced for multi-campus operators and is
+applied manually by a platform admin rather than through self-serve signup.
 
 **Password reset**: available to every role at `/forgot-password` (single-use,
 1-hour-expiry tokens; resetting revokes all of that account's active

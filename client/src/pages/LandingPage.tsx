@@ -778,7 +778,7 @@ export function LandingPage() {
                 </ul>
 
                 <Link
-                  to="/onboard"
+                  to={`/onboard?plan=${plan.name.toLowerCase()}`}
                   className={`mt-8 inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
                     plan.highlighted
                       ? "bg-[#2E3192] text-white hover:opacity-90"

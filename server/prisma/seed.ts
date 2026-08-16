@@ -22,7 +22,7 @@ async function main() {
       slug: "demo-academy",
       country: "Nigeria",
       currency: "NGN",
-      planTier: "BASIC",
+      planTier: "GROWTH",
       subscriptionStatus: "ACTIVE",
       maxStudents: 500,
       maxStaff: 50,

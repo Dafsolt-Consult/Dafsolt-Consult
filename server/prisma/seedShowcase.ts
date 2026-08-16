@@ -40,7 +40,7 @@ async function main() {
       slug: "bright-horizons",
       country: "Nigeria",
       currency: "NGN",
-      planTier: "PREMIUM",
+      planTier: "ENTERPRISE",
       subscriptionStatus: "ACTIVE",
       maxStudents: 1200,
       maxStaff: 120,
