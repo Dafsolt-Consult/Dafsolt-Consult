@@ -212,7 +212,7 @@ const PILLARS = [
 const WORKFLOW_STEPS = [
   {
     title: "Register your school",
-    body: "Create your school's isolated workspace in minutes — pick FREE, BASIC, or PREMIUM based on your student and staff seat count.",
+    body: "Create your school's isolated workspace in minutes — pick Starter, Growth, Professional or Enterprise based on your student count. Every plan gets the full DAFSOLT OS.",
     icon: icons.shield,
   },
   {
@@ -241,31 +241,64 @@ const ROLES = [
   { role: "HR Manager", detail: "Staff attendance, leave requests, payroll runs and performance reviews." },
 ];
 
+function naira(n: number) {
+  return `₦${n.toLocaleString()}`;
+}
+
+const INCLUDED_CATEGORIES = [
+  "Academic Management",
+  "Student & Parent Management",
+  "Finance",
+  "CBT & Examination",
+  "HR & Payroll",
+  "School Operations",
+  "Communication",
+  "Analytics",
+  "E-Learning",
+  "Multi-campus (higher plans)",
+];
+
 const PLANS = [
   {
-    name: "Free",
-    price: "₦0",
-    cadence: "/ 30 days",
-    blurb: "A 30-day trial to get a single class arm onto digital records.",
-    features: ["Up to 50 students", "Core academics & attendance", "1 staff seat cap tier", "Community support"],
-    cta: "Start for free",
+    name: "Starter",
+    students: "1–150 students",
+    normalPrice: 75000,
+    foundingPrice: 50000,
+    annualNormal: 210000,
+    blurb: "Nursery, primary or a small secondary school digitizing for the first time.",
+    features: ["The complete DAFSOLT OS — every module included", "Up to 150 students", "Core admin seats", "Standard support"],
+    cta: "Start on Starter",
   },
   {
-    name: "Basic",
-    price: "₦80,000",
-    cadence: "/month",
-    blurb: "For a full primary or secondary school running day-to-day.",
-    features: ["Higher student & staff caps", "Full CBT engine", "Library + fee invoicing", "Email support"],
-    cta: "Choose Basic",
+    name: "Growth",
+    students: "151–400 students",
+    normalPrice: 150000,
+    foundingPrice: 100000,
+    annualNormal: 420000,
+    blurb: "The plan most Nigerian private schools land on.",
+    features: ["Everything in Starter", "Full CBT engine + global question library", "HR & payroll, transport, hostel, e-learning", "Priority support"],
+    cta: "Start on Growth",
     highlighted: true,
   },
   {
-    name: "Premium",
-    price: "₦200,000",
-    cadence: "/month",
-    blurb: "For multi-arm schools — and groups running more than one campus.",
-    features: ["Highest seat caps", "Parent Portal for every guardian", "School Groups for multi-campus operators", "Priority support"],
-    cta: "Choose Premium",
+    name: "Professional",
+    students: "401–800 students",
+    normalPrice: 250000,
+    foundingPrice: 175000,
+    annualNormal: 700000,
+    blurb: "For larger schools that need more admin seats and deeper reporting.",
+    features: ["Everything in Growth", "Advanced analytics & compliance reporting", "More admin users & storage", "School branding"],
+    cta: "Start on Professional",
+  },
+  {
+    name: "Enterprise",
+    students: "801–1,500 students",
+    normalPrice: 400000,
+    foundingPrice: 280000,
+    annualNormal: 1120000,
+    blurb: "For large institutions that need dedicated support and tighter control.",
+    features: ["Everything in Professional", "Dedicated onboarding", "Enhanced security controls", "Multi-campus ready"],
+    cta: "Talk to sales",
   },
 ];
 
@@ -313,7 +346,7 @@ const FAQS = [
   },
   {
     q: "Can I change plans as my school grows?",
-    a: "Yes. FREE, BASIC, and PREMIUM plans each carry a student and staff seat cap enforced at creation time — upgrade whenever you're ready to add more.",
+    a: "Yes. Plans are keyed to your student count, so as you grow from Starter to Growth to Professional to Enterprise, you're upgrading capacity — not unlocking modules you were previously missing. School Groups running multiple campuses move to custom pricing.",
   },
 ];
 
@@ -458,7 +491,7 @@ export function LandingPage() {
 
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-500">
             <Icon path={icons.check} className="h-4 w-4 text-[#2E3192]" />
-            No card required for the Free plan
+            No card required for your 30-day guided trial
           </div>
         </div>
       </section>
@@ -669,11 +702,37 @@ export function LandingPage() {
       <section id="pricing" className="border-t border-[#E6E6E6] bg-[#E6E6E6]/50 py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">Plans that scale with your school</h2>
-            <p className="mt-4 text-lg text-slate-600">Seat caps enforced automatically — upgrade the moment you need to.</p>
+            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">One system. One price. No feature toll-gates.</h2>
+            <p className="mt-4 text-lg text-slate-600">
+              Every plan includes the complete DAFSOLT OS. Plans scale by student count, admin seats, storage and
+              support — never by which module you're allowed to use.
+            </p>
           </div>
 
-          <div className="mt-14 grid gap-8 lg:grid-cols-3">
+          <div className="mx-auto mt-8 flex max-w-4xl flex-wrap justify-center gap-2">
+            {INCLUDED_CATEGORIES.map((c) => (
+              <span
+                key={c}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#E6E6E6] bg-white px-3 py-1 text-xs font-medium text-slate-600"
+              >
+                <Icon path={icons.check} className="h-3.5 w-3.5 text-[#2E3192]" />
+                {c}
+              </span>
+            ))}
+          </div>
+
+          <div className="mx-auto mt-10 max-w-4xl rounded-2xl border border-[#81AEEB]/40 bg-[#2E3192] px-6 py-5 text-center sm:px-10">
+            <p className="text-sm font-bold uppercase tracking-wide text-[#D0E3FF]">🎓 DAFSOLT Founding Schools Programme</p>
+            <p className="mt-2 text-lg font-semibold text-white">
+              The first 1,000 schools to register lock in the founding prices below for their first year.
+            </p>
+            <p className="mt-1 text-sm text-[#D0E3FF]">
+              Free setup, free onboarding and free data migration — normally ₦50,000–₦100,000. After Year 1, standard
+              pricing applies.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-8 lg:grid-cols-4">
             {PLANS.map((plan) => (
               <div
                 key={plan.name}
@@ -689,11 +748,25 @@ export function LandingPage() {
                   </span>
                 )}
                 <h3 className="text-lg font-semibold text-slate-900">{plan.name}</h3>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900">{plan.price}</span>
-                  <span className="text-sm text-slate-500">{plan.cadence}</span>
+                <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">{plan.students}</p>
+
+                <div className="mt-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-slate-400 line-through">{naira(plan.normalPrice)}</span>
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                      Founding price
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-extrabold text-slate-900">{naira(plan.foundingPrice)}</span>
+                    <span className="text-sm text-slate-500">/term</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Standard pricing: {naira(plan.normalPrice)}/term, or {naira(plan.annualNormal)}/year.
+                  </p>
                 </div>
-                <p className="mt-3 text-sm text-slate-600">{plan.blurb}</p>
+
+                <p className="mt-4 text-sm text-slate-600">{plan.blurb}</p>
 
                 <ul className="mt-6 flex-1 space-y-3">
                   {plan.features.map((f) => (
@@ -717,6 +790,42 @@ export function LandingPage() {
                 </Link>
               </div>
             ))}
+          </div>
+
+          <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-[#E6E6E6] bg-white p-8 text-center sm:flex-row sm:text-left">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">School Group — 1,500+ students or multiple campuses</h3>
+              <p className="mt-2 max-w-2xl text-sm text-slate-600">
+                Custom pricing based on campuses, total students, admin seats, storage, SLA and integrations — built on
+                the same School Groups feature that lets one account run every campus.
+              </p>
+            </div>
+            <a
+              href="mailto:hello@dafsolt.com"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#81AEEB] hover:text-[#2E3192]"
+            >
+              Talk to us
+              <Icon path={icons.arrowRight} className="h-4 w-4" />
+            </a>
+          </div>
+
+          <div className="mx-auto mt-10 grid max-w-4xl gap-4 text-sm text-slate-600 sm:grid-cols-2">
+            <div className="flex items-start gap-2">
+              <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
+              One school subscription — no per-teacher, per-parent or per-student account fees.
+            </div>
+            <div className="flex items-start gap-2">
+              <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
+              Online payments are billed at the payment gateway's own rate, never a hidden DAFSOLT markup.
+            </div>
+            <div className="flex items-start gap-2">
+              <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
+              SMS is usage-based — pay for bundles as you send them, not a flat "unlimited" tax.
+            </div>
+            <div className="flex items-start gap-2">
+              <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
+              CBT, the question bank and every other module are included at every tier — never an add-on.
+            </div>
           </div>
         </div>
       </section>
