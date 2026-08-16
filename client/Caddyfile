@@ -22,6 +22,15 @@ http://{$DOMAIN} {
 		file_server
 	}
 
+	# PWA icons aren't content-hashed like /assets/*, so a short cache
+	# (not "immutable") — fast on repeat installs/home-screen loads, but a
+	# future icon redesign still shows up within a week without a rename.
+	handle /icons/* {
+		root * /srv
+		header Cache-Control "public, max-age=604800"
+		file_server
+	}
+
 	# The SPA shell itself must never be served stale, or the browser can
 	# keep pointing at pre-deploy asset hashes indefinitely (no explicit
 	# Cache-Control here previously meant browsers fell back to heuristic
