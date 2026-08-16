@@ -94,7 +94,7 @@ export function OnboardPage() {
           />
         </div>
         <div>
-          <Label>School address</Label>
+          <Label>School address (optional)</Label>
           <Input
             value={form.address}
             onChange={(e) => update("address", e.target.value)}
