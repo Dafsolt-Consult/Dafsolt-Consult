@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useFetch } from "../hooks/useFetch";
 
 /* ---------- small local icon set (no new dependency) ---------- */
 
@@ -359,6 +360,10 @@ export function LandingPage() {
   const [activePillar, setActivePillar] = useState<string>(PILLARS[0].key);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const { data: signupStats } = useFetch<{ schoolsRegistered: number; foundingCohortSize: number }>("/public/signup-stats");
+  const schoolsRegistered = signupStats?.schoolsRegistered ?? 0;
+  const foundingCohortSize = signupStats?.foundingCohortSize ?? 1000;
+  const foundingProgressPct = Math.min((schoolsRegistered / foundingCohortSize) * 100, 100);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -402,6 +407,9 @@ export function LandingPage() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
+            <a href="/kiosk/login" className="text-sm font-medium text-slate-500 transition hover:text-[#2E3192]">
+              Exam Kiosk
+            </a>
             <Link to="/login" className="text-sm font-medium text-slate-700 transition hover:text-[#2E3192]">
               Sign in
             </Link>
@@ -437,6 +445,9 @@ export function LandingPage() {
                 </a>
               ))}
               <div className="mt-2 flex flex-col gap-2 border-t border-[#E6E6E6] pt-3">
+                <a href="/kiosk/login" className="rounded-lg px-2 py-2 text-sm font-medium text-slate-500 hover:bg-[#E6E6E6]">
+                  Exam Kiosk
+                </a>
                 <Link to="/login" className="rounded-lg px-2 py-2 text-sm font-medium text-slate-700 hover:bg-[#E6E6E6]">
                   Sign in
                 </Link>
@@ -730,6 +741,21 @@ export function LandingPage() {
               Free setup, free onboarding and free data migration — normally ₦50,000–₦100,000. After Year 1, standard
               pricing applies.
             </p>
+
+            <div className="mx-auto mt-4 max-w-md">
+              <div className="flex items-baseline justify-between text-xs font-semibold text-[#D0E3FF]">
+                <span>
+                  <CountUp to={schoolsRegistered} /> of {foundingCohortSize.toLocaleString()} founding spots claimed
+                </span>
+                <span>{Math.round(foundingProgressPct)}%</span>
+              </div>
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-white/15">
+                <div
+                  className="h-full rounded-full bg-white transition-all duration-700"
+                  style={{ width: `${foundingProgressPct}%` }}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="mt-10 grid gap-8 lg:grid-cols-4">
@@ -910,6 +936,9 @@ export function LandingPage() {
               <Link to="/onboard" className="hover:text-white">
                 Register
               </Link>
+              <a href="/kiosk/login" className="hover:text-white">
+                Exam Kiosk Login
+              </a>
             </div>
           </div>
           <div className="mt-8 border-t border-slate-800 pt-6 text-center text-xs">

@@ -8,6 +8,7 @@ import { env } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 import authRoutes from "./modules/auth/auth.routes";
+import publicRoutes from "./modules/public/public.routes";
 import platformRoutes from "./modules/platform/platform.routes";
 import tenantsRoutes from "./modules/tenants/tenants.routes";
 import usersRoutes from "./modules/users/users.routes";
@@ -75,6 +76,7 @@ export function createApp() {
   app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
 
   app.use("/api/auth", authLimiter, authRoutes);
+  app.use("/api/public", publicRoutes);
   app.use("/api/platform", platformRoutes);
   app.use("/api/tenants", tenantsRoutes);
   app.use("/api/users", usersRoutes);

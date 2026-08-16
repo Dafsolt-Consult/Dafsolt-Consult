@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Spinner } from "./components/ui";
-import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardPage } from "./pages/OnboardPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
@@ -66,7 +65,10 @@ import { PlatformGlobalQuestionsPage } from "./pages/platform/PlatformGlobalQues
 export default function App() {
   return (
     <Routes>
-      <Route path="/welcome" element={<LandingPage />} />
+      {/* The landing page now lives at the official root URL (rendered by
+          ProtectedRoute for signed-out visitors) — /welcome is kept as a
+          redirect so any existing links/bookmarks still land somewhere. */}
+      <Route path="/welcome" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboard" element={<OnboardPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

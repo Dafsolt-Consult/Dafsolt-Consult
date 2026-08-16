@@ -16,11 +16,16 @@ function StatCard({ label, value, to }: { label: string; value: string | number;
   );
 }
 
+const FOUNDING_COHORT_SIZE = 1000;
+
 export function PlatformDashboardPage() {
   const { admin } = usePlatformAuth();
   const { data } = usePlatformFetch<Paginated<PlatformTenantRow>>("/tenants?pageSize=1");
   const { data: groups } = usePlatformFetch<SchoolGroupRow[]>("/school-groups");
   if (!admin) return null;
+
+  const schoolsRegistered = data?.total ?? 0;
+  const foundingProgress = Math.min((schoolsRegistered / FOUNDING_COHORT_SIZE) * 100, 100);
 
   return (
     <div>
@@ -31,6 +36,21 @@ export function PlatformDashboardPage() {
         {admin.role === "OWNER" && <StatCard label="Platform admins" value="Manage" to="/platform/admins" />}
         <StatCard label="Audit log" value="Review" to="/platform/audit-log" />
       </div>
+
+      <Card className="mt-4">
+        <div className="flex items-baseline justify-between">
+          <p className="text-sm font-medium text-slate-700">Founding Schools Programme cohort</p>
+          <p className="text-sm text-slate-500">
+            {schoolsRegistered.toLocaleString()} / {FOUNDING_COHORT_SIZE.toLocaleString()} signups
+          </p>
+        </div>
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-brand-600 transition-all" style={{ width: `${foundingProgress}%` }} />
+        </div>
+        <p className="mt-2 text-xs text-slate-500">
+          Every school that registers counts toward the first 1,000 — the same number shown live on the marketing site.
+        </p>
+      </Card>
     </div>
   );
 }
