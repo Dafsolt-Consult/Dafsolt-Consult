@@ -46,7 +46,7 @@ export function AuthGateShell({
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2E3192] text-white">
             <ShieldMark />
           </div>
-          <span className="text-lg font-bold tracking-tight text-[#2E3192]">DAFSOLT OS</span>
+          <span className="text-lg font-bold tracking-tight text-[#2E3192]">Dafsolt BOS</span>
         </Link>
         <Link
           to="/"

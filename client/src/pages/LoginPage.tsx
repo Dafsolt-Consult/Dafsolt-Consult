@@ -37,7 +37,7 @@ export function LoginPage() {
       subtitle="Sign in at your school's gate"
       footer={
         <>
-          A Dafsolt Consult product, built for schools across Africa.
+          Built for schools across Africa.
         </>
       }
     >

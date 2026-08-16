@@ -14,8 +14,8 @@ export default defineConfig({
       // there.
       includeAssets: ["icons/apple-touch-icon.png"],
       manifest: {
-        name: "DAFSOLT OS for Schools",
-        short_name: "DAFSOLT OS",
+        name: "Dafsolt BOS for School",
+        short_name: "Dafsolt BOS",
         description: "The complete operating system for your school — academics, finance, CBT, HR and more, in one place.",
         start_url: "/",
         scope: "/",

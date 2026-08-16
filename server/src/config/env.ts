@@ -46,7 +46,7 @@ export const env = {
   smtpPort: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined,
   smtpUser: process.env.SMTP_USER,
   smtpPass: process.env.SMTP_PASS,
-  smtpFrom: process.env.SMTP_FROM ?? "DAFSOLT OS <no-reply@dafsolt.com>",
+  smtpFrom: process.env.SMTP_FROM ?? "Dafsolt BOS <no-reply@dafsolt.com>",
 
   africasTalkingApiKey: process.env.AFRICASTALKING_API_KEY,
   africasTalkingUsername: process.env.AFRICASTALKING_USERNAME,

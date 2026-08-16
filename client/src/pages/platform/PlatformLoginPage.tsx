@@ -31,7 +31,7 @@ export function PlatformLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-900 px-4">
       <Card className="w-full max-w-sm">
-        <h1 className="mb-1 text-xl font-bold text-slate-900">DAFSOLT OS</h1>
+        <h1 className="mb-1 text-xl font-bold text-slate-900">Dafsolt BOS</h1>
         <p className="mb-6 text-sm text-slate-500">Platform administration sign in</p>
 
         {error && (

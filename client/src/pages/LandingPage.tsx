@@ -213,7 +213,7 @@ const PILLARS = [
 const WORKFLOW_STEPS = [
   {
     title: "Register your school",
-    body: "Create your school's isolated workspace in minutes — pick Starter, Growth, Professional or Enterprise based on your student count. Every plan gets the full DAFSOLT OS.",
+    body: "Create your school's isolated workspace in minutes — pick Starter, Growth, Professional or Enterprise based on your student count. Every plan gets the full Dafsolt BOS for School.",
     icon: icons.shield,
   },
   {
@@ -267,7 +267,7 @@ const PLANS = [
     foundingPrice: 50000,
     annualNormal: 210000,
     blurb: "Nursery, primary or a small secondary school digitizing for the first time.",
-    features: ["The complete DAFSOLT OS — every module included", "Up to 150 students", "Core admin seats", "Standard support"],
+    features: ["The complete Dafsolt BOS for School — every module included", "Up to 150 students", "Core admin seats", "Standard support"],
     cta: "Start on Starter",
   },
   {
@@ -326,11 +326,11 @@ const TESTIMONIALS = [
 
 const FAQS = [
   {
-    q: "What exactly is DAFSOLT OS?",
+    q: "What exactly is Dafsolt BOS for School?",
     a: "An operating system for running a school — not a single app bolted onto a spreadsheet. Administration, Academics, Finance, People, Communication, Operations and Analytics all read and write to the same data, so a result entered by a teacher is the same result a parent sees, the bursar bills against, and the proprietor's analytics chart counts.",
   },
   {
-    q: "Is DAFSOLT built for African schools specifically?",
+    q: "Is Dafsolt BOS for School built for African schools specifically?",
     a: "Yes. Nigerian/West African curriculum structure (Primary 1–6, JSS 1–3, SSS 1–3) and WAEC/NECO-style A–F grading are the defaults, along with Naira currency, Africa/Lagos timezone, and local payment and SMS rails so intermittent connectivity and mobile-money billing aren't an afterthought.",
   },
   {
@@ -395,7 +395,7 @@ export function LandingPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#2E3192] text-white">
               <Icon path={icons.administration} className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold tracking-tight text-[#2E3192]">DAFSOLT OS</span>
+            <span className="text-lg font-bold tracking-tight text-[#2E3192]">Dafsolt BOS</span>
           </div>
 
           <nav className="hidden items-center gap-8 md:flex">
@@ -472,7 +472,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 pb-10 pt-14 text-center sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
           <span className="inline-flex items-center gap-2 rounded-full border border-[#81AEEB]/40 bg-[#D0E3FF] px-3 py-1 text-xs font-semibold text-[#2E3192]">
             <Icon path={icons.globe} className="h-3.5 w-3.5" />
-            DAFSOLT OS for Schools
+            Dafsolt BOS for School
           </span>
 
           <h1 className="mx-auto mt-5 max-w-4xl text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
@@ -516,7 +516,7 @@ export function LandingPage() {
             </span>
             <h2 className="mt-4 text-3xl font-bold text-white sm:text-4xl">This is the actual software</h2>
             <p className="mt-4 text-lg text-slate-300">
-              Not mockups — live screens from a running DAFSOLT OS school, one per role. Pick a persona to see their screen.
+              Not mockups — live screens from a running Dafsolt BOS for School, one per role. Pick a persona to see their screen.
             </p>
           </div>
 
@@ -540,7 +540,7 @@ export function LandingPage() {
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl">
               <img
                 src={activeShot.image}
-                alt={`${activeShot.title} in DAFSOLT OS`}
+                alt={`${activeShot.title} in Dafsolt BOS for School`}
                 className="block w-full"
                 loading="eager"
               />
@@ -715,7 +715,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">One system. One price. No feature toll-gates.</h2>
             <p className="mt-4 text-lg text-slate-600">
-              Every plan includes the complete DAFSOLT OS. Plans scale by student count, admin seats, storage and
+              Every plan includes the complete Dafsolt BOS for School. Plans scale by student count, admin seats, storage and
               support — never by which module you're allowed to use.
             </p>
           </div>
@@ -733,7 +733,7 @@ export function LandingPage() {
           </div>
 
           <div className="mx-auto mt-10 max-w-4xl rounded-2xl border border-[#81AEEB]/40 bg-[#2E3192] px-6 py-5 text-center sm:px-10">
-            <p className="text-sm font-bold uppercase tracking-wide text-[#D0E3FF]">🎓 DAFSOLT Founding Schools Programme</p>
+            <p className="text-sm font-bold uppercase tracking-wide text-[#D0E3FF]">🎓 Dafsolt BOS Founding Schools Programme</p>
             <p className="mt-2 text-lg font-semibold text-white">
               The first 1,000 schools to register lock in the founding prices below for their first year.
             </p>
@@ -842,7 +842,7 @@ export function LandingPage() {
             </div>
             <div className="flex items-start gap-2">
               <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
-              Online payments are billed at the payment gateway's own rate, never a hidden DAFSOLT markup.
+              Online payments are billed at the payment gateway's own rate, never a hidden Dafsolt BOS markup.
             </div>
             <div className="flex items-start gap-2">
               <Icon path={icons.check} className="mt-0.5 h-4 w-4 shrink-0 text-[#2E3192]" />
@@ -895,7 +895,7 @@ export function LandingPage() {
       <section className="border-t border-[#E6E6E6] bg-[#2E3192] py-16">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">
-            From admission to graduation, DAFSOLT puts your entire school in one place.
+            From admission to graduation, Dafsolt BOS for School puts your entire school in one place.
           </h2>
           <p className="mt-4 text-lg text-[#D0E3FF]">
             Register your school in minutes, or sign in if your school already has an account.
@@ -926,9 +926,9 @@ export function LandingPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2E3192] text-white">
                 <Icon path={icons.administration} className="h-4 w-4" />
               </div>
-              <span className="text-base font-bold text-white">DAFSOLT OS</span>
+              <span className="text-base font-bold text-white">Dafsolt BOS</span>
             </div>
-            <p className="text-sm">A Dafsolt Consult product, built for schools across Africa.</p>
+            <p className="text-sm">Built for schools across Africa.</p>
             <div className="flex gap-6 text-sm">
               <Link to="/login" className="hover:text-white">
                 Sign in
@@ -942,7 +942,7 @@ export function LandingPage() {
             </div>
           </div>
           <div className="mt-8 border-t border-slate-800 pt-6 text-center text-xs">
-            © {new Date().getFullYear()} Dafsolt Consult. All rights reserved.
+            © {new Date().getFullYear()} Dafsolt BOS. All rights reserved.
           </div>
         </div>
       </footer>
