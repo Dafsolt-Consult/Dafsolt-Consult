@@ -50,6 +50,16 @@ export const env = {
 
   africasTalkingApiKey: process.env.AFRICASTALKING_API_KEY,
   africasTalkingUsername: process.env.AFRICASTALKING_USERNAME,
+
+  // Groq's OpenAI-compatible chat-completions API — powers the public
+  // support chatbot and the in-app assistant (src/domain/support,
+  // src/domain/assistant). Same provider/pattern as finance.dafsolt.cloud.
+  groqApiKey: process.env.GROQ_API_KEY,
+  groqModel: process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
+  groqBaseUri: process.env.GROQ_BASE_URI ?? "https://api.groq.com/openai/v1",
+
+  supportContactPhone: process.env.SUPPORT_CONTACT_PHONE ?? "+2348160116571",
+  supportContactEmail: process.env.SUPPORT_CONTACT_EMAIL ?? "support@dafsolt.cloud",
 };
 
 export const isProd = env.nodeEnv === "production";

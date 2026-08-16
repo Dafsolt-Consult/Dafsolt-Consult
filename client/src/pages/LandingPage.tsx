@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useFetch } from "../hooks/useFetch";
+import { SupportChatWidget } from "../components/SupportChatWidget";
 
 /* ---------- small local icon set (no new dependency) ---------- */
 
@@ -946,6 +947,8 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <SupportChatWidget />
     </div>
   );
 }

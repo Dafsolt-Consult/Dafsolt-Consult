@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { UserRole } from "../types";
+import { AssistantChatWidget } from "../components/AssistantChatWidget";
 
 interface NavItem {
   to: string;
@@ -130,6 +131,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <AssistantChatWidget />
     </div>
   );
 }
