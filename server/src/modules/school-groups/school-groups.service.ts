@@ -1,6 +1,7 @@
 import { prisma } from "../../config/prisma";
 import { ApiError } from "../../utils/ApiError";
 import { enrollmentTrend, attendanceTrend, feeCollectionByTerm, examPerformance } from "../analytics/analytics.service";
+import { STAFF_ROLES } from "../../utils/planLimits";
 import { CreateSchoolGroupInput, UpdateSchoolGroupInput } from "./school-groups.schema";
 
 const TENANT_SUMMARY_SELECT = {
@@ -9,7 +10,7 @@ const TENANT_SUMMARY_SELECT = {
   slug: true,
   planTier: true,
   subscriptionStatus: true,
-  _count: { select: { students: true, users: true } },
+  _count: { select: { students: true, users: { where: { role: { in: STAFF_ROLES } } } } },
 } as const;
 
 export async function listSchoolGroups() {

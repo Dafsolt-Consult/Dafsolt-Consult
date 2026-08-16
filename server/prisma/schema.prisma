@@ -47,6 +47,8 @@ enum UserRole {
 enum PlatformRole {
   OWNER // full access: billing/plan, platform admin management, impersonation
   SUPPORT // read tenants, start impersonation sessions; no admin/plan management
+  BILLING // manage tenant subscriptions/plans, view revenue analytics; no admin management or impersonation
+  CONTENT_MANAGER // manage the shared exam-practice question library; no billing, admin management or impersonation
 }
 
 enum Gender {

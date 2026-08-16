@@ -31,10 +31,12 @@ router.get("/tenants", platformController.listTenants);
 router.get("/tenants/:tenantId", platformController.getTenantById);
 router.patch(
   "/tenants/:tenantId/subscription",
-  authorizePlatform("OWNER"),
+  authorizePlatform("OWNER", "BILLING"),
   auditLog("UPDATE_SUBSCRIPTION", "Tenant"),
   platformController.updateTenantSubscription
 );
+
+router.get("/analytics/overview", platformController.getAnalyticsOverview);
 router.post(
   "/tenants/:tenantId/impersonate",
   authorizePlatform("OWNER", "SUPPORT"),
@@ -91,32 +93,32 @@ router.get("/audit-log", platformController.listAuditLog);
 router.get("/global-subjects", globalQuestionsController.listGlobalSubjects);
 router.post(
   "/global-subjects",
-  authorizePlatform("OWNER"),
+  authorizePlatform("OWNER", "CONTENT_MANAGER"),
   auditLog("CREATE_GLOBAL_SUBJECT", "GlobalSubject"),
   globalQuestionsController.createGlobalSubject
 );
 router.get("/global-questions", globalQuestionsController.listGlobalQuestions);
 router.post(
   "/global-questions",
-  authorizePlatform("OWNER"),
+  authorizePlatform("OWNER", "CONTENT_MANAGER"),
   auditLog("CREATE_GLOBAL_QUESTION", "GlobalQuestion"),
   globalQuestionsController.createGlobalQuestion
 );
 router.post(
   "/global-questions/bulk",
-  authorizePlatform("OWNER"),
+  authorizePlatform("OWNER", "CONTENT_MANAGER"),
   auditLog("BULK_CREATE_GLOBAL_QUESTIONS", "GlobalQuestion"),
   globalQuestionsController.bulkCreateGlobalQuestions
 );
 router.patch(
   "/global-questions/:questionId",
-  authorizePlatform("OWNER"),
+  authorizePlatform("OWNER", "CONTENT_MANAGER"),
   auditLog("UPDATE_GLOBAL_QUESTION", "GlobalQuestion"),
   globalQuestionsController.updateGlobalQuestion
 );
 router.delete(
   "/global-questions/:questionId",
-  authorizePlatform("OWNER"),
+  authorizePlatform("OWNER", "CONTENT_MANAGER"),
   auditLog("DELETE_GLOBAL_QUESTION", "GlobalQuestion"),
   globalQuestionsController.deleteGlobalQuestion
 );

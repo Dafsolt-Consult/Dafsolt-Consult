@@ -1,4 +1,4 @@
-export type PlatformRole = "OWNER" | "SUPPORT";
+export type PlatformRole = "OWNER" | "SUPPORT" | "BILLING" | "CONTENT_MANAGER";
 
 export interface PlatformAdminUser {
   id: string;

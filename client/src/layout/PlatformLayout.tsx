@@ -27,7 +27,7 @@ export function PlatformLayout() {
     <div className="flex min-h-screen">
       <aside className="flex w-64 flex-col border-r border-slate-800 bg-slate-900">
         <div className="border-b border-slate-800 px-5 py-4">
-          <p className="text-lg font-bold text-white">School Manager</p>
+          <p className="text-lg font-bold text-white">DAFSOLT OS</p>
           <p className="truncate text-xs text-slate-400">Platform administration</p>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">

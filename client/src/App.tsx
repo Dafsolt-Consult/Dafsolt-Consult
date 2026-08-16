@@ -53,7 +53,10 @@ import { PlatformAuthProvider } from "./context/PlatformAuthContext";
 import { PlatformProtectedRoute } from "./routes/PlatformProtectedRoute";
 import { PlatformLayout } from "./layout/PlatformLayout";
 import { PlatformLoginPage } from "./pages/platform/PlatformLoginPage";
-import { PlatformDashboardPage } from "./pages/platform/PlatformDashboardPage";
+// Code-split: recharts is a heavy dependency, same reasoning as AnalyticsPage above.
+const PlatformDashboardPage = lazy(() =>
+  import("./pages/platform/PlatformDashboardPage").then((m) => ({ default: m.PlatformDashboardPage }))
+);
 import { PlatformSchoolsPage } from "./pages/platform/PlatformSchoolsPage";
 import { PlatformSchoolDetailPage } from "./pages/platform/PlatformSchoolDetailPage";
 import { PlatformSchoolGroupsPage } from "./pages/platform/PlatformSchoolGroupsPage";
@@ -87,7 +90,14 @@ export default function App() {
                   </PlatformProtectedRoute>
                 }
               >
-                <Route index element={<PlatformDashboardPage />} />
+                <Route
+                  index
+                  element={
+                    <Suspense fallback={<div className="flex justify-center py-12"><Spinner /></div>}>
+                      <PlatformDashboardPage />
+                    </Suspense>
+                  }
+                />
                 <Route path="schools" element={<PlatformSchoolsPage />} />
                 <Route path="schools/:tenantId" element={<PlatformSchoolDetailPage />} />
                 <Route path="school-groups" element={<PlatformSchoolGroupsPage />} />

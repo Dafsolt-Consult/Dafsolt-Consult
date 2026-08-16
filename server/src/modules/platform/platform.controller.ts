@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiError } from "../../utils/ApiError";
 import * as platformService from "./platform.service";
+import * as platformAnalyticsService from "./platform.analytics.service";
 import {
   createPlatformAdminSchema,
   impersonateSchema,
@@ -38,7 +39,8 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
 export const listTenants = asyncHandler(async (req: Request, res: Response) => {
   const page = Number(req.query.page ?? 1);
   const pageSize = Math.min(Number(req.query.pageSize ?? 20), 100);
-  res.json(await platformService.listTenants(page, pageSize));
+  const { search, planTier, subscriptionStatus } = req.query as Record<string, string | undefined>;
+  res.json(await platformService.listTenants(page, pageSize, { search, planTier, subscriptionStatus }));
 });
 
 export const getTenantById = asyncHandler(async (req: Request, res: Response) => {
@@ -72,6 +74,10 @@ export const updateAdmin = asyncHandler(async (req: Request, res: Response) => {
   const input = updatePlatformAdminSchema.parse(req.body);
   const admin = await platformService.updateAdmin(req.params.adminId, input, req.platformAuth.platformAdminId);
   res.json(admin);
+});
+
+export const getAnalyticsOverview = asyncHandler(async (_req: Request, res: Response) => {
+  res.json(await platformAnalyticsService.getOverview());
 });
 
 export const listAuditLog = asyncHandler(async (req: Request, res: Response) => {
