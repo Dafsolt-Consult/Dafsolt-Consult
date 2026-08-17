@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Spinner } from "./components/ui";
 import { LoginPage } from "./pages/LoginPage";
 import { OnboardPage } from "./pages/OnboardPage";
+import { PrivacyPage } from "./pages/PrivacyPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { AppLayout } from "./layout/AppLayout";
@@ -74,6 +75,7 @@ export default function App() {
       <Route path="/welcome" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboard" element={<OnboardPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 

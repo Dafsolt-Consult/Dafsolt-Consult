@@ -31,6 +31,16 @@ http://{$DOMAIN} {
 		file_server
 	}
 
+	# Digital Asset Links verification for the Android TWA — must be served
+	# as real JSON, never caught by the SPA fallback below (a browser/Play
+	# fetching this and getting index.html back means the app opens with
+	# browser chrome instead of as a standalone app).
+	handle /.well-known/* {
+		root * /srv
+		header Cache-Control "no-cache"
+		file_server
+	}
+
 	# The SPA shell itself must never be served stale, or the browser can
 	# keep pointing at pre-deploy asset hashes indefinitely (no explicit
 	# Cache-Control here previously meant browsers fell back to heuristic
