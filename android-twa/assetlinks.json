@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "cloud.dafsolt.school",
+        "sha256_cert_fingerprints": ["1C:48:04:D2:F4:CF:EF:43:B7:69:22:9A:AA:6F:C6:02:90:E7:4F:6B:77:A0:16:5A:8C:7B:B0:82:82:C3:05:B3"]
+      }
+    }]
