@@ -22,6 +22,7 @@ db-backups/
 android-twa/*
 !android-twa/twa-manifest.json
 !android-twa/assetlinks.json
+!android-twa/store-listing/
 
 play-deploy/.env
 play-deploy/service-account.json
