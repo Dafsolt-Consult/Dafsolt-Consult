@@ -66,7 +66,7 @@ export function AuthGateShell({
             <p className="text-sm text-[#D0E3FF]">{subtitle}</p>
           </div>
 
-          <div className="px-8 py-8">{children}</div>
+          <div className="px-5 py-8 sm:px-8">{children}</div>
         </div>
       </main>
 

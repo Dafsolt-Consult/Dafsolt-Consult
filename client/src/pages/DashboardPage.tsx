@@ -32,7 +32,7 @@ export function DashboardPage() {
 
 function StatCard({ label, value, to }: { label: string; value: string | number; to?: string }) {
   const content = (
-    <Card className="hover:border-brand-300">
+    <Card className="hover:border-brand-300 active:border-brand-300">
       <p className="text-sm text-slate-500">{label}</p>
       <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
     </Card>

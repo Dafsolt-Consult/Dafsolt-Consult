@@ -137,14 +137,17 @@ export function KioskExamTakingPage() {
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-1">
+      {/* h-11 w-11 (44px) meets the minimum touch-target size — this grid
+          is how a student jumps between questions mid-exam, so a mis-tap
+          here during a timed attempt is a real cost, not a cosmetic one. */}
+      <div className="mb-4 flex flex-wrap gap-2">
         {state.questions.map((q, i) => {
           const answered = !!(answers[q.id]?.selectedOptionId || answers[q.id]?.textAnswer);
           return (
             <button
               key={q.id}
               onClick={() => setCurrent(i)}
-              className={`h-8 w-8 rounded text-xs font-medium ${
+              className={`flex h-11 w-11 items-center justify-center rounded text-sm font-medium ${
                 i === current ? "bg-brand-600 text-white" : answered ? "bg-brand-100 text-brand-800" : "bg-slate-100 text-slate-500"
               }`}
             >

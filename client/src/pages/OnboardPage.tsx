@@ -101,7 +101,7 @@ export function OnboardPage() {
             className="focus:!border-[#2E3192] focus:!ring-[#2E3192]"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label>Country</Label>
             <Select
@@ -169,7 +169,7 @@ export function OnboardPage() {
             Founding Schools Programme pricing for your first 1,000-school cohort — change anytime after signup.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label>Admin first name</Label>
             <Input
