@@ -8,6 +8,7 @@ interface TeacherRow {
   email: string;
   firstName: string;
   lastName: string;
+  phone?: string | null;
   role: string;
   isActive: boolean;
   teacher?: { staffId: string; qualification?: string | null } | null;
@@ -15,6 +16,7 @@ interface TeacherRow {
 
 export function TeachersPage() {
   const [showCreate, setShowCreate] = useState(false);
+  const [editTarget, setEditTarget] = useState<TeacherRow | null>(null);
   const { data, loading, error, refetch } = useFetch<TeacherRow[]>("/users");
 
   return (
@@ -35,6 +37,7 @@ export function TeachersPage() {
               <th className="px-4 py-3">Staff ID</th>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -49,6 +52,11 @@ export function TeachersPage() {
                 <td className="px-4 py-3">
                   <Badge tone={t.isActive ? "success" : "default"}>{t.isActive ? "Active" : "Inactive"}</Badge>
                 </td>
+                <td className="px-4 py-3">
+                  <Button variant="ghost" onClick={() => setEditTarget(t)}>
+                    Edit
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -56,6 +64,16 @@ export function TeachersPage() {
       )}
 
       {showCreate && <AddStaffModal onClose={() => setShowCreate(false)} onCreated={refetch} />}
+      {editTarget && (
+        <EditStaffModal
+          staff={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => {
+            refetch();
+            setEditTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -145,6 +163,64 @@ function AddStaffModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         )}
         <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? "Adding..." : "Add staff member"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+function EditStaffModal({ staff, onClose, onSaved }: { staff: TeacherRow; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    firstName: staff.firstName,
+    lastName: staff.lastName,
+    phone: staff.phone ?? "",
+    isActive: staff.isActive,
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api.patch(`/users/${staff.id}`, { ...form, phone: form.phone || undefined });
+      onSaved();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title={`Edit ${staff.firstName} ${staff.lastName}`} onClose={onClose}>
+      {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} />
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>First name</Label>
+            <Input required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
+          </div>
+          <div>
+            <Label>Last name</Label>
+            <Input required value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+          </div>
+        </div>
+        <div>
+          <Label>Phone</Label>
+          <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+          Active (inactive staff cannot sign in)
+        </label>
+        <Button type="submit" disabled={submitting} className="w-full">
+          {submitting ? "Saving..." : "Save changes"}
         </Button>
       </form>
     </Modal>

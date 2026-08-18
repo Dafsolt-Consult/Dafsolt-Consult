@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Select, Spinner, Table } from "../../components/ui";
-import { useClassLevels, useSessions, useSubjects } from "../../hooks/useAcademics";
+import { pickCurrentSession, useClassLevels, useSessions, useSubjects } from "../../hooks/useAcademics";
 import { useFetch } from "../../hooks/useFetch";
 import { Exam } from "../../types";
 
@@ -74,7 +74,7 @@ function CreateExamModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const currentSession = sessions?.find((s) => s.isCurrent) ?? sessions?.[0];
+  const currentSession = pickCurrentSession(sessions);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { api, apiErrorMessage } from "../../api/client";
 import { Button, Card, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Select, Spinner } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
-import { useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
+import { pickCurrentSession, useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
 import { LessonPlan } from "../../types";
 
 export function LessonPlansPage() {
@@ -86,7 +86,7 @@ function LessonPlanModal({ lessonPlan, onClose, onSaved }: { lessonPlan?: Lesson
   const { data: classArms } = useClassArms();
   const { data: subjects } = useSubjects();
   const { data: sessions } = useSessions();
-  const currentSession = sessions?.find((s) => s.isCurrent) ?? sessions?.[0];
+  const currentSession = pickCurrentSession(sessions);
 
   const [form, setForm] = useState({
     classArmId: lessonPlan?.classArmId ?? "",

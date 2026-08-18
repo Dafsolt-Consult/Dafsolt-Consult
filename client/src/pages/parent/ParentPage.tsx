@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Badge, Card, EmptyState, ErrorBanner, PageHeader, Select, Spinner, Table } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
-import { useSessions } from "../../hooks/useAcademics";
+import { pickCurrentSession, useSessions } from "../../hooks/useAcademics";
 import { Announcement, Assignment, CalendarEvent, Invoice, ReportCard, ResultEntry, Student } from "../../types";
 import { ParentChildTimetable } from "../timetable/TimetablePage";
 import { ParentChildElearning } from "../elearning/ElearningPage";
@@ -96,7 +96,7 @@ export function ParentPage() {
 
 function PerformanceTab({ studentId }: { studentId: string }) {
   const { data: sessions } = useSessions();
-  const currentSession = sessions?.find((s) => s.isCurrent) ?? sessions?.[0];
+  const currentSession = pickCurrentSession(sessions);
   const [termId, setTermId] = useState("");
   const activeTermId = termId || currentSession?.terms?.find((t) => t.isCurrent)?.id || currentSession?.terms?.[0]?.id || "";
 

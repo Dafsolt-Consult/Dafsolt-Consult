@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { api, apiErrorMessage } from "../../api/client";
 import { Button, Card, EmptyState, ErrorBanner, Label, Modal, PageHeader, Select, Spinner } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
-import { useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
+import { pickCurrentSession, useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
 import { TimetablePeriod } from "../../types";
 
 const DAYS = [
@@ -74,7 +74,7 @@ function WeeklyGrid({
 
 function useCurrentTerm() {
   const { data: sessions } = useSessions();
-  const currentSession = sessions?.find((s) => s.isCurrent) ?? sessions?.[0];
+  const currentSession = pickCurrentSession(sessions);
   const currentTerm = currentSession?.terms?.find((t) => t.isCurrent) ?? currentSession?.terms?.[0];
   return { sessions, currentSession, currentTerm };
 }

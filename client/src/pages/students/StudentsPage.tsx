@@ -13,6 +13,7 @@ export function StudentsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [guardianTarget, setGuardianTarget] = useState<Student | null>(null);
   const [disciplineTarget, setDisciplineTarget] = useState<Student | null>(null);
+  const [editTarget, setEditTarget] = useState<Student | null>(null);
   const { data, loading, error, refetch } = useFetch<Paginated<Student>>(`/students?search=${encodeURIComponent(search)}`, [search]);
 
   return (
@@ -70,9 +71,14 @@ export function StudentsPage() {
                 {(user?.role === "SCHOOL_ADMIN" || user?.role === "TEACHER") && (
                   <td className="space-x-2 px-4 py-3">
                     {user.role === "SCHOOL_ADMIN" && (
-                      <Button variant="ghost" onClick={() => setGuardianTarget(s)}>
-                        Add guardian
-                      </Button>
+                      <>
+                        <Button variant="ghost" onClick={() => setEditTarget(s)}>
+                          Edit
+                        </Button>
+                        <Button variant="ghost" onClick={() => setGuardianTarget(s)}>
+                          Add guardian
+                        </Button>
+                      </>
                     )}
                     <Button variant="ghost" onClick={() => setDisciplineTarget(s)}>
                       Discipline
@@ -97,7 +103,75 @@ export function StudentsPage() {
         />
       )}
       {disciplineTarget && <DisciplinaryRecordsModal student={disciplineTarget} onClose={() => setDisciplineTarget(null)} />}
+      {editTarget && (
+        <EditStudentModal
+          student={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSaved={() => {
+            refetch();
+            setEditTarget(null);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function EditStudentModal({ student, onClose, onSaved }: { student: Student; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    firstName: student.user.firstName,
+    lastName: student.user.lastName,
+    status: student.status,
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api.patch(`/students/${student.id}`, form);
+      onSaved();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal title={`Edit ${student.user.firstName} ${student.user.lastName}`} onClose={onClose}>
+      {error && (
+        <div className="mb-4">
+          <ErrorBanner message={error} />
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>First name</Label>
+            <Input required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
+          </div>
+          <div>
+            <Label>Last name</Label>
+            <Input required value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+          </div>
+        </div>
+        <div>
+          <Label>Status</Label>
+          <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            <option value="ACTIVE">Active</option>
+            <option value="GRADUATED">Graduated</option>
+            <option value="WITHDRAWN">Withdrawn</option>
+            <option value="SUSPENDED">Suspended</option>
+          </Select>
+        </div>
+        <Button type="submit" disabled={submitting} className="w-full">
+          {submitting ? "Saving..." : "Save changes"}
+        </Button>
+      </form>
+    </Modal>
   );
 }
 

@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, Card, EmptyState, ErrorBanner, Input, PageHeader, Select, Spinner, Table } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
-import { useSessions } from "../../hooks/useAcademics";
+import { pickCurrentSession, useSessions } from "../../hooks/useAcademics";
 
 type Tab = "hostels" | "rooms" | "allocations";
 
@@ -218,7 +218,7 @@ function RoomsTab() {
 
 function AllocationsTab() {
   const { data: sessions } = useSessions();
-  const currentSession = sessions?.find((s) => s.isCurrent) ?? sessions?.[0];
+  const currentSession = pickCurrentSession(sessions);
   const { data: hostels } = useFetch<Hostel[]>("/hostel/hostels");
   const [hostelId, setHostelId] = useState("");
   const query = hostelId ? `?hostelId=${hostelId}&isActive=true` : "?isActive=true";

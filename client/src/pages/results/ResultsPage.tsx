@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, Card, ErrorBanner, Input, PageHeader, Select, Table } from "../../components/ui";
-import { useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
+import { currentSessionId, pickCurrentSession, useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
 import { useFetch } from "../../hooks/useFetch";
 import { Paginated, Student } from "../../types";
 
@@ -22,6 +22,7 @@ export function ResultsPage() {
 }
 
 function StaffResultsView() {
+  const { user } = useAuth();
   const { data: classArms } = useClassArms();
   const { data: subjects } = useSubjects();
   const { data: sessions } = useSessions();
@@ -29,8 +30,10 @@ function StaffResultsView() {
   const [subjectId, setSubjectId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [scores, setScores] = useState<Record<string, { ca: string; exam: string }>>({});
+  const [generating, setGenerating] = useState(false);
+  const [generateMessage, setGenerateMessage] = useState<string | null>(null);
 
-  const sessionId = sessions?.find((s) => s.isCurrent)?.id ?? sessions?.[0]?.id ?? "";
+  const sessionId = currentSessionId(sessions);
   const termId = sessions?.find((s) => s.id === sessionId)?.terms?.find((t) => t.isCurrent)?.id ?? "";
 
   const { data: students } = useFetch<Paginated<Student>>(
@@ -75,9 +78,33 @@ function StaffResultsView() {
     }
   }
 
+  async function generateReportCards() {
+    setError(null);
+    setGenerateMessage(null);
+    setGenerating(true);
+    try {
+      const res = await api.post<{ generated: number }>("/results/report-cards/generate", { classArmId, sessionId, termId });
+      setGenerateMessage(`Generated ${res.data.generated} report card${res.data.generated === 1 ? "" : "s"} and notified students/guardians.`);
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   return (
     <div>
-      <PageHeader title="Results" subtitle="Enter continuous assessment and exam scores" />
+      <PageHeader
+        title="Results"
+        subtitle="Enter continuous assessment and exam scores"
+        actions={
+          user?.role === "SCHOOL_ADMIN" && classArmId && termId ? (
+            <Button onClick={generateReportCards} disabled={generating}>
+              {generating ? "Generating..." : "Generate report cards"}
+            </Button>
+          ) : undefined
+        }
+      />
 
       <Card className="mb-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -111,6 +138,7 @@ function StaffResultsView() {
           <ErrorBanner message={error} />
         </div>
       )}
+      {generateMessage && <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{generateMessage}</p>}
 
       {classArmId && subjectId && students?.items.length ? (
         <Table>
@@ -174,7 +202,7 @@ function StaffResultsView() {
 function MyResultsView() {
   const [termId, setTermId] = useState("");
   const { data: sessions } = useSessions();
-  const currentSession = sessions?.find((s) => s.isCurrent) ?? sessions?.[0];
+  const currentSession = pickCurrentSession(sessions);
 
   const { data: results } = useFetch<{ id: string; subject: { name: string }; caScore: number; examScore: number; totalScore: number; grade?: string | null }[]>(
     termId ? `/results/students/me?termId=${termId}` : null,

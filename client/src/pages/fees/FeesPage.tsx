@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, Card, ErrorBanner, Input, Label, PageHeader, Select, Table } from "../../components/ui";
-import { useClassArms, useSessions } from "../../hooks/useAcademics";
+import { pickCurrentSession, useClassArms, useSessions } from "../../hooks/useAcademics";
 import { useFetch } from "../../hooks/useFetch";
 
 interface FeeStructure {
@@ -65,7 +65,7 @@ function FeeStructuresSection() {
   const [form, setForm] = useState({ name: "", amount: "", termId: "" });
   const [error, setError] = useState<string | null>(null);
 
-  const currentSession = sessions?.find((s) => s.isCurrent) ?? sessions?.[0];
+  const currentSession = pickCurrentSession(sessions);
 
   async function create(e: FormEvent) {
     e.preventDefault();

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client";
 import { Button, Card, ErrorBanner, PageHeader, Select } from "../../components/ui";
-import { useClassArms, useSessions } from "../../hooks/useAcademics";
+import { currentSessionId, useClassArms, useSessions } from "../../hooks/useAcademics";
 import { useFetch } from "../../hooks/useFetch";
 import { Paginated, Student } from "../../types";
 
@@ -18,7 +18,7 @@ export function AttendancePage() {
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const sessionId = sessions?.find((s) => s.isCurrent)?.id ?? sessions?.[0]?.id;
+  const sessionId = currentSessionId(sessions) || undefined;
 
   const { data: students, loading } = useFetch<Paginated<Student>>(
     classArmId && sessionId ? `/students?classArmId=${classArmId}&sessionId=${sessionId}&pageSize=100` : null,

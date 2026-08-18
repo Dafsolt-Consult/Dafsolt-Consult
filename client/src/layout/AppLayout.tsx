@@ -51,8 +51,16 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/alumni", label: "Alumni", roles: ["SCHOOL_ADMIN", "TEACHER"] },
   { to: "/disciplinary-records", label: "Disciplinary Records", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
   { to: "/health-records", label: "Health Records", roles: ["SCHOOL_ADMIN", "NURSE", "TEACHER", "STUDENT"] },
-  { to: "/calendar", label: "School Calendar", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
-  { to: "/announcements", label: "Announcements", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
+  {
+    to: "/calendar",
+    label: "School Calendar",
+    roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "ACCOUNTANT", "NURSE", "HR_MANAGER", "TRANSPORT_OFFICER", "HOSTEL_WARDEN"],
+  },
+  {
+    to: "/announcements",
+    label: "Announcements",
+    roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "ACCOUNTANT", "NURSE", "HR_MANAGER", "TRANSPORT_OFFICER", "HOSTEL_WARDEN"],
+  },
   { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "PARENT"] },
   { to: "/library/borrow-records", label: "Borrow Records", roles: ["SCHOOL_ADMIN", "LIBRARIAN"] },
   { to: "/notifications", label: "Notifications" },

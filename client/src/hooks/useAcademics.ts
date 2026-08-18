@@ -27,3 +27,12 @@ export function currentSessionId(sessions: AcademicSession[] | null): string {
   if (current?.terms?.length) return current.id;
   return sessions?.find((s) => s.terms?.length)?.id ?? current?.id ?? sessions?.[0]?.id ?? "";
 }
+
+/** Same resolution as currentSessionId, but returns the session object —
+ * for the many pages that need `.terms` off it, not just the id. Always
+ * use this (or currentSessionId) instead of `sessions.find(s => s.isCurrent)
+ * ?? sessions[0]` directly, which reintroduces the termless-session bug. */
+export function pickCurrentSession(sessions: AcademicSession[] | null): AcademicSession | undefined {
+  const id = currentSessionId(sessions);
+  return sessions?.find((s) => s.id === id);
+}

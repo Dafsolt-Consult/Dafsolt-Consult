@@ -38,14 +38,22 @@ export async function attendanceTrend(tenantId: string) {
     }));
 }
 
-/** Billed vs. collected per term of the current (or most recent) session. */
+/** Billed vs. collected per term of the current (or most recent) session.
+ * Prefers the isCurrent session, but only if it actually has terms — a
+ * session can be marked current before its terms are added, which would
+ * otherwise silently return []. Mirrors the client's currentSessionId()
+ * in client/src/hooks/useAcademics.ts. */
 export async function feeCollectionByTerm(tenantId: string) {
-  const session =
-    (await prisma.academicSession.findFirst({ where: { tenantId, isCurrent: true } })) ??
-    (await prisma.academicSession.findFirst({ where: { tenantId }, orderBy: { startDate: "desc" } }));
+  const sessions = await prisma.academicSession.findMany({
+    where: { tenantId },
+    orderBy: { startDate: "desc" },
+    include: { terms: { orderBy: { startDate: "asc" } } },
+  });
+  const current = sessions.find((s) => s.isCurrent);
+  const session = (current?.terms.length ? current : sessions.find((s) => s.terms.length)) ?? current ?? sessions[0];
   if (!session) return [];
 
-  const terms = await prisma.term.findMany({ where: { tenantId, sessionId: session.id }, orderBy: { startDate: "asc" } });
+  const terms = session.terms;
 
   return Promise.all(
     terms.map(async (term) => {
