@@ -13,14 +13,17 @@ RUN npm run build
 
 FROM node:20-alpine
 WORKDIR /app
-RUN apk add --no-cache openssl
+# su-exec drops from root to node at runtime, after the entrypoint has had
+# a chance to chown the /app/uploads volume mount (which Docker preserves
+# as root-owned from before this image ran non-root) — see entrypoint.sh.
+RUN apk add --no-cache openssl su-exec
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/package.json ./package.json
 COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh && mkdir -p /app/uploads
+RUN chmod +x docker-entrypoint.sh && mkdir -p /app/uploads && chown -R node:node /app
 
 EXPOSE 4000
 

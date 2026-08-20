@@ -13,4 +13,8 @@ FROM caddy:2-alpine
 COPY --from=build /app/dist /srv
 COPY Caddyfile /etc/caddy/Caddyfile
 
+# Non-root: the caddy binary in this image already carries the
+# cap_net_bind_service file capability, so it can still bind :80/:443
+# while running as uid 1001 instead of root.
+USER 1001:1001
 EXPOSE 80 443
