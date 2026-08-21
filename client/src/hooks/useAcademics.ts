@@ -1,5 +1,5 @@
 import { useFetch } from "./useFetch";
-import { AcademicSession, ClassArm, ClassLevel, Subject } from "../types";
+import { AcademicSession, ClassArm, ClassLevel, Subject, Term } from "../types";
 
 export function useSessions() {
   return useFetch<AcademicSession[]>("/academics/sessions");
@@ -35,4 +35,21 @@ export function currentSessionId(sessions: AcademicSession[] | null): string {
 export function pickCurrentSession(sessions: AcademicSession[] | null): AcademicSession | undefined {
   const id = currentSessionId(sessions);
   return sessions?.find((s) => s.id === id);
+}
+
+/** Same problem as currentSessionId, one level down: a session's terms can
+ * all have isCurrent=false (a bulk import, a cleared flag, ...), and
+ * `terms.find(t => t.isCurrent)` alone then resolves to nothing. Falls back
+ * to the session's first term. Always use this (or pickCurrentTerm) instead
+ * of hand-rolling `terms?.find(t => t.isCurrent)?.id ?? ""` directly, which
+ * silently blanks the page instead of degrading to *a* term. */
+export function currentTermId(session: AcademicSession | undefined): string {
+  const current = session?.terms?.find((t) => t.isCurrent);
+  return current?.id ?? session?.terms?.[0]?.id ?? "";
+}
+
+/** Same resolution as currentTermId, but returns the term object. */
+export function pickCurrentTerm(session: AcademicSession | undefined): Term | undefined {
+  const id = currentTermId(session);
+  return session?.terms?.find((t) => t.id === id);
 }

@@ -48,20 +48,36 @@ function naira(kobo: number) {
 export function FeesPage() {
   const { user } = useAuth();
   const isStudentOrParent = user?.role === "STUDENT" || user?.role === "PARENT";
+  const { data: structures, refetch: refetchStructures } = useFetch<FeeStructure[]>(
+    isStudentOrParent ? null : "/fees/structures"
+  );
+  const [invoicesVersion, setInvoicesVersion] = useState(0);
 
   return (
     <div>
       <PageHeader title="Fees" subtitle={isStudentOrParent ? "Your invoices" : "Manage fee structures, invoices and payments"} />
-      {!isStudentOrParent && <FeeStructuresSection />}
+      {!isStudentOrParent && <FeeStructuresSection structures={structures} refetch={refetchStructures} />}
+      {!isStudentOrParent && (
+        <GenerateInvoicesSection structures={structures} onGenerated={() => setInvoicesVersion((v) => v + 1)} />
+      )}
       {!isStudentOrParent && <ScholarshipsSection />}
-      <InvoicesSection studentId={isStudentOrParent ? "me" : undefined} canManage={!isStudentOrParent} />
+      <InvoicesSection
+        studentId={isStudentOrParent ? "me" : undefined}
+        canManage={!isStudentOrParent}
+        refreshKey={invoicesVersion}
+      />
     </div>
   );
 }
 
-function FeeStructuresSection() {
+function FeeStructuresSection({
+  structures,
+  refetch,
+}: {
+  structures: FeeStructure[] | null;
+  refetch: () => void;
+}) {
   const { data: sessions } = useSessions();
-  const { data: structures, refetch } = useFetch<FeeStructure[]>("/fees/structures");
   const [form, setForm] = useState({ name: "", amount: "", termId: "" });
   const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +128,79 @@ function FeeStructuresSection() {
           ))}
         </Select>
         <Button type="submit">Create</Button>
+      </form>
+    </Card>
+  );
+}
+
+function GenerateInvoicesSection({
+  structures,
+  onGenerated,
+}: {
+  structures: FeeStructure[] | null;
+  onGenerated: () => void;
+}) {
+  const { data: classArms } = useClassArms();
+  const [feeStructureId, setFeeStructureId] = useState("");
+  const [classArmId, setClassArmId] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  async function generate(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setResult(null);
+    setSubmitting(true);
+    try {
+      const { data } = await api.post<{ generated: number }>("/fees/invoices/generate", {
+        feeStructureId,
+        classArmId,
+        dueDate,
+      });
+      setResult(`${data.generated} invoice(s) generated for the class.`);
+      onGenerated();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Card className="mb-6">
+      <h3 className="mb-3 font-medium text-slate-800">Generate invoices</h3>
+      <p className="mb-3 text-sm text-slate-500">
+        Bill an entire class against a fee structure. Students who already have an invoice for it are skipped.
+      </p>
+      {error && (
+        <div className="mb-3">
+          <ErrorBanner message={error} />
+        </div>
+      )}
+      {result && <div className="mb-3 text-sm text-emerald-600">{result}</div>}
+      <form onSubmit={generate} className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <Select required value={feeStructureId} onChange={(e) => setFeeStructureId(e.target.value)}>
+          <option value="">Fee structure</option>
+          {structures?.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} — {naira(s.amount)} ({s.term.name})
+            </option>
+          ))}
+        </Select>
+        <Select required value={classArmId} onChange={(e) => setClassArmId(e.target.value)}>
+          <option value="">Class</option>
+          {classArms?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.classLevel?.name ? `${c.classLevel.name} ${c.name}` : c.name}
+            </option>
+          ))}
+        </Select>
+        <Input type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Generating..." : "Generate"}
+        </Button>
       </form>
     </Card>
   );
@@ -236,9 +325,17 @@ function ScholarshipsSection() {
   );
 }
 
-function InvoicesSection({ studentId, canManage }: { studentId?: string; canManage: boolean }) {
+function InvoicesSection({
+  studentId,
+  canManage,
+  refreshKey,
+}: {
+  studentId?: string;
+  canManage: boolean;
+  refreshKey: number;
+}) {
   const url = studentId ? `/fees/invoices?studentId=${studentId}` : "/fees/invoices";
-  const { data: invoices, refetch } = useFetch<Invoice[]>(url);
+  const { data: invoices, refetch } = useFetch<Invoice[]>(url, [refreshKey]);
   const [error, setError] = useState<string | null>(null);
 
   async function pay(invoiceId: string, amount: number) {

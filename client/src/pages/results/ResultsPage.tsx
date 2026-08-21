@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, Card, ErrorBanner, Input, PageHeader, Select, Table } from "../../components/ui";
-import { currentSessionId, pickCurrentSession, useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
+import { currentSessionId, currentTermId, pickCurrentSession, useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
 import { useFetch } from "../../hooks/useFetch";
 import { Paginated, Student } from "../../types";
 
@@ -34,7 +34,7 @@ function StaffResultsView() {
   const [generateMessage, setGenerateMessage] = useState<string | null>(null);
 
   const sessionId = currentSessionId(sessions);
-  const termId = sessions?.find((s) => s.id === sessionId)?.terms?.find((t) => t.isCurrent)?.id ?? "";
+  const termId = currentTermId(sessions?.find((s) => s.id === sessionId));
 
   const { data: students } = useFetch<Paginated<Student>>(
     classArmId && sessionId ? `/students?classArmId=${classArmId}&sessionId=${sessionId}&pageSize=100` : null,

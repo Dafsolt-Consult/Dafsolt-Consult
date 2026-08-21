@@ -1,9 +1,9 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { api, apiErrorMessage } from "../../api/client";
 import { Button, Card, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Select, Spinner } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
-import { pickCurrentSession, useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
+import { currentTermId, pickCurrentSession, useClassArms, useSessions, useSubjects } from "../../hooks/useAcademics";
 import { LessonPlan } from "../../types";
 
 export function LessonPlansPage() {
@@ -91,7 +91,7 @@ function LessonPlanModal({ lessonPlan, onClose, onSaved }: { lessonPlan?: Lesson
   const [form, setForm] = useState({
     classArmId: lessonPlan?.classArmId ?? "",
     subjectId: lessonPlan?.subjectId ?? "",
-    termId: lessonPlan?.termId ?? currentSession?.terms?.find((t) => t.isCurrent)?.id ?? "",
+    termId: lessonPlan?.termId ?? currentTermId(currentSession),
     topic: lessonPlan?.topic ?? "",
     objectives: lessonPlan?.objectives ?? "",
     content: lessonPlan?.content ?? "",
@@ -100,6 +100,18 @@ function LessonPlanModal({ lessonPlan, onClose, onSaved }: { lessonPlan?: Lesson
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // useState's initial value is only read on mount, before useSessions()
+  // resolves — currentSession is always undefined at that point, so the
+  // termId default above evaluates to "" and never gets a second chance.
+  // Fill it in once sessions load, but only for a new plan and only if the
+  // user hasn't already picked something.
+  useEffect(() => {
+    if (!lessonPlan && !form.termId && currentSession) {
+      setForm((f) => (f.termId ? f : { ...f, termId: currentTermId(currentSession) }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSession, lessonPlan]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

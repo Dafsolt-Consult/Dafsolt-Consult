@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Badge, Card, EmptyState, ErrorBanner, Input, PageHeader, Select, Spinner, Table } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
-import { pickCurrentSession, useSessions } from "../../hooks/useAcademics";
+import { currentTermId, pickCurrentSession, useSessions } from "../../hooks/useAcademics";
 
 type Tab = "attendance" | "fees" | "audit" | "completeness";
 
@@ -134,7 +134,7 @@ function FeesTab() {
   const { data: sessions } = useSessions();
   const currentSession = pickCurrentSession(sessions);
   const [termId, setTermId] = useState("");
-  const effectiveTermId = termId || currentSession?.terms?.find((t) => t.isCurrent)?.id || "";
+  const effectiveTermId = termId || currentTermId(currentSession);
 
   const { data, loading, error } = useFetch<FeeComplianceSummary>(
     effectiveTermId ? `/compliance/fees?termId=${effectiveTermId}` : null,
