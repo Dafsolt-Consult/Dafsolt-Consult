@@ -16,6 +16,9 @@ export const createExamSchema = z.object({
   shuffleOptions: z.boolean().default(true),
   startAt: z.coerce.date().optional(),
   endAt: z.coerce.date().optional(),
+}).refine((v) => !v.startAt || !v.endAt || v.endAt > v.startAt, {
+  message: "Closing time must be after opening time",
+  path: ["endAt"],
 });
 
 export const updateExamSchema = z.object({
@@ -25,9 +28,15 @@ export const updateExamSchema = z.object({
   passMark: z.number().int().min(0).max(100).optional(),
   shuffleQuestions: z.boolean().optional(),
   shuffleOptions: z.boolean().optional(),
-  startAt: z.coerce.date().optional(),
-  endAt: z.coerce.date().optional(),
+  // Nullable (not just optional): the schedule UI needs to be able to
+  // explicitly clear a previously-set startAt/endAt back to open-ended,
+  // not just leave it unset on create.
+  startAt: z.coerce.date().nullable().optional(),
+  endAt: z.coerce.date().nullable().optional(),
   status: z.enum(["DRAFT", "SCHEDULED", "ONGOING", "COMPLETED", "ARCHIVED"]).optional(),
+}).refine((v) => !v.startAt || !v.endAt || v.endAt > v.startAt, {
+  message: "Closing time must be after opening time",
+  path: ["endAt"],
 });
 
 export const addExamQuestionsSchema = z.object({

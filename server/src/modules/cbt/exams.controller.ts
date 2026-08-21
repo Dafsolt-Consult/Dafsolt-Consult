@@ -50,6 +50,17 @@ export const updateExam = asyncHandler(async (req: Request, res: Response) => {
   const existing = await prisma.exam.findFirst({ where: { id: req.params.examId, tenantId } });
   if (!existing) throw ApiError.notFound("Exam not found");
 
+  // The schema's own endAt>startAt refine only sees keys present in THIS
+  // request — a partial PATCH supplying only one of the two would slip past
+  // it and leave the row inconsistent. Check the values that will actually
+  // land in the DB (existing, overridden by whichever fields this request
+  // supplies) instead.
+  const effectiveStartAt = "startAt" in input ? input.startAt : existing.startAt;
+  const effectiveEndAt = "endAt" in input ? input.endAt : existing.endAt;
+  if (effectiveStartAt && effectiveEndAt && effectiveEndAt <= effectiveStartAt) {
+    throw ApiError.badRequest("Closing time must be after opening time");
+  }
+
   const exam = await prisma.exam.update({ where: { id: existing.id }, data: input });
   res.json(exam);
 });

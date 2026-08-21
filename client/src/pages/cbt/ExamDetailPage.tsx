@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, apiErrorMessage } from "../../api/client";
-import { Badge, Button, Card, ErrorBanner, PageHeader, Select, Table } from "../../components/ui";
+import { Badge, Button, Card, ErrorBanner, Input, Label, PageHeader, Select, Table } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
 import { Exam, ExamStatus, Paginated, Question } from "../../types";
+
+/** ISO string -> "YYYY-MM-DDTHH:mm" in local time, for a datetime-local input. */
+function toLocalInput(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 interface ExamDetail extends Exam {
   examQuestions: { question: Question }[];
@@ -56,6 +64,8 @@ export function ExamDetailPage() {
         </div>
       )}
 
+      <ScheduleCard exam={exam} onChanged={refetch} />
+
       <div className="mb-6 flex gap-2 border-b border-slate-200">
         {(["questions", "results"] as const).map((t) => (
           <button
@@ -73,6 +83,68 @@ export function ExamDetailPage() {
       {tab === "questions" && <QuestionsTab exam={exam} onChanged={refetch} />}
       {tab === "results" && <ResultsTab examId={exam.id} />}
     </div>
+  );
+}
+
+function ScheduleCard({ exam, onChanged }: { exam: ExamDetail; onChanged: () => void }) {
+  const [startAt, setStartAt] = useState(toLocalInput(exam.startAt));
+  const [endAt, setEndAt] = useState(toLocalInput(exam.endAt));
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // useState's initializer only runs on mount — if the exam's schedule
+  // changes from outside this component (another tab, a refetch triggered
+  // elsewhere on the page) the inputs would otherwise go stale and a
+  // subsequent save could silently revert that change. Resync whenever the
+  // underlying value actually changes.
+  useEffect(() => {
+    setStartAt(toLocalInput(exam.startAt));
+    setEndAt(toLocalInput(exam.endAt));
+  }, [exam.startAt, exam.endAt]);
+
+  async function save() {
+    setError(null);
+    setSaving(true);
+    try {
+      await api.patch(`/cbt/exams/${exam.id}`, {
+        startAt: startAt ? new Date(startAt).toISOString() : null,
+        endAt: endAt ? new Date(endAt).toISOString() : null,
+      });
+      onChanged();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="mb-6">
+      <h3 className="mb-1 font-medium text-slate-800">Schedule</h3>
+      <p className="mb-3 text-xs text-slate-500">
+        Students can only start this exam inside this window. Leave both blank to control availability manually via status only.
+      </p>
+      {error && (
+        <div className="mb-3">
+          <ErrorBanner message={error} />
+        </div>
+      )}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <Label>Opens at</Label>
+          <Input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
+        </div>
+        <div>
+          <Label>Closes at</Label>
+          <Input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} />
+        </div>
+        <div className="flex items-end">
+          <Button onClick={save} disabled={saving} className="w-full">
+            {saving ? "Saving..." : "Save schedule"}
+          </Button>
+        </div>
+      </div>
+    </Card>
   );
 }
 

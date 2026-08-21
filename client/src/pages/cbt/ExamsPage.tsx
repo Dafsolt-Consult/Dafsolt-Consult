@@ -70,6 +70,8 @@ function CreateExamModal({ onClose, onCreated }: { onClose: () => void; onCreate
     termId: "",
     durationMinutes: "30",
     passMark: "50",
+    startAt: "",
+    endAt: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -86,6 +88,12 @@ function CreateExamModal({ onClose, onCreated }: { onClose: () => void; onCreate
         sessionId: currentSession?.id,
         durationMinutes: Number(form.durationMinutes),
         passMark: Number(form.passMark),
+        // datetime-local carries no timezone — convert to an ISO instant
+        // here, in the browser's own timezone, rather than shipping the raw
+        // string for the server to parse in ITS timezone (which would shift
+        // the window by the client/server offset).
+        startAt: form.startAt ? new Date(form.startAt).toISOString() : undefined,
+        endAt: form.endAt ? new Date(form.endAt).toISOString() : undefined,
       });
       onCreated();
       onClose();
@@ -151,6 +159,26 @@ function CreateExamModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <div>
             <Label>Pass mark (%)</Label>
             <Input type="number" min={0} max={100} value={form.passMark} onChange={(e) => setForm({ ...form, passMark: e.target.value })} />
+          </div>
+        </div>
+        <div>
+          <Label>Schedule (optional)</Label>
+          <p className="mb-2 text-xs text-slate-500">
+            Leave blank to open the exam manually via its status instead. If set, students can only start it inside this window.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              type="datetime-local"
+              placeholder="Opens at"
+              value={form.startAt}
+              onChange={(e) => setForm({ ...form, startAt: e.target.value })}
+            />
+            <Input
+              type="datetime-local"
+              placeholder="Closes at"
+              value={form.endAt}
+              onChange={(e) => setForm({ ...form, endAt: e.target.value })}
+            />
           </div>
         </div>
         <Button type="submit" disabled={submitting} className="w-full">
