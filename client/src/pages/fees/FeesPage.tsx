@@ -117,17 +117,30 @@ function FeeStructuresSection({
         </div>
       )}
       <form onSubmit={create} className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <Input placeholder="Name e.g. Tuition" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <Input type="number" placeholder="Amount (₦)" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-        <Select required value={form.termId} onChange={(e) => setForm({ ...form, termId: e.target.value })}>
-          <option value="">Select term</option>
-          {currentSession?.terms?.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </Select>
-        <Button type="submit">Create</Button>
+        <div>
+          <Label>Name</Label>
+          <Input placeholder="e.g. Tuition" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        </div>
+        <div>
+          <Label>Amount (₦)</Label>
+          <Input type="number" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+        </div>
+        <div>
+          <Label>Term</Label>
+          <Select required value={form.termId} onChange={(e) => setForm({ ...form, termId: e.target.value })}>
+            <option value="">Select term</option>
+            {currentSession?.terms?.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex items-end">
+          <Button type="submit" className="w-full">
+            Create
+          </Button>
+        </div>
       </form>
     </Card>
   );
@@ -181,26 +194,37 @@ function GenerateInvoicesSection({
       )}
       {result && <div className="mb-3 text-sm text-emerald-600">{result}</div>}
       <form onSubmit={generate} className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <Select required value={feeStructureId} onChange={(e) => setFeeStructureId(e.target.value)}>
-          <option value="">Fee structure</option>
-          {structures?.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} — {naira(s.amount)} ({s.term.name})
-            </option>
-          ))}
-        </Select>
-        <Select required value={classArmId} onChange={(e) => setClassArmId(e.target.value)}>
-          <option value="">Class</option>
-          {classArms?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.classLevel?.name ? `${c.classLevel.name} ${c.name}` : c.name}
-            </option>
-          ))}
-        </Select>
-        <Input type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Generating..." : "Generate"}
-        </Button>
+        <div>
+          <Label>Fee structure</Label>
+          <Select required value={feeStructureId} onChange={(e) => setFeeStructureId(e.target.value)}>
+            <option value="">Select</option>
+            {structures?.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} — {naira(s.amount)} ({s.term.name})
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <Label>Class</Label>
+          <Select required value={classArmId} onChange={(e) => setClassArmId(e.target.value)}>
+            <option value="">Select</option>
+            {classArms?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.classLevel?.name ? `${c.classLevel.name} ${c.name}` : c.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <Label>Due date</Label>
+          <Input type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        </div>
+        <div className="flex items-end">
+          <Button type="submit" disabled={submitting} className="w-full">
+            {submitting ? "Generating..." : "Generate"}
+          </Button>
+        </div>
       </form>
     </Card>
   );
@@ -281,8 +305,9 @@ function ScholarshipsSection() {
 
       <form onSubmit={grant} className="grid grid-cols-1 gap-3 sm:grid-cols-5">
         <div className="relative sm:col-span-2">
+          <Label>Student</Label>
           <Input
-            placeholder="Search student..."
+            placeholder="Search by name..."
             value={selectedStudent ? `${selectedStudent.user.firstName} ${selectedStudent.user.lastName}` : search}
             onChange={(e) => runSearch(e.target.value)}
           />
@@ -304,20 +329,29 @@ function ScholarshipsSection() {
             </div>
           )}
         </div>
-        <Input placeholder="Name e.g. Merit award" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <Select value={form.discountType} onChange={(e) => setForm({ ...form, discountType: e.target.value })}>
-          <option value="PERCENT">% off</option>
-          <option value="FIXED">₦ off</option>
-        </Select>
-        <Input
-          type="number"
-          min={1}
-          placeholder={form.discountType === "PERCENT" ? "e.g. 50" : "Amount (₦)"}
-          required
-          value={form.amount}
-          onChange={(e) => setForm({ ...form, amount: e.target.value })}
-        />
-        <Button type="submit" disabled={!selectedStudent || submitting} className="sm:col-span-5">
+        <div>
+          <Label>Name</Label>
+          <Input placeholder="e.g. Merit award" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        </div>
+        <div>
+          <Label>Discount type</Label>
+          <Select value={form.discountType} onChange={(e) => setForm({ ...form, discountType: e.target.value })}>
+            <option value="PERCENT">% off</option>
+            <option value="FIXED">₦ off</option>
+          </Select>
+        </div>
+        <div>
+          <Label>{form.discountType === "PERCENT" ? "Percent off" : "Amount (₦)"}</Label>
+          <Input
+            type="number"
+            min={1}
+            placeholder={form.discountType === "PERCENT" ? "e.g. 50" : "e.g. 5000"}
+            required
+            value={form.amount}
+            onChange={(e) => setForm({ ...form, amount: e.target.value })}
+          />
+        </div>
+        <Button type="submit" disabled={!selectedStudent || submitting} className="self-end sm:col-span-5">
           {submitting ? "Granting..." : "Grant scholarship"}
         </Button>
       </form>
