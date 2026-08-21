@@ -24,6 +24,13 @@ interface NavItem {
   to: string;
   label: string;
   roles?: UserRole[];
+  /** Sidebar section header. Undefined items (Dashboard/Parent Portal) render
+   * above every section, unheaded — every other item belongs to a section so
+   * the sidebar reads as named groups instead of one 29-item flat list (a
+   * flat list fails the "what are the major sections?" wayfinding check).
+   * Grouping happens after role-filtering, so a section with nothing visible
+   * for the current role never renders an empty header. */
+  section?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -33,48 +40,51 @@ const NAV_ITEMS: NavItem[] = [
     roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "ACCOUNTANT", "NURSE", "HR_MANAGER", "TRANSPORT_OFFICER", "HOSTEL_WARDEN"],
   },
   { to: "/", label: "Parent Portal", roles: ["PARENT"] },
-  { to: "/students", label: "Students", roles: ["SCHOOL_ADMIN", "TEACHER"] },
-  { to: "/students/promotions", label: "Promotions", roles: ["SCHOOL_ADMIN"] },
-  { to: "/teachers", label: "Teachers", roles: ["SCHOOL_ADMIN"] },
-  { to: "/academics", label: "Classes & Subjects", roles: ["SCHOOL_ADMIN", "TEACHER"] },
-  { to: "/timetable", label: "Timetable", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
-  { to: "/attendance", label: "Attendance", roles: ["SCHOOL_ADMIN", "TEACHER"] },
-  { to: "/lesson-plans", label: "Lesson Plans", roles: ["SCHOOL_ADMIN", "TEACHER"] },
-  { to: "/results", label: "Results", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
-  { to: "/fees", label: "Fees", roles: ["SCHOOL_ADMIN", "ACCOUNTANT", "STUDENT"] },
-  { to: "/cbt/questions", label: "Question Bank", roles: ["SCHOOL_ADMIN", "TEACHER"] },
-  { to: "/cbt/exams", label: "Exams", roles: ["SCHOOL_ADMIN", "TEACHER"] },
-  { to: "/cbt/available", label: "My CBT Exams", roles: ["STUDENT"] },
-  { to: "/cbt/practice", label: "CBT Practice", roles: ["STUDENT"] },
-  { to: "/assignments", label: "Assignments", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
-  { to: "/elearning", label: "E-Learning", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
-  { to: "/alumni", label: "Alumni", roles: ["SCHOOL_ADMIN", "TEACHER"] },
-  { to: "/disciplinary-records", label: "Disciplinary Records", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"] },
-  { to: "/health-records", label: "Health Records", roles: ["SCHOOL_ADMIN", "NURSE", "TEACHER", "STUDENT"] },
+  { to: "/students", label: "Students", roles: ["SCHOOL_ADMIN", "TEACHER"], section: "Academics" },
+  { to: "/students/promotions", label: "Promotions", roles: ["SCHOOL_ADMIN"], section: "Academics" },
+  { to: "/teachers", label: "Teachers", roles: ["SCHOOL_ADMIN"], section: "Academics" },
+  { to: "/academics", label: "Classes & Subjects", roles: ["SCHOOL_ADMIN", "TEACHER"], section: "Academics" },
+  { to: "/timetable", label: "Timetable", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"], section: "Academics" },
+  { to: "/attendance", label: "Attendance", roles: ["SCHOOL_ADMIN", "TEACHER"], section: "Academics" },
+  { to: "/lesson-plans", label: "Lesson Plans", roles: ["SCHOOL_ADMIN", "TEACHER"], section: "Academics" },
+  { to: "/results", label: "Results", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"], section: "Academics" },
+  { to: "/cbt/questions", label: "Question Bank", roles: ["SCHOOL_ADMIN", "TEACHER"], section: "Assessment" },
+  { to: "/cbt/exams", label: "Exams", roles: ["SCHOOL_ADMIN", "TEACHER"], section: "Assessment" },
+  { to: "/cbt/available", label: "My CBT Exams", roles: ["STUDENT"], section: "Assessment" },
+  { to: "/cbt/practice", label: "CBT Practice", roles: ["STUDENT"], section: "Assessment" },
+  { to: "/assignments", label: "Assignments", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"], section: "Assessment" },
+  { to: "/elearning", label: "E-Learning", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"], section: "Student Life" },
+  { to: "/alumni", label: "Alumni", roles: ["SCHOOL_ADMIN", "TEACHER"], section: "Student Life" },
+  { to: "/disciplinary-records", label: "Disciplinary Records", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT"], section: "Student Life" },
+  { to: "/health-records", label: "Health Records", roles: ["SCHOOL_ADMIN", "NURSE", "TEACHER", "STUDENT"], section: "Student Life" },
+  { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "PARENT"], section: "Student Life" },
+  { to: "/library/borrow-records", label: "Borrow Records", roles: ["SCHOOL_ADMIN", "LIBRARIAN"], section: "Student Life" },
+  { to: "/transport", label: "Transport", roles: ["SCHOOL_ADMIN", "TRANSPORT_OFFICER", "STUDENT", "PARENT"], section: "Student Life" },
+  { to: "/hostel", label: "Hostel", roles: ["SCHOOL_ADMIN", "HOSTEL_WARDEN", "STUDENT", "PARENT"], section: "Student Life" },
   {
     to: "/calendar",
     label: "School Calendar",
     roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "ACCOUNTANT", "NURSE", "HR_MANAGER", "TRANSPORT_OFFICER", "HOSTEL_WARDEN"],
+    section: "Communication",
   },
   {
     to: "/announcements",
     label: "Announcements",
     roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "ACCOUNTANT", "NURSE", "HR_MANAGER", "TRANSPORT_OFFICER", "HOSTEL_WARDEN"],
+    section: "Communication",
   },
-  { to: "/library/books", label: "Library", roles: ["SCHOOL_ADMIN", "TEACHER", "STUDENT", "LIBRARIAN", "PARENT"] },
-  { to: "/library/borrow-records", label: "Borrow Records", roles: ["SCHOOL_ADMIN", "LIBRARIAN"] },
-  { to: "/notifications", label: "Notifications" },
-  { to: "/analytics", label: "Analytics & Reporting", roles: ["SCHOOL_ADMIN"] },
-  { to: "/compliance", label: "Compliance Reports", roles: ["SCHOOL_ADMIN"] },
-  { to: "/settings", label: "Settings", roles: ["SCHOOL_ADMIN"] },
-  { to: "/transport", label: "Transport", roles: ["SCHOOL_ADMIN", "TRANSPORT_OFFICER", "STUDENT", "PARENT"] },
-  { to: "/hostel", label: "Hostel", roles: ["SCHOOL_ADMIN", "HOSTEL_WARDEN", "STUDENT", "PARENT"] },
+  { to: "/notifications", label: "Notifications", section: "Communication" },
+  { to: "/fees", label: "Fees", roles: ["SCHOOL_ADMIN", "ACCOUNTANT", "STUDENT"], section: "Operations" },
   {
     to: "/hr",
     label: "HR & Payroll",
     roles: ["SCHOOL_ADMIN", "HR_MANAGER", "TEACHER", "LIBRARIAN", "ACCOUNTANT", "NURSE", "TRANSPORT_OFFICER", "HOSTEL_WARDEN"],
+    section: "Operations",
   },
-  { to: "/inventory", label: "Inventory & Assets", roles: ["SCHOOL_ADMIN", "ACCOUNTANT"] },
+  { to: "/inventory", label: "Inventory & Assets", roles: ["SCHOOL_ADMIN", "ACCOUNTANT"], section: "Operations" },
+  { to: "/analytics", label: "Analytics & Reporting", roles: ["SCHOOL_ADMIN"], section: "Admin" },
+  { to: "/compliance", label: "Compliance Reports", roles: ["SCHOOL_ADMIN"], section: "Admin" },
+  { to: "/settings", label: "Settings", roles: ["SCHOOL_ADMIN"], section: "Admin" },
 ];
 
 function ImpersonationBanner({ onExit }: { onExit: () => void }) {
@@ -94,6 +104,19 @@ export function AppLayout() {
   if (!user) return null;
 
   const visibleItems = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(user.role));
+
+  // Group consecutive items sharing a section under one header, in the
+  // order sections first appear — NAV_ITEMS is already section-clustered,
+  // so this never interleaves two headers for the same section.
+  const navGroups: { section?: string; items: NavItem[] }[] = [];
+  for (const item of visibleItems) {
+    const last = navGroups[navGroups.length - 1];
+    if (last && last.section === item.section) {
+      last.items.push(item);
+    } else {
+      navGroups.push({ section: item.section, items: [item] });
+    }
+  }
 
   async function exitImpersonation() {
     await logout();
@@ -150,21 +173,30 @@ export function AppLayout() {
               <CloseIcon />
             </button>
           </div>
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-            {visibleItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === "/"}
-                onClick={() => setMobileNavOpen(false)}
-                className={({ isActive }) =>
-                  `block rounded-lg px-3 py-2.5 text-sm font-medium ${
-                    isActive ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100 active:bg-slate-100"
-                  }`
-                }
-              >
-                {item.label}
-              </NavLink>
+          <nav className="flex-1 overflow-y-auto px-3 py-4">
+            {navGroups.map((group, i) => (
+              <div key={group.section ?? `_top_${i}`} className={i > 0 ? "mt-4" : undefined}>
+                {group.section && (
+                  <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">{group.section}</p>
+                )}
+                <div className="space-y-1">
+                  {group.items.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.to === "/"}
+                      onClick={() => setMobileNavOpen(false)}
+                      className={({ isActive }) =>
+                        `block rounded-lg px-3 py-2.5 text-sm font-medium ${
+                          isActive ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100 active:bg-slate-100"
+                        }`
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
           {(user.role === "SCHOOL_ADMIN" || user.role === "TEACHER") && (
