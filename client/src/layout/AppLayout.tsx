@@ -20,7 +20,7 @@ function CloseIcon() {
   );
 }
 
-interface NavItem {
+export interface NavItem {
   to: string;
   label: string;
   roles?: UserRole[];
@@ -33,7 +33,7 @@ interface NavItem {
   section?: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS: NavItem[] = [
   {
     to: "/",
     label: "Dashboard",
@@ -98,25 +98,31 @@ function ImpersonationBanner({ onExit }: { onExit: () => void }) {
   );
 }
 
+/** Role-filtered NAV_ITEMS, grouped into consecutive same-section runs, in
+ * the order sections first appear — NAV_ITEMS is already section-clustered,
+ * so this never interleaves two headers for the same section. Shared by the
+ * sidebar and the dashboard's "everything available to you" quick-actions
+ * grid, so both always reflect exactly the same role-gated feature set. */
+export function navGroupsForRole(role: UserRole): { section?: string; items: NavItem[] }[] {
+  const visibleItems = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(role));
+  const groups: { section?: string; items: NavItem[] }[] = [];
+  for (const item of visibleItems) {
+    const last = groups[groups.length - 1];
+    if (last && last.section === item.section) {
+      last.items.push(item);
+    } else {
+      groups.push({ section: item.section, items: [item] });
+    }
+  }
+  return groups;
+}
+
 export function AppLayout() {
   const { user, logout } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   if (!user) return null;
 
-  const visibleItems = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(user.role));
-
-  // Group consecutive items sharing a section under one header, in the
-  // order sections first appear — NAV_ITEMS is already section-clustered,
-  // so this never interleaves two headers for the same section.
-  const navGroups: { section?: string; items: NavItem[] }[] = [];
-  for (const item of visibleItems) {
-    const last = navGroups[navGroups.length - 1];
-    if (last && last.section === item.section) {
-      last.items.push(item);
-    } else {
-      navGroups.push({ section: item.section, items: [item] });
-    }
-  }
+  const navGroups = navGroupsForRole(user.role);
 
   async function exitImpersonation() {
     await logout();
