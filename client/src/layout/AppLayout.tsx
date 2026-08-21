@@ -187,7 +187,7 @@ export function AppLayout() {
                       end={item.to === "/"}
                       onClick={() => setMobileNavOpen(false)}
                       className={({ isActive }) =>
-                        `block rounded-lg px-3 py-2.5 text-sm font-medium ${
+                        `block rounded-lg px-3 py-3 text-sm font-medium ${
                           isActive ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100 active:bg-slate-100"
                         }`
                       }
@@ -205,7 +205,7 @@ export function AppLayout() {
                 href="/kiosk/login"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 active:bg-slate-100"
+                className="flex items-center justify-between rounded-lg px-3 py-3 text-sm font-medium text-slate-600 hover:bg-slate-100 active:bg-slate-100"
               >
                 <span>CBT Exam Kiosk</span>
                 <span className="text-xs text-slate-400">Opens in new tab ↗</span>
