@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { platformApi } from "../../api/platformClient";
 import { apiErrorMessage } from "../../api/client";
-import { Card, ErrorBanner, Input, PageHeader, Select, Table } from "../../components/ui";
+import { Card, ErrorBanner, Input, PageHeader, Pagination, Select, Table } from "../../components/ui";
 import { usePlatformFetch } from "../../hooks/usePlatformFetch";
 import { Paginated } from "../../types";
 import { PlatformTenantRow } from "../../types/platform";
@@ -22,16 +22,23 @@ export function PlatformSchoolsPage() {
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
   const debouncedSearch = useDebounced(search);
+  const pageSize = 20;
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, planFilter, statusFilter]);
 
   const url = useMemo(() => {
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (planFilter) params.set("planTier", planFilter);
     if (statusFilter) params.set("subscriptionStatus", statusFilter);
-    const qs = params.toString();
-    return qs ? `/tenants?${qs}` : "/tenants";
-  }, [debouncedSearch, planFilter, statusFilter]);
+    params.set("page", String(page));
+    params.set("pageSize", String(pageSize));
+    return `/tenants?${params.toString()}`;
+  }, [debouncedSearch, planFilter, statusFilter, page]);
 
   const { data, loading, error, refetch } = usePlatformFetch<Paginated<PlatformTenantRow>>(url);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -150,6 +157,7 @@ export function PlatformSchoolsPage() {
           </p>
         </Card>
       )}
+      {data && <Pagination page={data.page} pageSize={data.pageSize} total={data.total} onPageChange={setPage} />}
     </div>
   );
 }

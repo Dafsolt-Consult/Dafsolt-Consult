@@ -81,6 +81,42 @@ export function ErrorBanner({ message }: { message: string }) {
   return <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{message}</div>;
 }
 
+export function Pagination({
+  page,
+  pageSize,
+  total,
+  onPageChange,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (totalPages <= 1) return null;
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+      <p>
+        {start}–{end} of {total.toLocaleString()}
+      </p>
+      <div className="flex items-center gap-2">
+        <Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          Previous
+        </Button>
+        <span className="text-slate-500">
+          Page {page} of {totalPages}
+        </span>
+        <Button variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function Table({ children }: { children: ReactNode }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">

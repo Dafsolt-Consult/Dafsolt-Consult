@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Badge, Card, EmptyState, PageHeader } from "../../components/ui";
+import { Badge, Card, EmptyState } from "../../components/ui";
 import { usePlatformAuth } from "../../context/PlatformAuthContext";
+import { PlatformAdminUser } from "../../types/platform";
 import { usePlatformFetch } from "../../hooks/usePlatformFetch";
 import { Paginated } from "../../types";
 import { PlatformTenantRow, SchoolGroupRow } from "../../types/platform";
@@ -13,6 +14,33 @@ const BRAND_GREEN = "#16a34a";
 const SERIES_BLUE = "#2a78d6";
 const GRID = "#e1e0d9";
 const AXIS = "#898781";
+
+const ROLE_LABELS: Record<string, string> = {
+  OWNER: "Owner",
+  SUPPORT: "Support",
+  BILLING: "Billing",
+  CONTENT_MANAGER: "Content Manager",
+};
+
+function PlatformDashboardHeader({ admin }: { admin: PlatformAdminUser }) {
+  const today = new Date().toLocaleDateString("en-NG", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const initials = `${admin.firstName[0] ?? ""}${admin.lastName?.[0] ?? ""}`.toUpperCase();
+
+  return (
+    <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-6 py-6 text-white shadow-sm sm:px-8 sm:py-7">
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 text-lg font-semibold ring-1 ring-white/20">
+          {initials}
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{today}</p>
+          <h1 className="text-2xl font-semibold">Welcome, {admin.firstName}</h1>
+          <p className="mt-0.5 text-sm text-slate-300">Platform administration · {ROLE_LABELS[admin.role] ?? admin.role}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function StatCard({ label, value, to }: { label: string; value: string | number; to: string }) {
   return (
@@ -79,7 +107,7 @@ export function PlatformDashboardPage() {
 
   return (
     <div>
-      <PageHeader title={`Welcome, ${admin.firstName}`} subtitle={`Platform administration · ${admin.role}`} />
+      <PlatformDashboardHeader admin={admin} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Schools on the platform" value={data?.total ?? "—"} to="/platform/schools" />
         <StatCard label="School groups" value={groups?.length ?? "—"} to="/platform/school-groups" />

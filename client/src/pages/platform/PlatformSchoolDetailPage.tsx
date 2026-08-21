@@ -1,10 +1,11 @@
 import { ReactNode, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { platformApi } from "../../api/platformClient";
 import { apiErrorMessage } from "../../api/client";
-import { Badge, Button, Card, ErrorBanner, PageHeader } from "../../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorBanner, PageHeader } from "../../components/ui";
 import { usePlatformFetch } from "../../hooks/usePlatformFetch";
-import { PlatformTenantDetail } from "../../types/platform";
+import { Paginated } from "../../types";
+import { PlatformAuditLogEntry, PlatformTenantDetail } from "../../types/platform";
 
 // Impersonation hands a short-lived (~15min, non-renewable) tenant access
 // token to a new browser tab, written into the SAME localStorage keys the
@@ -18,6 +19,9 @@ const TENANT_ACCESS_TOKEN_KEY = "dafsolt.accessToken";
 export function PlatformSchoolDetailPage() {
   const { tenantId } = useParams<{ tenantId: string }>();
   const { data: tenant, loading, error } = usePlatformFetch<PlatformTenantDetail>(tenantId ? `/tenants/${tenantId}` : null);
+  const { data: activity } = usePlatformFetch<Paginated<PlatformAuditLogEntry>>(
+    tenantId ? `/audit-log?tenantId=${tenantId}&pageSize=10` : null
+  );
   const [impersonateError, setImpersonateError] = useState<string | null>(null);
   const [impersonating, setImpersonating] = useState(false);
 
@@ -51,6 +55,9 @@ export function PlatformSchoolDetailPage() {
 
   return (
     <div>
+      <Link to="/platform/schools" className="mb-3 inline-block text-sm font-medium text-slate-500 hover:text-slate-800 hover:underline">
+        ← Back to schools
+      </Link>
       <PageHeader
         title={tenant.name}
         subtitle={tenant.slug}
@@ -89,6 +96,38 @@ export function PlatformSchoolDetailPage() {
           </dl>
         </Card>
       </div>
+
+      <Card className="mt-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-700">Recent activity</h2>
+          {activity && activity.total > 0 && (
+            <Link to={`/platform/audit-log`} className="text-xs font-medium text-brand-700 hover:underline">
+              View full audit log →
+            </Link>
+          )}
+        </div>
+        {!activity || activity.items.length === 0 ? (
+          <EmptyState message="No audit activity for this school yet." />
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {activity.items.map((entry) => (
+              <li key={entry.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <Badge>{entry.action}</Badge>
+                  <span className="ml-2 text-slate-600">
+                    {entry.platformAdmin
+                      ? `${entry.platformAdmin.firstName} ${entry.platformAdmin.lastName}`
+                      : entry.user
+                        ? `${entry.user.firstName} ${entry.user.lastName}`
+                        : "System"}
+                  </span>
+                </div>
+                <span className="shrink-0 text-xs text-slate-400">{new Date(entry.createdAt).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </div>
   );
 }

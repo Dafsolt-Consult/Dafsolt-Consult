@@ -1,7 +1,7 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { platformApi } from "../../api/platformClient";
 import { apiErrorMessage } from "../../api/client";
-import { Badge, Button, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Select, Spinner, Table } from "../../components/ui";
+import { Badge, Button, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Pagination, Select, Spinner, Table } from "../../components/ui";
 import { usePlatformFetch } from "../../hooks/usePlatformFetch";
 import { ExamBoard, GlobalQuestion, GlobalSubject, Paginated, QuestionType, SchoolStage } from "../../types";
 import { BulkAddGlobalQuestionsModal } from "./BulkAddGlobalQuestionsModal";
@@ -15,12 +15,18 @@ export function PlatformGlobalQuestionsPage() {
   const [editQuestion, setEditQuestion] = useState<GlobalQuestion | null>(null);
   const [showNewSubject, setShowNewSubject] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
 
-  const query = new URLSearchParams({ pageSize: "50" });
+  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (globalSubjectId) query.set("globalSubjectId", globalSubjectId);
   if (examBoard) query.set("examBoard", examBoard);
 
-  const { data, loading, error, refetch } = usePlatformFetch<Paginated<GlobalQuestion>>(`/global-questions?${query}`, [globalSubjectId, examBoard]);
+  const { data, loading, error, refetch } = usePlatformFetch<Paginated<GlobalQuestion>>(`/global-questions?${query}`, [globalSubjectId, examBoard, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [globalSubjectId, examBoard]);
 
   async function deleteQuestion(question: GlobalQuestion) {
     if (!confirm("Delete this practice question from the shared library?")) return;
@@ -111,6 +117,7 @@ export function PlatformGlobalQuestionsPage() {
           </tbody>
         </Table>
       )}
+      {data && <Pagination page={data.page} pageSize={data.pageSize} total={data.total} onPageChange={setPage} />}
 
       {showNewSubject && (
         <NewSubjectModal
