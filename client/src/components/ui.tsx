@@ -6,10 +6,10 @@ export function Button({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" | "ghost" }) {
   const variants: Record<string, string> = {
-    primary: "bg-brand-600 text-white hover:bg-brand-700 disabled:bg-brand-300",
-    secondary: "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50",
-    danger: "bg-red-600 text-white hover:bg-red-700",
-    ghost: "text-slate-600 hover:bg-slate-100",
+    primary: "bg-brand-600 text-white hover:bg-brand-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:hover:bg-slate-200",
+    secondary: "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-300 disabled:hover:bg-slate-50",
+    danger: "bg-red-600 text-white hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:hover:bg-slate-200",
+    ghost: "text-slate-600 hover:bg-slate-100 disabled:text-slate-300 disabled:hover:bg-transparent",
   };
   return (
     <button
@@ -31,7 +31,7 @@ export function Input({ className = "", ...props }: InputHTMLAttributes<HTMLInpu
 export function Select({ className = "", children, ...props }: SelectHTMLAttributes<HTMLSelectElement> & { children: ReactNode }) {
   return (
     <select
-      className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 ${className}`}
+      className={`select-arrow w-full appearance-none rounded-lg border border-slate-300 bg-white py-2 pl-3 pr-9 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 ${className}`}
       {...props}
     >
       {children}
