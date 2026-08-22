@@ -60,6 +60,12 @@ export const env = {
 
   supportContactPhone: process.env.SUPPORT_CONTACT_PHONE ?? "+2348160116571",
   supportContactEmail: process.env.SUPPORT_CONTACT_EMAIL ?? "support@dafsolt.cloud",
+
+  // dafsolt.cloud backoffice's cross-product Monitor page — see
+  // src/modules/monitor. Both unset in local/staging; the scheduler job
+  // silently no-ops then.
+  monitorReportUrl: process.env.MONITOR_REPORT_URL,
+  monitorReportToken: process.env.MONITOR_REPORT_TOKEN,
 };
 
 export const isProd = env.nodeEnv === "production";

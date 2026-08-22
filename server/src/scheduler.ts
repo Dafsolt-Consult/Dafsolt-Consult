@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import { prisma } from "./config/prisma";
+import { reportMonitorStatus } from "./modules/monitor/monitor.service";
 
 /** Registers every recurring background job. Called once from index.ts on
  * boot. Each job is intentionally a plain `prisma.updateMany`/aggregate —
@@ -19,6 +20,13 @@ export function startScheduler() {
     } catch (err) {
       console.error("[scheduler] overdue-invoice sweep failed:", err);
     }
+  });
+
+  // Cross-product live status push to the dafsolt.cloud backoffice Monitor
+  // page — see modules/monitor/monitor.service.ts. No-ops if
+  // MONITOR_REPORT_URL/TOKEN aren't set (local/staging).
+  cron.schedule("*/5 * * * *", () => {
+    reportMonitorStatus().catch((err) => console.error("[scheduler] monitor report failed:", err));
   });
 
   console.log("[scheduler] background jobs registered");

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { Prisma } from "@prisma/client";
 import { ApiError } from "../utils/ApiError";
+import { recordError } from "../utils/errorCounter";
 
 export function notFoundHandler(_req: Request, res: Response) {
   res.status(404).json({ message: "Route not found" });
@@ -27,5 +28,6 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   }
 
   console.error(err);
+  recordError(err instanceof Error ? err.message : String(err));
   return res.status(500).json({ message: "Internal server error" });
 }

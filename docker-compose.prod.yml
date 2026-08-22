@@ -55,6 +55,8 @@ services:
       GROQ_BASE_URI: ${GROQ_BASE_URI:-https://api.groq.com/openai/v1}
       SUPPORT_CONTACT_PHONE: ${SUPPORT_CONTACT_PHONE:-+2348160116571}
       SUPPORT_CONTACT_EMAIL: ${SUPPORT_CONTACT_EMAIL:-support@dafsolt.cloud}
+      MONITOR_REPORT_URL: ${MONITOR_REPORT_URL:-}
+      MONITOR_REPORT_TOKEN: ${MONITOR_REPORT_TOKEN:-}
     volumes:
       - dafsolt_uploads_prod:/app/uploads
     expose:
