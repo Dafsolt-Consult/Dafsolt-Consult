@@ -6,6 +6,7 @@ import rateLimit from "express-rate-limit";
 import path from "path";
 import { env } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { trackActivityUsage } from "./middleware/activityUsage";
 
 import authRoutes from "./modules/auth/auth.routes";
 import publicRoutes from "./modules/public/public.routes";
@@ -74,6 +75,7 @@ export function createApp() {
   });
 
   app.use("/uploads", express.static(path.resolve(env.uploadDir)));
+  app.use(trackActivityUsage);
 
   app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
 

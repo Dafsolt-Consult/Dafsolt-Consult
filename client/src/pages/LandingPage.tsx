@@ -373,6 +373,50 @@ export function LandingPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Landing-page visitor beacon — feeds the backoffice Activity page's
+  // "who viewed, how long" data. This page only ever renders for a signed-
+  // out visitor (see App.tsx), so no auth-check guard is needed here.
+  useEffect(() => {
+    const VID_KEY = "dbos_vid";
+    let visitorId: string | null = null;
+    try {
+      visitorId = localStorage.getItem(VID_KEY);
+      if (!visitorId) {
+        visitorId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem(VID_KEY, visitorId);
+      }
+    } catch {
+      // private browsing / storage blocked
+    }
+
+    const beacon = (phase: "enter" | "leave") => {
+      const payload = JSON.stringify({ path: location.pathname, visitorId, phase });
+      const url = "/api/public/landing-view";
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(url, new Blob([payload], { type: "application/json" }));
+      } else {
+        fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true }).catch(() => {});
+      }
+    };
+
+    beacon("enter");
+    let leftAlready = false;
+    const sendLeave = () => {
+      if (leftAlready) return;
+      leftAlready = true;
+      beacon("leave");
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") sendLeave();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", sendLeave);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", sendLeave);
+    };
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTestimonialIndex((i) => (i + 1) % TESTIMONIALS.length);

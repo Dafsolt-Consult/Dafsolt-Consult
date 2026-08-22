@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { prisma } from "./config/prisma";
 import { reportMonitorStatus } from "./modules/monitor/monitor.service";
+import { reportActivityStatus } from "./modules/monitor/activity.service";
 
 /** Registers every recurring background job. Called once from index.ts on
  * boot. Each job is intentionally a plain `prisma.updateMany`/aggregate —
@@ -27,6 +28,12 @@ export function startScheduler() {
   // MONITOR_REPORT_URL/TOKEN aren't set (local/staging).
   cron.schedule("*/5 * * * *", () => {
     reportMonitorStatus().catch((err) => console.error("[scheduler] monitor report failed:", err));
+  });
+
+  // Cross-product audit-trail + usage push to the dafsolt.cloud backoffice
+  // Activity page — see modules/monitor/activity.service.ts.
+  cron.schedule("*/5 * * * *", () => {
+    reportActivityStatus().catch((err) => console.error("[scheduler] activity report failed:", err));
   });
 
   console.log("[scheduler] background jobs registered");

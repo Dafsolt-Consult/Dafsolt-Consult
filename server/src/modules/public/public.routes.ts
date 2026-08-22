@@ -9,4 +9,9 @@ const router = Router();
 
 router.get("/signup-stats", publicController.getSignupStats);
 
+// Landing-page visitor beacon — see public.service.ts's recordLandingView
+// docblock. No auth (anonymous visitor); the app-wide rate limiter in
+// app.ts still applies.
+router.post("/landing-view", publicController.postLandingView);
+
 export default router;

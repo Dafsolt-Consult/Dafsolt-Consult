@@ -1830,3 +1830,36 @@ model Alumnus {
   @@index([tenantId, graduationYear])
   @@map("alumni")
 }
+
+/// "Who used this, how long" for the dafsolt.cloud backoffice Activity
+/// page — one row per (actor, day), upserted by
+/// middleware/activityUsage.ts on every authenticated request (or, for
+/// actorType "visitor", by the public landing-page beacon). Pushed every 5
+/// minutes by modules/monitor/activity.service.ts alongside AuditLog rows
+/// ("what was done").
+model ActivityDailyUsage {
+  id           String   @id @default(cuid())
+  actorType    String // "admin" | "user" | "visitor"
+  actorId      String
+  actorLabel   String?
+  day          String // "YYYY-MM-DD", UTC
+  firstSeenAt  DateTime
+  lastSeenAt   DateTime
+  requestCount Int      @default(0)
+
+  @@unique([actorType, actorId, day])
+  @@index([day])
+  @@map("activity_daily_usage")
+}
+
+/// Single-purpose key/value store for modules/monitor/activity.service.ts's
+/// AuditLog watermark — which rows have already been pushed to the
+/// backoffice, so a redeploy doesn't resend the whole audit history. Value
+/// is a string (an AuditLog.createdAt ISO timestamp), not an int — AuditLog
+/// has no numeric sequence to cursor by, only cuid ids and createdAt.
+model ActivityReportCursor {
+  key   String @id
+  value String
+
+  @@map("activity_report_cursors")
+}
