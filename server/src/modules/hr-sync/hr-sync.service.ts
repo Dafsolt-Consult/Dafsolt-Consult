@@ -13,9 +13,14 @@ import { env } from "../../config/env";
  * never throws — callers on the real staff-write path call it without
  * awaiting; a Core failure must never affect that write.
  *
- * E4 pilot scope: only fires for the single tenant named by
- * DAFSOLT_CORE_HR_SYNC_TENANT_SLUG — every other tenant is a silent
- * no-op until this is rolled out more broadly.
+ * E6 full-rollout scope: each enrolled School Manager tenant has its OWN
+ * dedicated Core tenant + sync user — Core's employment-sync lookup is
+ * scoped to the calling sync user's own Core tenant, so a single shared
+ * sync-user could never actually match staff outside its one Core tenant
+ * anyway. `env.dafsoltCoreHrSyncTenants` is a parsed JSON map of
+ * { [schoolTenantSlug]: { email, password } }; a tenant not present in
+ * the map is a silent no-op, same posture as the original single-tenant
+ * pilot scoping.
  */
 
 const CORE_API_BASE_URL = "https://id.dafsolt.cloud/core-api";
@@ -29,6 +34,11 @@ export interface SyncEmploymentInput {
   department?: string;
 }
 
+interface TenantCredentials {
+  email: string;
+  password: string;
+}
+
 interface CoreTokens {
   accessToken: string;
   refreshToken: string;
@@ -37,8 +47,9 @@ interface CoreTokens {
 
 // Module-level, in-process cache — fine here (unlike a PHP-FPM worker,
 // this is a single long-running Node process), same approach as
-// sso.service.ts's JWKS cache above.
-let tokens: CoreTokens | null = null;
+// sso.service.ts's JWKS cache above. Keyed per tenant, since each
+// enrolled tenant authenticates as a different Core user.
+const tokensByTenant = new Map<string, CoreTokens>();
 
 export async function syncEmployment(tenantId: string, input: SyncEmploymentInput): Promise<void> {
   try {
@@ -51,13 +62,13 @@ export async function syncEmployment(tenantId: string, input: SyncEmploymentInpu
 async function run(tenantId: string, input: SyncEmploymentInput): Promise<void> {
   if (!env.dafsoltCoreHrSyncEnabled) return;
 
-  const pilotSlug = env.dafsoltCoreHrSyncTenantSlug;
-  if (!pilotSlug) return;
-
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } });
-  if (!tenant || tenant.slug !== pilotSlug) return;
+  if (!tenant) return;
 
-  const token = await getAccessToken();
+  const credentials = getCredentialsFor(tenant.slug);
+  if (!credentials) return;
+
+  const token = await getAccessToken(tenant.slug, credentials);
   if (!token) return;
 
   const res = await fetch(`${CORE_API_BASE_URL}/hr/employment-sync`, {
@@ -74,42 +85,40 @@ async function run(tenantId: string, input: SyncEmploymentInput): Promise<void> 
   }
 }
 
-async function getAccessToken(): Promise<string | null> {
-  if (tokens && Date.now() < tokens.expiresAt) {
-    return tokens.accessToken;
-  }
-  if (tokens) {
-    const refreshed = await refresh(tokens.refreshToken);
-    if (refreshed) return refreshed;
-  }
-  return login();
+function getCredentialsFor(tenantSlug: string): TenantCredentials | null {
+  return env.dafsoltCoreHrSyncTenants[tenantSlug] ?? null;
 }
 
-async function login(): Promise<string | null> {
-  const email = env.dafsoltCoreHrSyncEmail;
-  const password = env.dafsoltCoreHrSyncPassword;
-  if (!email || !password) {
-    console.warn("[hr-sync] enabled but DAFSOLT_CORE_HR_SYNC_EMAIL/PASSWORD is not set");
-    return null;
+async function getAccessToken(tenantSlug: string, credentials: TenantCredentials): Promise<string | null> {
+  const cached = tokensByTenant.get(tenantSlug);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.accessToken;
   }
+  if (cached) {
+    const refreshed = await refresh(tenantSlug, cached.refreshToken);
+    if (refreshed) return refreshed;
+  }
+  return login(tenantSlug, credentials);
+}
 
+async function login(tenantSlug: string, credentials: TenantCredentials): Promise<string | null> {
   const res = await fetch(`${CORE_API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email: credentials.email, password: credentials.password }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   if (!res.ok) {
-    console.warn(`[hr-sync] login failed with status ${res.status}`);
+    console.warn(`[hr-sync] login failed for tenant "${tenantSlug}" with status ${res.status}`);
     return null;
   }
 
   const body = (await res.json()) as { accessToken: string; refreshToken: string };
-  storeTokens(body.accessToken, body.refreshToken);
+  storeTokens(tenantSlug, body.accessToken, body.refreshToken);
   return body.accessToken;
 }
 
-async function refresh(refreshToken: string): Promise<string | null> {
+async function refresh(tenantSlug: string, refreshToken: string): Promise<string | null> {
   const res = await fetch(`${CORE_API_BASE_URL}/auth/refresh`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -120,23 +129,23 @@ async function refresh(refreshToken: string): Promise<string | null> {
     // Refresh token rotated/revoked/expired — drop the cache and let the
     // next call fall through to a fresh login instead of looping on a
     // dead token.
-    tokens = null;
+    tokensByTenant.delete(tenantSlug);
     return null;
   }
 
   const body = (await res.json()) as { accessToken: string; refreshToken: string };
-  storeTokens(body.accessToken, body.refreshToken);
+  storeTokens(tenantSlug, body.accessToken, body.refreshToken);
   return body.accessToken;
 }
 
-function storeTokens(accessToken: string, refreshToken: string): void {
+function storeTokens(tenantSlug: string, accessToken: string, refreshToken: string): void {
   const payload = decodeJwtPayload(accessToken);
   // Signature isn't verified here — this token was just issued to us
   // directly by Core over HTTPS, not supplied by an untrusted caller; we
   // only need `exp` to know when to refresh. Refresh 60s early so a
   // request already in flight never races an expiring token.
   const expiresAt = payload?.exp ? payload.exp * 1000 - 60_000 : Date.now() + 10 * 60_000;
-  tokens = { accessToken, refreshToken, expiresAt };
+  tokensByTenant.set(tenantSlug, { accessToken, refreshToken, expiresAt });
 }
 
 function decodeJwtPayload(token: string): { exp?: number } | null {

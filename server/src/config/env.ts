@@ -8,6 +8,25 @@ function required(name: string, fallback?: string): string {
   return value;
 }
 
+interface TenantCredentials {
+  email: string;
+  password: string;
+}
+
+// Malformed/unset input silently resolves to {} — dafsoltCoreHrSyncEnabled
+// still gates the whole feature, so an empty map here just means every
+// tenant is a no-op, not a boot-time crash.
+function parseTenantCredentialsMap(name: string): Record<string, TenantCredentials> {
+  const raw = process.env[name];
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as Record<string, TenantCredentials>;
+  } catch {
+    console.warn(`[env] ${name} is not valid JSON — ignoring`);
+    return {};
+  }
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: Number(process.env.PORT ?? 4000),
@@ -73,13 +92,13 @@ export const env = {
   dafsoltCoreSsoEnabled: process.env.DAFSOLT_CORE_SSO_ENABLED === "true",
 
   // Outbound sync of staff into dafsolt-core's shared Employment record
-  // (E4 pilot) — see src/modules/hr-sync. Off unless explicitly enabled;
-  // scoped to one tenant slug at a time. dafsoltCoreHrSyncEmail/Password
-  // are a dedicated non-human Core user, never a real person's login.
+  // (E4 pilot -> E6 full rollout) — see src/modules/hr-sync. Off unless
+  // explicitly enabled. DAFSOLT_CORE_HR_SYNC_TENANTS is a JSON map of
+  // { [tenantSlug]: { email, password } } — one dedicated non-human Core
+  // user per enrolled tenant, never a real person's login. A tenant not
+  // present in the map is a silent no-op.
   dafsoltCoreHrSyncEnabled: process.env.DAFSOLT_CORE_HR_SYNC_ENABLED === "true",
-  dafsoltCoreHrSyncTenantSlug: process.env.DAFSOLT_CORE_HR_SYNC_TENANT_SLUG,
-  dafsoltCoreHrSyncEmail: process.env.DAFSOLT_CORE_HR_SYNC_EMAIL,
-  dafsoltCoreHrSyncPassword: process.env.DAFSOLT_CORE_HR_SYNC_PASSWORD,
+  dafsoltCoreHrSyncTenants: parseTenantCredentialsMap("DAFSOLT_CORE_HR_SYNC_TENANTS"),
 };
 
 export const isProd = env.nodeEnv === "production";
