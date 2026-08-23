@@ -71,6 +71,15 @@ export const env = {
   // Additive alternate login path, off unless explicitly enabled; when
   // disabled, POST /api/sso/callback behaves as if the route doesn't exist.
   dafsoltCoreSsoEnabled: process.env.DAFSOLT_CORE_SSO_ENABLED === "true",
+
+  // Outbound sync of staff into dafsolt-core's shared Employment record
+  // (E4 pilot) — see src/modules/hr-sync. Off unless explicitly enabled;
+  // scoped to one tenant slug at a time. dafsoltCoreHrSyncEmail/Password
+  // are a dedicated non-human Core user, never a real person's login.
+  dafsoltCoreHrSyncEnabled: process.env.DAFSOLT_CORE_HR_SYNC_ENABLED === "true",
+  dafsoltCoreHrSyncTenantSlug: process.env.DAFSOLT_CORE_HR_SYNC_TENANT_SLUG,
+  dafsoltCoreHrSyncEmail: process.env.DAFSOLT_CORE_HR_SYNC_EMAIL,
+  dafsoltCoreHrSyncPassword: process.env.DAFSOLT_CORE_HR_SYNC_PASSWORD,
 };
 
 export const isProd = env.nodeEnv === "production";

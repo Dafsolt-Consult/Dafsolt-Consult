@@ -4,6 +4,7 @@ import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { createStaffSchema, updateUserSchema } from "./users.schema";
 import * as usersService from "./users.service";
+import * as hrSync from "../hr-sync/hr-sync.service";
 import { ApiError } from "../../utils/ApiError";
 
 export const listStaff = asyncHandler(async (req: Request, res: Response) => {
@@ -48,6 +49,17 @@ export const createStaff = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
   const input = createStaffSchema.parse(req.body);
   const user = await usersService.createStaffAccount(tenantId, input);
+
+  // Fire-and-forget: never awaited, a Core outage must never affect this
+  // response. hireDate falls back to createdAt for the 7 non-Teacher
+  // roles, which have no dedicated hireDate field of their own.
+  void hrSync.syncEmployment(tenantId, {
+    email: user.email,
+    status: "active",
+    hireDate: (user.teacher?.hireDate ?? user.createdAt).toISOString(),
+    jobTitle: user.role,
+  });
+
   res.status(201).json(user);
 });
 
@@ -60,5 +72,17 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   if (!existing) throw ApiError.notFound("User not found");
 
   const user = await prisma.user.update({ where: { id: userId }, data: input });
+
+  // Only re-sync on an actual status change — don't fire on unrelated
+  // profile edits (name/phone/baseSalary). No on_leave signal exists on
+  // this app's side (confirmed in E0): isActive is a hard boolean, so the
+  // mapping is permanently lossy, not a bug.
+  if (input.isActive !== undefined) {
+    void hrSync.syncEmployment(tenantId, {
+      email: user.email,
+      status: user.isActive ? "active" : "terminated",
+    });
+  }
+
   res.json(user);
 });
