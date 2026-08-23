@@ -57,6 +57,7 @@ services:
       SUPPORT_CONTACT_EMAIL: ${SUPPORT_CONTACT_EMAIL:-support@dafsolt.cloud}
       MONITOR_REPORT_URL: ${MONITOR_REPORT_URL:-}
       MONITOR_REPORT_TOKEN: ${MONITOR_REPORT_TOKEN:-}
+      DAFSOLT_CORE_SSO_ENABLED: ${DAFSOLT_CORE_SSO_ENABLED:-false}
     volumes:
       - dafsolt_uploads_prod:/app/uploads
     expose:
