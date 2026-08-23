@@ -9,6 +9,7 @@ import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { trackActivityUsage } from "./middleware/activityUsage";
 
 import authRoutes from "./modules/auth/auth.routes";
+import ssoRoutes from "./modules/sso/sso.routes";
 import publicRoutes from "./modules/public/public.routes";
 import supportRoutes from "./modules/support/support.routes";
 import assistantRoutes from "./modules/assistant/assistant.routes";
@@ -54,6 +55,34 @@ export function createApp() {
   app.set("trust proxy", 1);
 
   app.use(helmet());
+
+  // dafsolt-core (id.dafsolt.cloud) SSO callback — mounted here, BEFORE the
+  // app-wide CORS policy below, deliberately. The `cors` package
+  // short-circuits every OPTIONS preflight request unconditionally
+  // (regardless of path) once mounted via a path-less app.use(), and it
+  // would otherwise answer this route's preflight with env.clientUrl's
+  // Access-Control-Allow-Origin instead of the Gateway's — the browser
+  // would then block the real POST. Mounting here means this route's own
+  // narrow CORS (Gateway origin only, no credentials — the token arrives in
+  // the POST body, not cookies) and its own rate limiter are the only
+  // gates it passes through; it never reaches the app-wide CORS/JSON/rate
+  // limiter below, so this changes nothing about how any other route
+  // behaves — every other path still hits the exact same app-wide chain, in
+  // the exact same order, as before.
+  app.use(
+    "/api/sso",
+    cors({ origin: "https://id.dafsolt.cloud" }),
+    express.json({ limit: "16kb" }),
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 20,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: "Too many attempts, please try again later" },
+    }),
+    ssoRoutes
+  );
+
   app.use(cors({ origin: env.clientUrl, credentials: true }));
   app.use(express.json({ limit: "2mb" }));
   app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));

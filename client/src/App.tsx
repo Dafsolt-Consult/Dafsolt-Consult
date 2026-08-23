@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Spinner } from "./components/ui";
 import { LoginPage } from "./pages/LoginPage";
+import { SsoLandingPage } from "./pages/SsoLandingPage";
 import { OnboardPage } from "./pages/OnboardPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
@@ -74,6 +75,7 @@ export default function App() {
           redirect so any existing links/bookmarks still land somewhere. */}
       <Route path="/welcome" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/sso-landing" element={<SsoLandingPage />} />
       <Route path="/onboard" element={<OnboardPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

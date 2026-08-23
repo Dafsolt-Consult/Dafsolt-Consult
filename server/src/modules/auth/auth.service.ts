@@ -196,7 +196,7 @@ export async function resetPassword(rawToken: string, newPassword: string) {
   ]);
 }
 
-async function issueSession(userId: string, tenantId: string | null, role: import("@prisma/client").UserRole) {
+export async function issueSession(userId: string, tenantId: string | null, role: import("@prisma/client").UserRole) {
   const accessToken = signAccessToken({ sub: userId, tenantId, role });
   const refreshToken = signRefreshToken(userId);
 

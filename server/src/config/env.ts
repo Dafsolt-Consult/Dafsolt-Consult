@@ -66,6 +66,11 @@ export const env = {
   // silently no-ops then.
   monitorReportUrl: process.env.MONITOR_REPORT_URL,
   monitorReportToken: process.env.MONITOR_REPORT_TOKEN,
+
+  // dafsolt-core (id.dafsolt.cloud) SSO pilot — see src/modules/sso.
+  // Additive alternate login path, off unless explicitly enabled; when
+  // disabled, POST /api/sso/callback behaves as if the route doesn't exist.
+  dafsoltCoreSsoEnabled: process.env.DAFSOLT_CORE_SSO_ENABLED === "true",
 };
 
 export const isProd = env.nodeEnv === "production";
