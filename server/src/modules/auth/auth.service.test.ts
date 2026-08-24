@@ -88,6 +88,36 @@ describe("auth.service.onboardSchool — tenant-welcome notification", () => {
   });
 });
 
+describe("auth.service.defaultAcademicYearStart", () => {
+  let defaultAcademicYearStart: (typeof import("./auth.service"))["defaultAcademicYearStart"];
+
+  beforeEach(async () => {
+    ({ defaultAcademicYearStart } = await import("./auth.service"));
+  });
+
+  it("treats August onward as the start of the UPCOMING academic year, not the outgoing one", () => {
+    // The bug this guards against: onboarding on 2026-08-24 originally
+    // computed academic year 2025/2026 (ending 2026-08-01, already 23
+    // days in the past) instead of the upcoming 2026/2027 — caught via
+    // live production verification, not simulated. Confirmed against
+    // Royal Executive's own real data: its Third Term (last of 3) ends
+    // 2026-08-02, and it already had its *next* session marked current
+    // by 2026-08-24, three weeks before that session even starts.
+    expect(defaultAcademicYearStart(new Date("2026-08-24T00:00:00Z"))).toBe(2026);
+    expect(defaultAcademicYearStart(new Date("2026-08-01T00:00:00Z"))).toBe(2026);
+  });
+
+  it("treats July and earlier as still inside the academic year that started last September", () => {
+    expect(defaultAcademicYearStart(new Date("2026-07-31T00:00:00Z"))).toBe(2025);
+    expect(defaultAcademicYearStart(new Date("2026-01-01T00:00:00Z"))).toBe(2025);
+  });
+
+  it("treats September onward (well into the new year) as that same upcoming/current year", () => {
+    expect(defaultAcademicYearStart(new Date("2026-09-14T00:00:00Z"))).toBe(2026);
+    expect(defaultAcademicYearStart(new Date("2026-12-31T00:00:00Z"))).toBe(2026);
+  });
+});
+
 describe("auth.service.onboardSchool — default academic session", () => {
   let onboardSchool: (typeof import("./auth.service"))["onboardSchool"];
 

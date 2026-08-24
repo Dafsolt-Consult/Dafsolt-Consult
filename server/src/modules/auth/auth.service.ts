@@ -23,12 +23,21 @@ const RESET_TOKEN_TTL_MS = ms("1h");
  * instead of a working default. currentSessionId()'s own fallback chain
  * (client/src/hooks/useAcademics.ts) already degrades gracefully rather
  * than crashing, but a real default is better than an empty first
- * screen. Nigerian/West African school year convention: starts
- * September. If onboarding happens Jan-Aug, that academic year already
- * started the previous September.
+ * screen.
+ *
+ * Nigerian/West African school year convention: starts September, Third
+ * Term (the last of 3) ends around early August (confirmed against
+ * Royal Executive's own real live data: 2026-08-02) — so by the time
+ * August itself arrives, the outgoing year is over or ending and the
+ * upcoming one is the one a school actually wants treated as current
+ * (also confirmed live: Royal Executive already had its *next* session
+ * marked current on 2026-08-24, three weeks before that session's own
+ * start date). Using September as the cutover instead (this function's
+ * first version) computed an already-ended session for anyone onboarding
+ * in August — caught via live verification, not simulated.
  */
-function defaultAcademicYearStart(now: Date): number {
-  return now.getUTCMonth() >= 8 /* September (0-indexed) */ ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+export function defaultAcademicYearStart(now: Date): number {
+  return now.getUTCMonth() >= 7 /* August (0-indexed) */ ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
 }
 
 async function seedDefaultAcademicSession(tenantId: string, now: Date): Promise<void> {
