@@ -10,6 +10,7 @@ import ms from "../../utils/ms";
 import { slugify } from "../../utils/slugify";
 import { sendEmail } from "../../utils/email";
 import { PLAN_DEFAULTS } from "../../utils/planLimits";
+import * as notificationsSync from "../notifications-sync/notifications-sync.service";
 
 const TRIAL_DAYS = 30;
 const RESET_TOKEN_TTL_MS = ms("1h");
@@ -69,6 +70,17 @@ export async function onboardSchool(input: OnboardSchoolInput) {
   });
 
   const adminUser = tenant.users[0];
+
+  // Same fire-and-forget posture as everywhere else this fires: a Core
+  // outage must never affect onboarding. Distinct template from staff
+  // welcome — this is the school's own owner account, not a staff member
+  // being added.
+  void notificationsSync.sendTenantWelcome(tenant.id, {
+    email: adminUser.email,
+    recipientName: `${adminUser.firstName} ${adminUser.lastName}`,
+    loginUrl: `${env.clientUrl}/login`,
+  });
+
   return issueSession(adminUser.id, tenant.id, adminUser.role);
 }
 

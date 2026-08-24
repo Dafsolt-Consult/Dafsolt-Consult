@@ -27,6 +27,7 @@ function signAccessToken(expiresInSeconds: number) {
 describe("notifications-sync.service", () => {
   let originalFetch: typeof global.fetch;
   let sendWelcome: (typeof import("./notifications-sync.service"))["sendWelcome"];
+  let sendTenantWelcome: (typeof import("./notifications-sync.service"))["sendTenantWelcome"];
 
   beforeEach(async () => {
     originalFetch = global.fetch;
@@ -43,7 +44,7 @@ describe("notifications-sync.service", () => {
     // that cache never leaks between test cases. vi.mock() calls above
     // apply automatically to the fresh import too.
     vi.resetModules();
-    ({ sendWelcome } = await import("./notifications-sync.service"));
+    ({ sendWelcome, sendTenantWelcome } = await import("./notifications-sync.service"));
   });
 
   afterEach(() => {
@@ -142,5 +143,23 @@ describe("notifications-sync.service", () => {
     await expect(
       sendWelcome("t1", { email: "never-onboarded@pilot.test", loginUrl: "https://edu.dafsolt.cloud/login" })
     ).resolves.toBeUndefined();
+  });
+
+  it("sendTenantWelcome uses a distinct template from sendWelcome", async () => {
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ accessToken: signAccessToken(900), refreshToken: "r1" }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ sent: true }) });
+
+    await sendTenantWelcome("t1", {
+      email: "owner@pilot-tenant.test",
+      recipientName: "Owner",
+      loginUrl: "https://edu.dafsolt.cloud/login",
+    });
+
+    const [, notifyOpts] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[1];
+    expect(JSON.parse(notifyOpts.body).template).toBe("tenant-welcome");
   });
 });

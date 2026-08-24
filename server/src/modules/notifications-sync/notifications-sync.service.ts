@@ -51,13 +51,28 @@ const tokensByTenant = new Map<string, CoreTokens>();
 
 export async function sendWelcome(tenantId: string, input: SendWelcomeInput): Promise<void> {
   try {
-    await run(tenantId, input);
+    await run(tenantId, "welcome", input);
   } catch (err) {
     console.warn(`[notifications-sync] send failed for ${input.email}:`, err instanceof Error ? err.message : err);
   }
 }
 
-async function run(tenantId: string, input: SendWelcomeInput): Promise<void> {
+// Distinct template/copy from sendWelcome above — for the tenant owner's
+// own registration (a new school onboarding), not a staff member being
+// added to an existing school. Same mechanism, different message, per the
+// Notifications rollout plan. Will legitimately no-op for most real
+// self-serve sign-ups (a brand-new tenant is never already in the
+// dafsoltCoreHrSyncTenants credential map) — same posture as every other
+// no-op case here, not a bug.
+export async function sendTenantWelcome(tenantId: string, input: SendWelcomeInput): Promise<void> {
+  try {
+    await run(tenantId, "tenant-welcome", input);
+  } catch (err) {
+    console.warn(`[notifications-sync] send failed for ${input.email}:`, err instanceof Error ? err.message : err);
+  }
+}
+
+async function run(tenantId: string, template: string, input: SendWelcomeInput): Promise<void> {
   if (!env.dafsoltCoreNotifyEnabled) return;
 
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } });
@@ -75,7 +90,7 @@ async function run(tenantId: string, input: SendWelcomeInput): Promise<void> {
     body: JSON.stringify({
       email: input.email,
       channel: "email",
-      template: "welcome",
+      template,
       data: { recipientName: input.recipientName, loginUrl: input.loginUrl },
     }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
