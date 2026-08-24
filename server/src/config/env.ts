@@ -99,6 +99,12 @@ export const env = {
   // present in the map is a silent no-op.
   dafsoltCoreHrSyncEnabled: process.env.DAFSOLT_CORE_HR_SYNC_ENABLED === "true",
   dafsoltCoreHrSyncTenants: parseTenantCredentialsMap("DAFSOLT_CORE_HR_SYNC_TENANTS"),
+
+  // Outbound welcome-email notifications via Core's Phase N
+  // `POST /notifications` — see src/modules/notifications-sync. Reuses
+  // dafsoltCoreHrSyncTenants above (same per-tenant Core sync user),
+  // toggled independently via its own flag.
+  dafsoltCoreNotifyEnabled: process.env.DAFSOLT_CORE_NOTIFY_ENABLED === "true",
 };
 
 export const isProd = env.nodeEnv === "production";

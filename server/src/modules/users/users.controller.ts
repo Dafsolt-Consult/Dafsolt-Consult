@@ -5,7 +5,9 @@ import { resolveTenantId } from "../../middleware/auth";
 import { createStaffSchema, updateUserSchema } from "./users.schema";
 import * as usersService from "./users.service";
 import * as hrSync from "../hr-sync/hr-sync.service";
+import * as notificationsSync from "../notifications-sync/notifications-sync.service";
 import { ApiError } from "../../utils/ApiError";
+import { env } from "../../config/env";
 
 export const listStaff = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
@@ -58,6 +60,16 @@ export const createStaff = asyncHandler(async (req: Request, res: Response) => {
     status: "active",
     hireDate: (user.teacher?.hireDate ?? user.createdAt).toISOString(),
     jobTitle: user.role,
+  });
+
+  // Same fire-and-forget posture as HR sync above. School Manager sends no
+  // welcome/invite email of its own on this path (the admin sets the new
+  // staff member's password directly, communicated out-of-band) — no
+  // duplicate-email overlap to reason about here, unlike PMS's pilot.
+  void notificationsSync.sendWelcome(tenantId, {
+    email: user.email,
+    recipientName: `${user.firstName} ${user.lastName}`,
+    loginUrl: `${env.clientUrl}/login`,
   });
 
   res.status(201).json(user);

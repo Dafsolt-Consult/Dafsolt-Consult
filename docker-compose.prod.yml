@@ -60,6 +60,7 @@ services:
       DAFSOLT_CORE_SSO_ENABLED: ${DAFSOLT_CORE_SSO_ENABLED:-false}
       DAFSOLT_CORE_HR_SYNC_ENABLED: ${DAFSOLT_CORE_HR_SYNC_ENABLED:-false}
       DAFSOLT_CORE_HR_SYNC_TENANTS: ${DAFSOLT_CORE_HR_SYNC_TENANTS:-}
+      DAFSOLT_CORE_NOTIFY_ENABLED: ${DAFSOLT_CORE_NOTIFY_ENABLED:-false}
     volumes:
       - dafsolt_uploads_prod:/app/uploads
     expose:
