@@ -15,6 +15,60 @@ import * as notificationsSync from "../notifications-sync/notifications-sync.ser
 const TRIAL_DAYS = 30;
 const RESET_TOKEN_TTL_MS = ms("1h");
 
+/**
+ * A brand-new tenant previously started with zero AcademicSession/Term
+ * rows — if an admin's first action was marking a session current before
+ * adding terms (a completely normal thing to do), every term-scoped
+ * feature would land on the safe-fallback "no terms anywhere" case
+ * instead of a working default. currentSessionId()'s own fallback chain
+ * (client/src/hooks/useAcademics.ts) already degrades gracefully rather
+ * than crashing, but a real default is better than an empty first
+ * screen. Nigerian/West African school year convention: starts
+ * September. If onboarding happens Jan-Aug, that academic year already
+ * started the previous September.
+ */
+function defaultAcademicYearStart(now: Date): number {
+  return now.getUTCMonth() >= 8 /* September (0-indexed) */ ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+}
+
+async function seedDefaultAcademicSession(tenantId: string, now: Date): Promise<void> {
+  const yearStart = defaultAcademicYearStart(now);
+  const yearEnd = yearStart + 1;
+
+  await prisma.academicSession.create({
+    data: {
+      tenantId,
+      name: `${yearStart}/${yearEnd}`,
+      startDate: new Date(Date.UTC(yearStart, 8, 1)),
+      endDate: new Date(Date.UTC(yearEnd, 7, 1)),
+      isCurrent: true,
+      terms: {
+        create: [
+          {
+            tenantId,
+            name: "First Term",
+            startDate: new Date(Date.UTC(yearStart, 8, 1)),
+            endDate: new Date(Date.UTC(yearStart, 11, 20)),
+            isCurrent: true,
+          },
+          {
+            tenantId,
+            name: "Second Term",
+            startDate: new Date(Date.UTC(yearEnd, 0, 5)),
+            endDate: new Date(Date.UTC(yearEnd, 3, 5)),
+          },
+          {
+            tenantId,
+            name: "Third Term",
+            startDate: new Date(Date.UTC(yearEnd, 3, 25)),
+            endDate: new Date(Date.UTC(yearEnd, 7, 1)),
+          },
+        ],
+      },
+    },
+  });
+}
+
 async function resolveUniqueSlug(requested: string | undefined, schoolName: string) {
   const base = slugify(requested || schoolName) || "school";
 
@@ -70,6 +124,17 @@ export async function onboardSchool(input: OnboardSchoolInput) {
   });
 
   const adminUser = tenant.users[0];
+
+  // A missing default session shouldn't fail registration — the tenant
+  // and admin account are already committed above, and every term-scoped
+  // feature still degrades gracefully without one (currentSessionId()'s
+  // fallback chain). Worst case on failure here: the school ends up in
+  // exactly the pre-fix state, not a new/worse one.
+  try {
+    await seedDefaultAcademicSession(tenant.id, new Date());
+  } catch (err) {
+    console.warn(`[onboardSchool] failed to seed a default academic session for tenant ${tenant.id}:`, err);
+  }
 
   // Same fire-and-forget posture as everywhere else this fires: a Core
   // outage must never affect onboarding. Distinct template from staff
