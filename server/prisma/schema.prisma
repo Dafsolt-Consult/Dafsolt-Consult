@@ -1046,8 +1046,8 @@ model Book {
   publishedYear   Int?
   format          BookFormat    @default(PHYSICAL)
   description     String?
-  coverImageUrl   String?
-  ebookFileUrl    String?
+  coverImageFileId String?
+  ebookFileFileId String?
   targetAudience  SchoolStage?
   totalCopies     Int           @default(1)
   availableCopies Int           @default(1)

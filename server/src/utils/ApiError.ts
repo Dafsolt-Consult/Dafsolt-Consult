@@ -28,4 +28,8 @@ export class ApiError extends Error {
   static conflict(message: string) {
     return new ApiError(409, message);
   }
+
+  static badGateway(message: string, details?: unknown) {
+    return new ApiError(502, message, details);
+  }
 }

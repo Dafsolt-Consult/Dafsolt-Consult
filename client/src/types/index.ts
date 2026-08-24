@@ -126,8 +126,8 @@ export interface Book {
   publishedYear?: number | null;
   format: "PHYSICAL" | "EBOOK" | "BOTH";
   description?: string | null;
-  coverImageUrl?: string | null;
-  ebookFileUrl?: string | null;
+  coverImageFileId?: string | null;
+  ebookFileFileId?: string | null;
   targetAudience?: "PRIMARY" | "JUNIOR_SECONDARY" | "SENIOR_SECONDARY" | null;
   totalCopies: number;
   availableCopies: number;

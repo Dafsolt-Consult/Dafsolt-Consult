@@ -3,7 +3,14 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { prisma } from "../../config/prisma";
 import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
-import { borrowBookSchema, createBookSchema, createCategorySchema, updateBookSchema } from "./library.schema";
+import {
+  borrowBookSchema,
+  createBookSchema,
+  createCategorySchema,
+  requestUploadUrlSchema,
+  updateBookSchema,
+} from "./library.schema";
+import { CoreFilesUnavailableError, getDownloadUrl, getUploadUrl } from "../core-files/core-files-sync.service";
 
 const DAILY_FINE = 20; // currency minor units per day overdue (kobo), tune per school
 
@@ -160,3 +167,49 @@ export const listBorrowRecords = asyncHandler(async (req: Request, res: Response
 
   res.json(withOverdueFlag);
 });
+
+// --- Core file storage (Phase F pilot: book covers/ebooks) -----------------
+//
+// Two-step, matching Core's own pre-signed-URL pattern: the client asks
+// here for an upload URL, PUTs the file bytes DIRECTLY to R2 with it (never
+// through this server), then calls the ordinary createBook/updateBook
+// route with the returned fileId. Reading back a cover/ebook works the
+// same way in reverse via the download-url routes below — a fresh
+// pre-signed URL each time, never a stored raw one (R2 URLs expire).
+
+export const requestUploadUrl = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = resolveTenantId(req);
+  const input = requestUploadUrlSchema.parse(req.body);
+
+  try {
+    const result = await getUploadUrl(tenantId, input);
+    res.json(result);
+  } catch (err) {
+    if (err instanceof CoreFilesUnavailableError) {
+      throw ApiError.badGateway(err.message);
+    }
+    throw err;
+  }
+});
+
+async function bookFileDownloadUrl(req: Request, res: Response, field: "coverImageFileId" | "ebookFileFileId") {
+  const tenantId = resolveTenantId(req);
+  const book = await prisma.book.findFirst({ where: { id: req.params.bookId, tenantId } });
+  if (!book) throw ApiError.notFound("Book not found");
+
+  const fileId = book[field];
+  if (!fileId) throw ApiError.notFound(`This book has no ${field === "coverImageFileId" ? "cover image" : "ebook file"}`);
+
+  try {
+    const result = await getDownloadUrl(tenantId, fileId);
+    res.json(result);
+  } catch (err) {
+    if (err instanceof CoreFilesUnavailableError) {
+      throw ApiError.badGateway(err.message);
+    }
+    throw err;
+  }
+}
+
+export const getBookCoverDownloadUrl = asyncHandler((req, res) => bookFileDownloadUrl(req, res, "coverImageFileId"));
+export const getBookEbookDownloadUrl = asyncHandler((req, res) => bookFileDownloadUrl(req, res, "ebookFileFileId"));

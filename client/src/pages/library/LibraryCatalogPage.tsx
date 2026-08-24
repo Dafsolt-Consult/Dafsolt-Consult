@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { api, apiErrorMessage } from "../../api/client";
 import { Badge, Button, Card, EmptyState, ErrorBanner, Input, Label, Modal, PageHeader, Select, Spinner } from "../../components/ui";
 import { useFetch } from "../../hooks/useFetch";
@@ -14,6 +14,50 @@ interface StudentOption {
   id: string;
   admissionNumber: string;
   user: { firstName: string; lastName: string };
+}
+
+// Two-step upload matching Core's own pre-signed-URL pattern: ask this
+// app's backend for an upload URL (it proxies to dafsolt-core), then PUT
+// the file bytes DIRECTLY to R2 with it — never through this app's own
+// server. Returns the Core FileObject id to store on the Book record.
+async function uploadLibraryFile(file: File): Promise<string> {
+  const { data } = await api.post<{ uploadUrl: string; fileId: string }>("/library/files/upload-url", {
+    filename: file.name,
+    contentType: file.type || "application/octet-stream",
+    sizeBytes: file.size,
+  });
+  const putRes = await fetch(data.uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body: file,
+  });
+  if (!putRes.ok) throw new Error(`Upload to storage failed (${putRes.status})`);
+  return data.fileId;
+}
+
+// Fetches a fresh pre-signed download URL on mount rather than storing a
+// raw one — R2 URLs expire (15 min), so this is deliberately re-requested
+// each time the page renders this book, not cached across sessions.
+function useLibraryFileDownloadUrl(bookId: string, fileId: string | null | undefined, kind: "cover" | "ebook") {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    setUrl(null);
+    if (!fileId) return;
+    let cancelled = false;
+    api
+      .get<{ downloadUrl: string }>(`/library/books/${bookId}/${kind}/download-url`)
+      .then(({ data }) => {
+        if (!cancelled) setUrl(data.downloadUrl);
+      })
+      .catch(() => {
+        // A missing/expired file shouldn't break the catalog card — just
+        // renders without a cover / without the "Read online" button.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId, fileId, kind]);
+  return url;
 }
 
 export function LibraryCatalogPage() {
@@ -79,40 +123,14 @@ export function LibraryCatalogPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {data.items.map((book) => (
-            <Card key={book.id}>
-              {book.coverImageUrl && <img src={book.coverImageUrl} alt="" className="mb-3 h-32 w-full rounded-lg object-cover" />}
-              <h3 className="font-semibold text-slate-800">{book.title}</h3>
-              <p className="text-sm text-slate-500">{book.author}</p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                <Badge>{book.format}</Badge>
-                {book.targetAudience && <Badge>{book.targetAudience.replace("_", " ")}</Badge>}
-                {book.category && <Badge>{book.category.name}</Badge>}
-              </div>
-              {book.format !== "EBOOK" && <p className="mt-2 text-xs text-slate-500">{book.availableCopies} of {book.totalCopies} copies available</p>}
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(book.format === "EBOOK" || book.format === "BOTH") && book.ebookFileUrl && (
-                  <a href={book.ebookFileUrl} target="_blank" rel="noreferrer">
-                    <Button variant="secondary">Read online</Button>
-                  </a>
-                )}
-                {canManage && book.format !== "EBOOK" && (
-                  <Button variant="secondary" disabled={book.availableCopies < 1} onClick={() => setBorrowBook(book)}>
-                    Borrow
-                  </Button>
-                )}
-                {canManage && (
-                  <>
-                    <Button variant="ghost" onClick={() => setEditBook(book)}>
-                      Edit
-                    </Button>
-                    <Button variant="ghost" onClick={() => deleteBook(book)}>
-                      Delete
-                    </Button>
-                  </>
-                )}
-              </div>
-            </Card>
+            <BookCard
+              key={book.id}
+              book={book}
+              canManage={canManage}
+              onBorrow={() => setBorrowBook(book)}
+              onEdit={() => setEditBook(book)}
+              onDelete={() => deleteBook(book)}
+            />
           ))}
         </div>
       )}
@@ -187,6 +205,60 @@ function NewCategoryButton({ onCreated }: { onCreated: () => void }) {
   );
 }
 
+function BookCard({
+  book,
+  canManage,
+  onBorrow,
+  onEdit,
+  onDelete,
+}: {
+  book: Book;
+  canManage: boolean;
+  onBorrow: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const coverUrl = useLibraryFileDownloadUrl(book.id, book.coverImageFileId, "cover");
+  const ebookUrl = useLibraryFileDownloadUrl(book.id, book.ebookFileFileId, "ebook");
+
+  return (
+    <Card>
+      {coverUrl && <img src={coverUrl} alt="" className="mb-3 h-32 w-full rounded-lg object-cover" />}
+      <h3 className="font-semibold text-slate-800">{book.title}</h3>
+      <p className="text-sm text-slate-500">{book.author}</p>
+      <div className="mt-2 flex flex-wrap gap-1">
+        <Badge>{book.format}</Badge>
+        {book.targetAudience && <Badge>{book.targetAudience.replace("_", " ")}</Badge>}
+        {book.category && <Badge>{book.category.name}</Badge>}
+      </div>
+      {book.format !== "EBOOK" && <p className="mt-2 text-xs text-slate-500">{book.availableCopies} of {book.totalCopies} copies available</p>}
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {(book.format === "EBOOK" || book.format === "BOTH") && ebookUrl && (
+          <a href={ebookUrl} target="_blank" rel="noreferrer">
+            <Button variant="secondary">Read online</Button>
+          </a>
+        )}
+        {canManage && book.format !== "EBOOK" && (
+          <Button variant="secondary" disabled={book.availableCopies < 1} onClick={onBorrow}>
+            Borrow
+          </Button>
+        )}
+        {canManage && (
+          <>
+            <Button variant="ghost" onClick={onEdit}>
+              Edit
+            </Button>
+            <Button variant="ghost" onClick={onDelete}>
+              Delete
+            </Button>
+          </>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 function BookFormModal({
   book,
   categories,
@@ -205,9 +277,15 @@ function BookFormModal({
     format: (book?.format ?? "PHYSICAL") as string,
     targetAudience: (book?.targetAudience ?? "") as string,
     totalCopies: String(book?.totalCopies ?? 1),
-    ebookFileUrl: book?.ebookFileUrl ?? "",
     categoryId: book?.category?.id ?? "",
   });
+  // Existing (already-uploaded) file ids, vs. a newly-picked-but-not-yet-
+  // uploaded File — kept separate so the actual upload only happens on
+  // submit, not on every keystroke/selection.
+  const [coverFileId, setCoverFileId] = useState(book?.coverImageFileId ?? undefined);
+  const [ebookFileId, setEbookFileId] = useState(book?.ebookFileFileId ?? undefined);
+  const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
+  const [pendingEbookFile, setPendingEbookFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -216,12 +294,18 @@ function BookFormModal({
     setError(null);
     setSubmitting(true);
     try {
+      const [uploadedCoverFileId, uploadedEbookFileId] = await Promise.all([
+        pendingCoverFile ? uploadLibraryFile(pendingCoverFile) : Promise.resolve(coverFileId),
+        pendingEbookFile ? uploadLibraryFile(pendingEbookFile) : Promise.resolve(ebookFileId),
+      ]);
+
       const payload = {
         ...form,
         totalCopies: Number(form.totalCopies),
         targetAudience: form.targetAudience || undefined,
-        ebookFileUrl: form.ebookFileUrl || undefined,
         categoryId: form.categoryId || undefined,
+        coverImageFileId: uploadedCoverFileId,
+        ebookFileFileId: uploadedEbookFileId,
       };
       if (isEdit) {
         await api.patch(`/library/books/${book!.id}`, payload);
@@ -286,10 +370,25 @@ function BookFormModal({
             <Input type="number" min={0} value={form.totalCopies} onChange={(e) => setForm({ ...form, totalCopies: e.target.value })} />
           </div>
         )}
+        <div>
+          <Label>Cover image</Label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setPendingCoverFile(e.target.files?.[0] ?? null)}
+            className="block w-full text-sm text-slate-600"
+          />
+          {(pendingCoverFile || coverFileId) && !pendingCoverFile && <p className="mt-1 text-xs text-slate-500">Current cover kept unless you choose a new file.</p>}
+        </div>
         {form.format !== "PHYSICAL" && (
           <div>
-            <Label>Ebook file URL</Label>
-            <Input type="url" value={form.ebookFileUrl} onChange={(e) => setForm({ ...form, ebookFileUrl: e.target.value })} />
+            <Label>Ebook file</Label>
+            <input
+              type="file"
+              onChange={(e) => setPendingEbookFile(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm text-slate-600"
+            />
+            {ebookFileId && !pendingEbookFile && <p className="mt-1 text-xs text-slate-500">Current file kept unless you choose a new one.</p>}
           </div>
         )}
         <Button type="submit" disabled={submitting} className="w-full">

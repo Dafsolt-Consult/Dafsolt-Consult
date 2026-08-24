@@ -11,12 +11,16 @@ const readRoles = authorize("SCHOOL_ADMIN", "LIBRARIAN", "TEACHER", "STUDENT", "
 router.get("/categories", readRoles, libraryController.listCategories);
 router.post("/categories", librarianRoles, libraryController.createCategory);
 
+router.post("/files/upload-url", librarianRoles, libraryController.requestUploadUrl);
+
 router.get("/books", readRoles, libraryController.listBooks);
 router.post("/books", librarianRoles, libraryController.createBook);
 router.get("/books/:bookId", readRoles, libraryController.getBook);
 router.patch("/books/:bookId", librarianRoles, libraryController.updateBook);
 router.delete("/books/:bookId", librarianRoles, libraryController.deleteBook);
 router.post("/books/:bookId/borrow", librarianRoles, libraryController.borrowBook);
+router.get("/books/:bookId/cover/download-url", readRoles, libraryController.getBookCoverDownloadUrl);
+router.get("/books/:bookId/ebook/download-url", readRoles, libraryController.getBookEbookDownloadUrl);
 
 router.get("/borrow-records", readRoles, libraryController.listBorrowRecords);
 router.post("/borrow-records/:borrowRecordId/return", librarianRoles, libraryController.returnBook);
