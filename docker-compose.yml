@@ -1,5 +1,12 @@
 version: "3.9"
 
+# Local development only. Pinned to a name distinct from
+# docker-compose.prod.yml's "dafsolt-consult" so this can never default to
+# the same Compose project as production and collide with it (this exact
+# class of incident already happened once — see the "near-miss" note in
+# the dafsolt_school_manager_deploy memory).
+name: dafsolt-consult-dev
+
 services:
   postgres:
     image: postgres:16-alpine

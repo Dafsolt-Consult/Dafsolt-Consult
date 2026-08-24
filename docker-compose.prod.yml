@@ -5,6 +5,8 @@
 # Usage: copy .env.production.example to .env, fill in real secrets, then:
 #   docker compose -f docker-compose.prod.yml up -d --build
 
+name: dafsolt-consult
+
 services:
   postgres:
     image: postgres:16-alpine
