@@ -10,6 +10,7 @@ import { trackActivityUsage } from "./middleware/activityUsage";
 
 import authRoutes from "./modules/auth/auth.routes";
 import ssoRoutes from "./modules/sso/sso.routes";
+import dashboardSummaryRoutes from "./modules/dashboard-summary/dashboard-summary.routes";
 import publicRoutes from "./modules/public/public.routes";
 import supportRoutes from "./modules/support/support.routes";
 import assistantRoutes from "./modules/assistant/assistant.routes";
@@ -81,6 +82,26 @@ export function createApp() {
       message: { message: "Too many attempts, please try again later" },
     }),
     ssoRoutes
+  );
+
+  // Gateway's unified-dashboard "Your workspace" widget (Phase 3 of the
+  // Industry-Adaptive Module Program) — same CORS-ordering rationale as
+  // /api/sso directly above: must be mounted before the app-wide CORS
+  // policy below, or the `cors` package's path-less app.use() would
+  // answer this route's OPTIONS preflight with env.clientUrl's origin
+  // instead of the Gateway's, and the browser would block the real POST.
+  app.use(
+    "/api/dashboard-summary",
+    cors({ origin: "https://id.dafsolt.cloud" }),
+    express.json({ limit: "16kb" }),
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 20,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: "Too many attempts, please try again later" },
+    }),
+    dashboardSummaryRoutes
   );
 
   app.use(cors({ origin: env.clientUrl, credentials: true }));
