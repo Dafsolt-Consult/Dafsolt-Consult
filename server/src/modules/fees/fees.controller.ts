@@ -5,6 +5,7 @@ import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
 import { resolveStudentParam } from "../../utils/resolveStudentId";
 import { notifyUsers, studentAndGuardianUserIds } from "../../utils/notify";
+import { syncInvoice, syncPayment } from "../ledger-sync/ledger-sync.service";
 import { createFeeStructureSchema, generateInvoicesSchema, recordPaymentSchema } from "./fees.schema";
 
 export const listFeeStructures = asyncHandler(async (req: Request, res: Response) => {
@@ -79,6 +80,9 @@ export const generateInvoices = asyncHandler(async (req: Request, res: Response)
         subject: "New fee invoice",
         message: `${feeStructure.name} (₦${(invoice.amount / 100).toLocaleString()}) is due ${invoice.dueDate.toDateString()}.`,
       });
+      // Fire-and-forget, after commit — see ledger-sync.service.ts's own
+      // docblock for why a Core outage must never affect this write.
+      void syncInvoice(tenantId, invoice.id);
       return invoice;
     })
   );
@@ -135,6 +139,8 @@ export const recordPayment = asyncHandler(async (req: Request, res: Response) =>
 
     return [payment, updatedInvoice];
   });
+
+  void syncPayment(tenantId, payment.id);
 
   res.status(201).json({ payment, invoice: updatedInvoice });
 });

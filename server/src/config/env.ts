@@ -105,6 +105,16 @@ export const env = {
   // dafsoltCoreHrSyncTenants above (same per-tenant Core sync user),
   // toggled independently via its own flag.
   dafsoltCoreNotifyEnabled: process.env.DAFSOLT_CORE_NOTIFY_ENABLED === "true",
+
+  // Outbound Fee invoice/payment sync into Core's General Ledger — see
+  // src/modules/ledger-sync (second pilot of that primitive, after
+  // PMS's Folio). DELIBERATELY its own, narrower credential map, not
+  // dafsoltCoreHrSyncTenants above: that map already includes
+  // royal-executive (real student/fee data), which needs its own
+  // separate go-ahead before real money-adjacent postings start —
+  // ledger-sync.service.ts's own docblock has the full reasoning.
+  dafsoltCoreLedgerSyncEnabled: process.env.DAFSOLT_CORE_LEDGER_SYNC_ENABLED === "true",
+  dafsoltCoreLedgerSyncTenants: parseTenantCredentialsMap("DAFSOLT_CORE_LEDGER_SYNC_TENANTS"),
 };
 
 export const isProd = env.nodeEnv === "production";
