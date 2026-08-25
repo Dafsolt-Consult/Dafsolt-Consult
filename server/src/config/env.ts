@@ -115,6 +115,18 @@ export const env = {
   // ledger-sync.service.ts's own docblock has the full reasoning.
   dafsoltCoreLedgerSyncEnabled: process.env.DAFSOLT_CORE_LEDGER_SYNC_ENABLED === "true",
   dafsoltCoreLedgerSyncTenants: parseTenantCredentialsMap("DAFSOLT_CORE_LEDGER_SYNC_TENANTS"),
+
+  // Outbound Student/Guardian sync into Core's Contact primitive — see
+  // src/modules/contact-sync (first pilot of that primitive; Core's own
+  // schema comment names PMS's Guest, School Manager's Student+Guardian,
+  // and TradeLoan's Member as the three candidates it was built for).
+  // Own, narrower credential map, same reasoning as
+  // dafsoltCoreLedgerSyncTenants above and NOT dafsoltCoreHrSyncTenants:
+  // that map already includes royal-executive (real student/guardian
+  // PII), which needs its own separate go-ahead before this pilot
+  // extends past the empty trial tenant "blosom".
+  dafsoltCoreContactSyncEnabled: process.env.DAFSOLT_CORE_CONTACT_SYNC_ENABLED === "true",
+  dafsoltCoreContactSyncTenants: parseTenantCredentialsMap("DAFSOLT_CORE_CONTACT_SYNC_TENANTS"),
 };
 
 export const isProd = env.nodeEnv === "production";

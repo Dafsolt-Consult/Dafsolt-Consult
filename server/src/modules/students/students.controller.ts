@@ -5,6 +5,7 @@ import { resolveTenantId } from "../../middleware/auth";
 import { ApiError } from "../../utils/ApiError";
 import { addGuardianSchema, createStudentSchema, enrollStudentSchema, updateStudentSchema } from "./students.schema";
 import * as studentsService from "./students.service";
+import { syncGuardian, syncStudent } from "../contact-sync/contact-sync.service";
 
 export const listStudents = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
@@ -59,6 +60,12 @@ export const createStudent = asyncHandler(async (req: Request, res: Response) =>
   const tenantId = resolveTenantId(req);
   const input = createStudentSchema.parse(req.body);
   const student = await studentsService.createStudent(tenantId, input);
+  // Fire-and-forget, after commit — see contact-sync.service.ts's own
+  // docblock for why a Core outage must never affect this write.
+  void syncStudent(tenantId, student.id);
+  for (const link of student.guardianLinks) {
+    void syncGuardian(tenantId, link.guardian.id);
+  }
   res.status(201).json(student);
 });
 
@@ -76,6 +83,9 @@ export const updateStudent = asyncHandler(async (req: Request, res: Response) =>
       user: firstName || lastName ? { update: { firstName, lastName } } : undefined,
     },
   });
+  if (firstName || lastName) {
+    void syncStudent(tenantId, student.id);
+  }
   res.json(student);
 });
 
@@ -83,6 +93,7 @@ export const addGuardian = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = resolveTenantId(req);
   const input = addGuardianSchema.parse(req.body);
   const link = await studentsService.addGuardian(tenantId, req.params.studentId, input);
+  void syncGuardian(tenantId, link.guardian.id);
   res.status(201).json(link);
 });
 

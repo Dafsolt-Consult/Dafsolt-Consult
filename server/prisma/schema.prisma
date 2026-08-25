@@ -646,6 +646,12 @@ model Student {
   gender          Gender?
   status          StudentStatus @default(ACTIVE)
   admissionDate   DateTime      @default(now())
+  // Contact/CRM first pilot (Core Platformization Gate Industry-Adaptive
+  // Module Program Finding F) — id of the mirrored dafsolt-core Contact
+  // row, once this student has been synced (see src/modules/contact-sync).
+  // Null until the first successful sync; this stays the local source of
+  // truth, Core only ever gets a one-way outbound mirror.
+  coreContactId   String?
 
   enrollments           Enrollment[]
   guardianLinks         StudentGuardian[]
@@ -773,6 +779,9 @@ model Guardian {
   email      String?
   address    String?
   occupation String?
+  // Contact/CRM first pilot — see Student.coreContactId's comment above,
+  // same posture.
+  coreContactId String?
 
   studentLinks StudentGuardian[]
 
