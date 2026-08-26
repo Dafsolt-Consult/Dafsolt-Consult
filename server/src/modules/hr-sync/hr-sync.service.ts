@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma";
 import { env } from "../../config/env";
+import { credentialsForTenantSlug } from "../core-sync-credentials/core-sync-credentials.service";
 
 /**
  * Outbound, one-way sync of School Manager staff into dafsolt-core's
@@ -65,7 +66,7 @@ async function run(tenantId: string, input: SyncEmploymentInput): Promise<void> 
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } });
   if (!tenant) return;
 
-  const credentials = getCredentialsFor(tenant.slug);
+  const credentials = await getCredentialsFor(tenant.slug);
   if (!credentials) return;
 
   const token = await getAccessToken(tenant.slug, credentials);
@@ -85,8 +86,12 @@ async function run(tenantId: string, input: SyncEmploymentInput): Promise<void> 
   }
 }
 
-function getCredentialsFor(tenantSlug: string): TenantCredentials | null {
-  return env.dafsoltCoreHrSyncTenants[tenantSlug] ?? null;
+// Store first (auto-provisioned tenants — a credential delivered by Core's
+// provisioning flow to core_sync_credentials), legacy env map second.
+// Same precedence every Core sync integration in this fleet now uses
+// (2026-08-26).
+async function getCredentialsFor(tenantSlug: string): Promise<TenantCredentials | null> {
+  return (await credentialsForTenantSlug(tenantSlug)) ?? env.dafsoltCoreHrSyncTenants[tenantSlug] ?? null;
 }
 
 async function getAccessToken(tenantSlug: string, credentials: TenantCredentials): Promise<string | null> {

@@ -14,9 +14,23 @@ const mockEnv: {
 const mockTenantFindUnique = vi.fn();
 
 vi.mock("../../config/env", () => ({ env: mockEnv }));
+const mockCredentialFindFirst = vi.fn();
+
 vi.mock("../../config/prisma", () => ({
-  prisma: { tenant: { findUnique: mockTenantFindUnique } },
+  prisma: {
+    tenant: { findUnique: mockTenantFindUnique },
+    coreSyncCredential: { findFirst: mockCredentialFindFirst },
+  },
 }));
+
+async function deliverStoredCredential(password: string) {
+  process.env.CORE_SYNC_CREDENTIAL_KEY = Buffer.alloc(32, 11).toString("base64");
+  const { encryptSecret } = await import("../../utils/secret-box");
+  mockCredentialFindFirst.mockResolvedValue({
+    email: "sync+school_manager@pilot-tenant.dafsolt.internal",
+    passwordCiphertext: encryptSecret(password),
+  });
+}
 
 function signAccessToken(expiresInSeconds: number) {
   return jwt.sign({ sub: "core-user-1" }, "unused-secret-just-for-exp-decode", {
@@ -38,6 +52,9 @@ describe("notifications-sync.service", () => {
     };
     mockTenantFindUnique.mockReset();
     mockTenantFindUnique.mockResolvedValue({ slug: "pilot-tenant" });
+    // No delivered credential by default — pre-existing tests exercise the
+    // legacy env-map path.
+    mockCredentialFindFirst.mockReset().mockResolvedValue(null);
 
     // notifications-sync.service.ts caches Core tokens in a module-level
     // Map — reset the module registry and re-import fresh each test so
@@ -161,5 +178,24 @@ describe("notifications-sync.service", () => {
 
     const [, notifyOpts] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[1];
     expect(JSON.parse(notifyOpts.body).template).toBe("tenant-welcome");
+  });
+
+  it("prefers a delivered sync credential over the legacy env map", async () => {
+    await deliverStoredCredential("stored-password-wins");
+
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ accessToken: signAccessToken(900), refreshToken: "r1" }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ sent: true }) });
+
+    await sendWelcome("t1", { email: "a@pilot.test", loginUrl: "https://edu.dafsolt.cloud/login" });
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const loginBody = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    expect(loginBody.password).toBe("stored-password-wins");
+
+    delete process.env.CORE_SYNC_CREDENTIAL_KEY;
   });
 });

@@ -65,6 +65,14 @@ services:
       DAFSOLT_CORE_NOTIFY_ENABLED: ${DAFSOLT_CORE_NOTIFY_ENABLED:-false}
       DAFSOLT_CORE_LEDGER_SYNC_ENABLED: ${DAFSOLT_CORE_LEDGER_SYNC_ENABLED:-false}
       DAFSOLT_CORE_LEDGER_SYNC_TENANTS: ${DAFSOLT_CORE_LEDGER_SYNC_TENANTS:-}
+      # Contact-sync pilot (2026-08-25) read these from env.ts but they
+      # were never added to this allowlist — dormant until now, fixed as
+      # part of the core-sync-credentials port (2026-08-26).
+      DAFSOLT_CORE_CONTACT_SYNC_ENABLED: ${DAFSOLT_CORE_CONTACT_SYNC_ENABLED:-false}
+      DAFSOLT_CORE_CONTACT_SYNC_TENANTS: ${DAFSOLT_CORE_CONTACT_SYNC_TENANTS:-}
+      # Delivered Core sync credentials at rest (core-sync-credentials
+      # receiver, 2026-08-26). Unset = receiving endpoint fails closed.
+      CORE_SYNC_CREDENTIAL_KEY: ${CORE_SYNC_CREDENTIAL_KEY:-}
     volumes:
       - dafsolt_uploads_prod:/app/uploads
     expose:

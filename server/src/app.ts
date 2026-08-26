@@ -11,6 +11,7 @@ import { trackActivityUsage } from "./middleware/activityUsage";
 import authRoutes from "./modules/auth/auth.routes";
 import ssoRoutes from "./modules/sso/sso.routes";
 import dashboardSummaryRoutes from "./modules/dashboard-summary/dashboard-summary.routes";
+import coreSyncCredentialsRoutes from "./modules/core-sync-credentials/core-sync-credentials.routes";
 import publicRoutes from "./modules/public/public.routes";
 import supportRoutes from "./modules/support/support.routes";
 import assistantRoutes from "./modules/assistant/assistant.routes";
@@ -102,6 +103,23 @@ export function createApp() {
       message: { message: "Too many attempts, please try again later" },
     }),
     dashboardSummaryRoutes
+  );
+
+  // dafsolt-core's backend delivering an auto-provisioned sync credential
+  // at provisioning time (port of Kitchen ERP's core-sync-credentials).
+  // Server-to-server fetch from Core — no browser, so no CORS needed;
+  // its own tight body limit + rate limiter are the only extra gates.
+  app.use(
+    "/api/core-sync-credentials",
+    express.json({ limit: "4kb" }),
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 20,
+      standardHeaders: true,
+      legacyHeaders: false,
+      message: { message: "Too many attempts, please try again later" },
+    }),
+    coreSyncCredentialsRoutes
   );
 
   app.use(cors({ origin: env.clientUrl, credentials: true }));

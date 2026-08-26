@@ -16,13 +16,25 @@ const mockInvoiceFindUnique = vi.fn();
 const mockPaymentFindUnique = vi.fn();
 
 vi.mock("../../config/env", () => ({ env: mockEnv }));
+const mockCredentialFindFirst = vi.fn();
+
 vi.mock("../../config/prisma", () => ({
   prisma: {
     tenant: { findUnique: mockTenantFindUnique },
     invoice: { findUnique: mockInvoiceFindUnique },
     payment: { findUnique: mockPaymentFindUnique },
+    coreSyncCredential: { findFirst: mockCredentialFindFirst },
   },
 }));
+
+async function deliverStoredCredential(password: string) {
+  process.env.CORE_SYNC_CREDENTIAL_KEY = Buffer.alloc(32, 11).toString("base64");
+  const { encryptSecret } = await import("../../utils/secret-box");
+  mockCredentialFindFirst.mockResolvedValue({
+    email: "ledger-sync+stored@example.internal",
+    passwordCiphertext: encryptSecret(password),
+  });
+}
 
 function signAccessToken(expiresInSeconds: number) {
   return jwt.sign({ sub: "core-user-1" }, "unused-secret-just-for-exp-decode", { expiresIn: expiresInSeconds });
@@ -47,6 +59,9 @@ describe("ledger-sync.service", () => {
     mockTenantFindUnique.mockReset().mockResolvedValue({ slug: "blosom" });
     mockInvoiceFindUnique.mockReset();
     mockPaymentFindUnique.mockReset();
+    // No delivered credential by default — pre-existing tests exercise the
+    // legacy env-map path.
+    mockCredentialFindFirst.mockReset().mockResolvedValue(null);
 
     // Module-level Map caches (tokens + chart of accounts) — reset the
     // module registry and re-import fresh each test, same technique
@@ -159,5 +174,48 @@ describe("ledger-sync.service", () => {
       String(c[0]).includes("/ledger/postings")
     );
     expect(postingCalls).toHaveLength(0);
+  });
+
+  it("a delivered credential alone does not enable ledger sync — the explicit allowlist is preserved", async () => {
+    // The 2026-08-26 decision: unlike HR/notifications sync, a school that
+    // only holds an auto-delivered credential is still NOT enrolled in
+    // fee-posting. This map exists precisely so royal-executive's real
+    // fee data can't be enrolled implicitly.
+    await deliverStoredCredential("stored-password");
+
+    mockTenantFindUnique.mockResolvedValue({ slug: "store-only-school" });
+    mockInvoiceFindUnique.mockResolvedValue({ id: "inv-1", amount: 5000, createdAt: new Date() });
+
+    await syncInvoice("t9", "inv-1");
+
+    expect(global.fetch).not.toHaveBeenCalled();
+    delete process.env.CORE_SYNC_CREDENTIAL_KEY;
+  });
+
+  it("an allowlisted school prefers a delivered credential over its map entry", async () => {
+    await deliverStoredCredential("stored-password-wins");
+
+    mockInvoiceFindUnique.mockResolvedValue({ id: "inv-1", amount: 5000, createdAt: new Date() });
+
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockImplementation(async (url) => {
+        if (String(url).endsWith("/auth/login")) {
+          return jsonResponse({ accessToken: signAccessToken(900), refreshToken: "r1" });
+        }
+        if (String(url).endsWith("/ledger/accounts")) {
+          return jsonResponse({ accounts: [] });
+        }
+        return jsonResponse({ id: "tx-1" });
+      });
+
+    await syncInvoice("t1", "inv-1");
+
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const loginCall = calls.find(([url]) => String(url).endsWith("/auth/login"));
+    expect(JSON.parse((loginCall as unknown as [string, { body: string }])[1].body).password).toBe(
+      "stored-password-wins"
+    );
+
+    delete process.env.CORE_SYNC_CREDENTIAL_KEY;
   });
 });

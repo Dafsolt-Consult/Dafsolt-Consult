@@ -127,6 +127,14 @@ export const env = {
   // extends past the empty trial tenant "blosom".
   dafsoltCoreContactSyncEnabled: process.env.DAFSOLT_CORE_CONTACT_SYNC_ENABLED === "true",
   dafsoltCoreContactSyncTenants: parseTenantCredentialsMap("DAFSOLT_CORE_CONTACT_SYNC_TENANTS"),
+
+  // AES-256-GCM key (base64 of exactly 32 raw bytes) encrypting delivered
+  // Core sync credentials at rest — see src/utils/secret-box.ts and
+  // src/modules/core-sync-credentials (2026-08-26 port). secret-box reads
+  // process.env directly rather than this object, deliberately: a missing
+  // or malformed key must fail CLOSED at receive time and degrade to "no
+  // sync" at resolution time, never crash boot.
+  coreSyncCredentialKey: process.env.CORE_SYNC_CREDENTIAL_KEY,
 };
 
 export const isProd = env.nodeEnv === "production";

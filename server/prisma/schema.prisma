@@ -367,8 +367,29 @@ model Tenant {
   alumni               Alumnus[]
   healthRecords        HealthRecord[]
   healthIncidents      HealthIncident[]
+  coreSyncCredential   CoreSyncCredential?
 
   @@map("tenants")
+}
+
+/// The per-tenant dafsolt-core sync credential delivered by Core's
+/// provisioning flow (POST /api/core-sync-credentials — port of Kitchen
+/// ERP's core-sync-credentials store). One row per tenant covers every
+/// outbound sync (HR, notifications, ledger) — they all authenticate to
+/// Core as this same non-human sync user. passwordCiphertext is
+/// AES-256-GCM encrypted at rest (src/utils/secret-box.ts); the
+/// plaintext exists only in transit and is never logged.
+model CoreSyncCredential {
+  id                 String   @id @default(cuid())
+  tenantId           String   @unique
+  email              String
+  passwordCiphertext String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("core_sync_credentials")
 }
 
 model User {

@@ -1,5 +1,6 @@
 import { prisma } from "../../config/prisma";
 import { env } from "../../config/env";
+import { credentialsForTenantSlug } from "../core-sync-credentials/core-sync-credentials.service";
 
 /**
  * Outbound, one-way sync of Fee invoices/payments into dafsolt-core's
@@ -20,9 +21,12 @@ import { env } from "../../config/env";
  * go-ahead, same discipline the HR/Notifications rollouts used
  * (E3 -> E3b -> E4 -> E5, each real-data tenant gated separately). This
  * pilot has its OWN, narrower credential map
- * (DAFSOLT_CORE_LEDGER_SYNC_TENANTS), scoped to just the empty trial
- * tenant "blosom" for now. Extending to royal-executive is a separate
- * future decision — add its slug to that env var only after that
+ * (DAFSOLT_CORE_LEDGER_SYNC_TENANTS). Since sync credentials became
+ * auto-provisioned (2026-08-26), the allowlist stays the gate while
+ * credential RESOLUTION prefers a delivered core_sync_credentials row
+ * over the static env entry — enrolling a school still means adding its
+ * slug to that env var, never happens implicitly. Extending to
+ * royal-executive remains a separate future decision requiring its own
  * go-ahead, never by widening this to reuse the HR map.
  */
 
@@ -117,8 +121,17 @@ async function prepare(tenantId: string): Promise<[string | null, ChartOfAccount
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } });
   if (!tenant) return [null, null];
 
-  const credentials = env.dafsoltCoreLedgerSyncTenants[tenant.slug];
-  if (!credentials) return [null, null];
+  // Explicit per-tenant gate FIRST, unchanged (reaffirmed 2026-08-26 when
+  // sync credentials became auto-provisioned): fee-posting still requires
+  // the school to be present in DAFSOLT_CORE_LEDGER_SYNC_TENANTS — a
+  // delivered credential alone never switches it on. This map exists
+  // precisely so royal-executive's real fee data can't be enrolled
+  // implicitly.
+  if (!(tenant.slug in env.dafsoltCoreLedgerSyncTenants)) return [null, null];
+
+  // Gate passed: a delivered (auto-provisioned) credential wins over the
+  // map entry's static ones.
+  const credentials = (await credentialsForTenantSlug(tenant.slug)) ?? env.dafsoltCoreLedgerSyncTenants[tenant.slug];
 
   const token = await getAccessToken(tenant.slug, credentials);
   if (!token) return [null, null];

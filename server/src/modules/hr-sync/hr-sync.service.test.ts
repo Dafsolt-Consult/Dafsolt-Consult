@@ -14,9 +14,25 @@ const mockEnv: {
 const mockTenantFindUnique = vi.fn();
 
 vi.mock("../../config/env", () => ({ env: mockEnv }));
+const mockCredentialFindFirst = vi.fn();
+
 vi.mock("../../config/prisma", () => ({
-  prisma: { tenant: { findUnique: mockTenantFindUnique } },
+  prisma: {
+    tenant: { findUnique: mockTenantFindUnique },
+    coreSyncCredential: { findFirst: mockCredentialFindFirst },
+  },
 }));
+
+// Delivers a stored (auto-provisioned) credential for the current test to
+// resolve; returns nothing — call before syncEmployment().
+async function deliverStoredCredential(password: string) {
+  process.env.CORE_SYNC_CREDENTIAL_KEY = Buffer.alloc(32, 11).toString("base64");
+  const { encryptSecret } = await import("../../utils/secret-box");
+  mockCredentialFindFirst.mockResolvedValue({
+    email: "sync+school_manager@pilot-tenant.dafsolt.internal",
+    passwordCiphertext: encryptSecret(password),
+  });
+}
 
 function signAccessToken(expiresInSeconds: number) {
   return jwt.sign({ sub: "core-user-1" }, "unused-secret-just-for-exp-decode", {
@@ -37,6 +53,9 @@ describe("hr-sync.service", () => {
     };
     mockTenantFindUnique.mockReset();
     mockTenantFindUnique.mockResolvedValue({ slug: "pilot-tenant" });
+    // No delivered credential by default — pre-existing tests exercise the
+    // legacy env-map path.
+    mockCredentialFindFirst.mockReset().mockResolvedValue(null);
 
     // hr-sync.service.ts caches Core tokens in a module-level Map — reset
     // the module registry and re-import fresh each test so that cache
@@ -156,5 +175,24 @@ describe("hr-sync.service", () => {
     await expect(
       syncEmployment("t1", { email: "never-onboarded@pilot.test", status: "active" })
     ).resolves.toBeUndefined();
+  });
+
+  it("prefers a delivered sync credential over the legacy env map", async () => {
+    await deliverStoredCredential("stored-password-wins");
+
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ accessToken: signAccessToken(900), refreshToken: "r1" }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ synced: true }) });
+
+    await syncEmployment("t1", { email: "a@pilot.test", status: "active" });
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const loginBody = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    expect(loginBody.password).toBe("stored-password-wins");
+
+    delete process.env.CORE_SYNC_CREDENTIAL_KEY;
   });
 });
