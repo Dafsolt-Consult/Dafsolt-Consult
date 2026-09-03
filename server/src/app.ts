@@ -3,7 +3,6 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
-import path from "path";
 import { env } from "./config/env";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { trackActivityUsage } from "./middleware/activityUsage";
@@ -142,7 +141,6 @@ export function createApp() {
     message: { message: "Too many attempts, please try again later" },
   });
 
-  app.use("/uploads", express.static(path.resolve(env.uploadDir)));
   app.use(trackActivityUsage);
 
   app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));

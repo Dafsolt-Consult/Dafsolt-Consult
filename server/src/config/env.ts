@@ -54,9 +54,6 @@ export const env = {
   superAdminEmail: process.env.SUPER_ADMIN_EMAIL,
   superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
 
-  uploadDir: process.env.UPLOAD_DIR ?? "uploads",
-  maxUploadMb: Number(process.env.MAX_UPLOAD_MB ?? 20),
-
   // Real email/SMS delivery — optional. When unset, sendEmail/sendSms
   // (src/utils/email.ts, src/utils/sms.ts) return a FAILED result with a
   // clear reason instead of throwing, so the rest of the app keeps working

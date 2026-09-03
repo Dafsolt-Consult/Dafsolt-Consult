@@ -36,7 +36,15 @@ router.patch(
   platformController.updateTenantSubscription
 );
 
-router.get("/analytics/overview", platformController.getAnalyticsOverview);
+// Revenue analytics — same role pair as the subscription-management route
+// above (PlatformRole's own doc comment scopes "view revenue analytics" to
+// BILLING, alongside OWNER's full access); SUPPORT and CONTENT_MANAGER have
+// no documented reason to see it.
+router.get(
+  "/analytics/overview",
+  authorizePlatform("OWNER", "BILLING"),
+  platformController.getAnalyticsOverview
+);
 router.post(
   "/tenants/:tenantId/impersonate",
   authorizePlatform("OWNER", "SUPPORT"),
