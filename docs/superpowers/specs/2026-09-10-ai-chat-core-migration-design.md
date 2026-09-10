@@ -99,9 +99,28 @@ back to **the exact same local fallback-reply text these services
 already return today** — zero behavior change in the failure path,
 matching Kitchen ERP's own "same graceful-degradation posture" design.
 
-`AssistantChatService` keeps its `extractActions()` method unchanged —
-Core's reply still carries `ACTION:` lines in the same format, validated
-against `context.knownIds` exactly as today.
+**Correction after verifying against dafsolt-core's real route source and
+Kitchen ERP's actual post-migration file (this section originally
+guessed wrong):** `AssistantChatService`'s old `extractActions()` method
+is deleted entirely, not kept. `dafsolt-core`'s `/assistant/chat` route
+(`src/routes/assistant.js`) does the ACTION-line extraction/validation
+itself, server-side, using the exact `actions`/`knownIds` the caller
+sent in that same request — it returns an already-resolved
+`{ reply, actions: [{label, url}] }`. Kitchen ERP's own post-migration
+`AssistantChatService` confirms this: a direct `if (result) return
+result;`, no client-side re-extraction step. The security boundary is
+unchanged in substance (an ACTION line can only ever resolve against
+THIS request's own `knownIds`) — only its physical location moved into
+Core, which is what "consolidation" means here.
+
+**Also found while verifying (2026-09-10), not in the original design**:
+Core's `/assistant/chat` route additionally gates on the calling
+tenant's `IndustryBlueprint.aiAssistantEnabled` flag, checked BEFORE the
+Groq call. Production's `EDUCATION` blueprint currently has this `false`
+(only `FOOD_SERVICE` is `true`) — Task 1 now includes flipping it, with
+its own explicit confirmation, since this is a real "turn the feature on
+for this whole industry" decision, not a bug fix. Support-chat has no
+such gate (verified in `src/routes/support.js`) and is unaffected.
 
 ### What gets deleted
 
@@ -159,3 +178,33 @@ row exists with `status: 'delivered'`.
 - **Ambiguity check**: the "backfill vs. accept the gap" decision was
   the one genuinely two-way fork; resolved via explicit user confirmation
   (backfill first), recorded above as the current design, not left open.
+
+## Addendum (found while writing the implementation plan)
+
+Reading dafsolt-core's real `src/routes/assistant.js` (rather than assuming
+its shape from `/support/chat`'s sibling route) surfaced a second, more
+severe prerequisite than the credential backfill above:
+
+- **`IndustryBlueprint.aiAssistantEnabled` for `EDUCATION` is `false` in
+  production** (only `FOOD_SERVICE` is `true`). Core's `/assistant/chat`
+  checks this per-request, before the Groq call, and 403s if false —
+  unlike the credential gap (which only affected `royal-executive`/
+  `blosom`), this would silently and permanently break assistant-chat for
+  **every** School Manager tenant, not just the 2 backfilled ones. Added
+  as Task 1, Step 1a in the plan, called out separately for its own
+  explicit confirmation (a real "turn this feature on for a whole
+  industry" decision, not a bug fix).
+- The ACTION-line extraction/validation happens entirely inside Core's
+  route (confirmed by reading its source and Kitchen ERP's actual
+  post-migration `AssistantChatService`, not assumed) — the product-side
+  wrapper does a direct passthrough of Core's `{reply, actions}`, it does
+  not re-extract or re-validate. This spec's original architecture
+  section said "the ACTION-line extraction/validation stay completely
+  untouched," which is true of `AccountContextBuilder`'s role in
+  producing `knownIds`/the action catalog, but imprecise about *where*
+  the extraction step itself runs post-migration — corrected in the plan.
+- Kitchen ERP's actual post-migration `SupportChatService`/
+  `AssistantChatService` both kept their own local 12-message history
+  trim in front of the Core call (even though Core's own routes
+  independently cap history at 20) — the plan matches this exactly
+  rather than dropping it as redundant.
