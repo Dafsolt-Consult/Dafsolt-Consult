@@ -25,7 +25,7 @@
 **Files:** none in `Dafsolt-Consult` — this task creates one Core tenant (`dafsolt-core`'s own database) and delivers 2 `core_sync_credentials` rows into `Dafsolt-Consult`'s own database via the existing HTTP receiver. A throwaway script is written to `dafsolt-core/scripts/` and deleted after use, matching this project's established "throwaway script, deleted after" convention for one-off production operations.
 
 **Interfaces:**
-- Produces: a real Core tenant `school-manager-ai-proxy` with a known email/password (for Task 5's `SCHOOL_MANAGER_AI_PROXY_EMAIL`/`_PASSWORD` env vars); `core_sync_credentials` rows for `royal-executive` and `blosom` with `status: 'delivered'` (consumed by Task 3's `credentialsForTenantSlug()` call); `IndustryBlueprint.aiAssistantEnabled = true` for `EDUCATION` (checked by Core's `/assistant/chat` route before every call — without this, that route 403s every School Manager tenant regardless of credentials).
+- Produces: a real Core tenant `school-manager-ai-proxy` with a known email/password (for Task 6 Step 3's `SCHOOL_MANAGER_AI_PROXY_EMAIL`/`_PASSWORD` production `.env` values, read by Task 2's `env.ts` fields); `core_sync_credentials` rows for `royal-executive` and `blosom` with `status: 'delivered'` (consumed by Task 3's `credentialsForTenantSlug()` call); `IndustryBlueprint.aiAssistantEnabled = true` for `EDUCATION` (checked by Core's `/assistant/chat` route before every call — without this, that route 403s every School Manager tenant regardless of credentials).
 
 **⚠️ Step 1a below changes a real production entitlement flag for an entire industry (every current and future EDUCATION/School-Manager tenant), not just this migration's 2 backfilled tenants. Confirm this specific step with the user before running it — it is a separate decision from the credential backfill.**
 
@@ -44,7 +44,7 @@ curl -s -X POST https://id.dafsolt.cloud/core-api/auth/register \
   }'
 ```
 
-Expected: `201`, response body contains `tenant.slug: "school-manager-ai-proxy"`. Record the email/password used — they become `SCHOOL_MANAGER_AI_PROXY_EMAIL`/`SCHOOL_MANAGER_AI_PROXY_PASSWORD` in Task 5. Do not commit these anywhere — they go directly into the production `.env` file in Task 6.
+Expected: `201`, response body contains `tenant.slug: "school-manager-ai-proxy"`. Record the email/password used — they become `SCHOOL_MANAGER_AI_PROXY_EMAIL`/`SCHOOL_MANAGER_AI_PROXY_PASSWORD`. Do not commit these anywhere — they go directly into the production `.env` file in Task 6 Step 3.
 
 - [ ] **Step 1a: Enable the EDUCATION industry's AI-assistant entitlement (confirm with user first — see warning above)**
 
