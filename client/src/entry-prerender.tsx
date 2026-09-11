@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { StaticRouter } from "react-router-dom/server";
+import { StaticRouter } from "react-router";
 import { LandingPage } from "./pages/LandingPage";
 
 // Used only at build time (see scripts/prerender.mjs) to bake real marketing
