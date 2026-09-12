@@ -91,9 +91,9 @@ export function LoginPage() {
 
       <p className="mt-3 text-center text-sm text-slate-500">
         New school?{" "}
-        <Link to="/onboard" className="font-medium text-[#2E3192] hover:underline">
+        <a href="https://id.dafsolt.cloud/register?industry=EDUCATION" className="font-medium text-[#2E3192] hover:underline">
           Register your school
-        </Link>
+        </a>
       </p>
     </AuthGateShell>
   );

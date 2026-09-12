@@ -458,13 +458,13 @@ export function LandingPage() {
             <Link to="/login" className="text-sm font-medium text-slate-700 transition hover:text-[#2E3192]">
               Sign in
             </Link>
-            <Link
-              to="/onboard"
+            <a
+              href="https://id.dafsolt.cloud/register?industry=EDUCATION"
               className="inline-flex items-center gap-1.5 rounded-lg bg-[#2E3192] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
             >
               Register your school
               <Icon path={icons.arrowRight} className="h-4 w-4" />
-            </Link>
+            </a>
           </div>
 
           <button
@@ -496,12 +496,12 @@ export function LandingPage() {
                 <Link to="/login" className="rounded-lg px-2 py-2 text-sm font-medium text-slate-700 hover:bg-[#E6E6E6]">
                   Sign in
                 </Link>
-                <Link
-                  to="/onboard"
+                <a
+                  href="https://id.dafsolt.cloud/register?industry=EDUCATION"
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#2E3192] px-4 py-2 text-sm font-semibold text-white"
                 >
                   Register your school
-                </Link>
+                </a>
               </div>
             </div>
           </div>
@@ -530,13 +530,13 @@ export function LandingPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              to="/onboard"
+            <a
+              href="https://id.dafsolt.cloud/register?industry=EDUCATION"
               className="inline-flex items-center gap-2 rounded-lg bg-[#2E3192] px-6 py-3 text-base font-semibold text-white shadow-md transition hover:opacity-90 hover:shadow-lg"
             >
               Register your school
               <Icon path={icons.arrowRight} className="h-5 w-5" />
-            </Link>
+            </a>
             <Link
               to="/login"
               className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-700 transition hover:border-[#81AEEB] hover:text-[#2E3192]"
@@ -946,13 +946,13 @@ export function LandingPage() {
             Register your school in minutes, or sign in if your school already has an account.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              to="/onboard"
+            <a
+              href="https://id.dafsolt.cloud/register?industry=EDUCATION"
               className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-base font-semibold text-[#2E3192] shadow-md transition hover:bg-[#D0E3FF]"
             >
               Register your school
               <Icon path={icons.arrowRight} className="h-5 w-5" />
-            </Link>
+            </a>
             <Link
               to="/login"
               className="inline-flex items-center gap-2 rounded-lg border border-[#81AEEB] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#81AEEB]/20"
@@ -978,9 +978,9 @@ export function LandingPage() {
               <Link to="/login" className="hover:text-white">
                 Sign in
               </Link>
-              <Link to="/onboard" className="hover:text-white">
+              <a href="https://id.dafsolt.cloud/register?industry=EDUCATION" className="hover:text-white">
                 Register
-              </Link>
+              </a>
               <a href="/kiosk/login" className="hover:text-white">
                 Exam Kiosk Login
               </a>
